@@ -19,7 +19,7 @@ if sdk not in sys.path:
 import arnold
 
 _M = 1 / 255
-_P = [ 1, 1, 0, 1]
+_P = [ 1, 1, 0, 1 ]
 
 class Shaders:
     def __init__(self):
@@ -91,7 +91,7 @@ def update(self, data, scene):
 
     arnold.AiBegin()
     #arnold.AiMsgSetConsoleFlags(arnold.AI_LOG_ALL)
-    
+
     for ob in scene.objects:
         if ob.hide_render:
             continue
@@ -151,7 +151,15 @@ def update(self, data, scene):
                 node = arnold.AiNode("point_light")
                 arnold.AiNodeSetStr(node, "name", ob.name)
                 arnold.AiNodeSetRGB(node, "color", *lamp.color)
-                arnold.AiNodeSetFlt(node, "intensity", lamp.energy)
+                arnold.AiNodeSetStr(node, "decay_type", lamp.arnold.point.decay_type)
+                arnold.AiNodeSetFlt(node, "intensity", lamp.arnold.point.intensity)
+                arnold.AiNodeSetFlt(node, "exposure", lamp.arnold.point.exposure)
+                arnold.AiNodeSetBool(node, "cast_shadows", lamp.arnold.point.cast_shadows)
+                arnold.AiNodeSetBool(node, "cast_volumetric_shadows", lamp.arnold.point.cast_volumetric_shadows)
+                arnold.AiNodeSetFlt(node, "shadow_density", lamp.arnold.point.shadow_density)
+                arnold.AiNodeSetRGB(node, "shadow_color", *lamp.arnold.point.shadow_color)
+                arnold.AiNodeSetInt(node, "samples", lamp.arnold.point.samples)
+                arnold.AiNodeSetBool(node, "normalize", lamp.arnold.point.normalize)
                 arnold.AiNodeSetArray(node, "matrix", _amatrix(ob.matrix_world))
 
     ob = self.camera_override
@@ -160,7 +168,7 @@ def update(self, data, scene):
     arnold.AiNodeSetStr(camera, "name", ob.name)
     arnold.AiNodeSetFlt(camera, "fov", math.degrees(ob.data.angle))
     arnold.AiNodeSetArray(camera, "matrix", _amatrix(ob.matrix_world))
-        
+
     filter = arnold.AiNode("gaussian_filter")
     arnold.AiNodeSetStr(filter, "name", "outfilter")
     display = arnold.AiNode("driver_display")
@@ -168,17 +176,18 @@ def update(self, data, scene):
     outputs = arnold.AiArray(1, 1, arnold.AI_TYPE_STRING, b"RGBA RGBA outfilter outdriver")
     self._session['display'] = display
 
+    opts = scene.arnold
     options = arnold.AiUniverseGetOptions()
-    arnold.AiNodeSetBool(options, "skip_license_check", True)
-    arnold.AiNodeSetInt(options, "threads", 0)
-    arnold.AiNodeSetInt(options, "AA_samples", 10)
     arnold.AiNodeSetInt(options, "xres", self.resolution_x)
     arnold.AiNodeSetInt(options, "yres", self.resolution_y)
+    arnold.AiNodeSetBool(options, "skip_license_check", opts.skip_license_check)
+    arnold.AiNodeSetInt(options, "AA_samples", opts.aa_samples)
+    arnold.AiNodeSetInt(options, "AA_seed", opts.aa_seed)
+    arnold.AiNodeSetInt(options, "threads", opts.threads)
+    arnold.AiNodeSetStr(options, "thread_priority", opts.thread_priority)
     arnold.AiNodeSetPtr(options, "camera", camera)
     arnold.AiNodeSetArray(options, "outputs", outputs)
 
-    #render = self.render
-        
     if 0:
         arnold.AiNodeSetBool(options, "preserve_scene_data", True)
         arnold.AiASSWrite(r"D:\Tools\Dev\Src\blender\everything.ass", arnold.AI_NODE_ALL, False, False)
@@ -227,12 +236,12 @@ def render(self, scene):
                 rect[_x - width + 1] = _P
             result.layers[0].passes[0].rect = rect
             self.end_result(result)
-            
+
             mem = arnold.AiMsgUtilGetUsedMemory() / 1048576  # 1024*1024
             self._peak = max(self._peak, mem)
             self.update_memory_stats(mem, self._peak)
             #self.update_stats("", "Tile: %dx%d" % (x, y))
-    
+
         # display callback must be a variable
         cb = arnold.AtDisplayCallBack(display_callback)
         arnold.AiNodeSetPtr(self._session['display'], "callback", cb)

@@ -14,13 +14,12 @@ bl_info = {
 }
 
 import bpy
-from . import engine
 
 # TODO: Clean
 _RELOAD_ENGINE = False
 
 
-class ArnoldEngine(bpy.types.RenderEngine):
+class ArnoldRenderEngine(bpy.types.RenderEngine):
     bl_idname = "ARNOLD_RENDER"
     bl_label = "Arnold Render"
 
@@ -36,6 +35,9 @@ class ArnoldEngine(bpy.types.RenderEngine):
         ("properties_world", ((
             "WORLD_PT_context_world",
             "WORLD_PT_custom_props",
+        ), False)),
+        ("properties_data_lamp", ((
+            "DATA_PT_context_lamp",
         ), False)),
         ("properties_material", ((
             "MATERIAL_PT_context_material",
@@ -117,9 +119,18 @@ class ArnoldEngine(bpy.types.RenderEngine):
         engine.render(self, scene)
 
 
+from . import ui
+from . import props
+from . import engine
+
+
 def register():
-    bpy.utils.register_class(ArnoldEngine)
+    ui.register()
+    props.register()
+    bpy.utils.register_class(ArnoldRenderEngine)
 
 
 def unregister():
-    bpy.utils.unregister_class(ArnoldEngine)
+    ui.unregister()
+    props.unregister()
+    bpy.utils.unregister_class(ArnoldRenderEngine)
