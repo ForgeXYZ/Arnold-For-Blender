@@ -15,9 +15,6 @@ bl_info = {
 
 import bpy
 
-# TODO: Clean
-_RELOAD_ENGINE = False
-
 
 class ArnoldRenderEngine(bpy.types.RenderEngine):
     bl_idname = "ARNOLD_RENDER"
@@ -38,6 +35,7 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
         ), False)),
         ("properties_data_lamp", ((
             "DATA_PT_context_lamp",
+            "DATA_PT_custom_props_lamp",
         ), False)),
         ("properties_material", ((
             "MATERIAL_PT_context_material",
@@ -103,15 +101,6 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
         for mod, panels in cls._COMPATIBLE_PANELS:
             cls._compatible(mod, panels, True)
 
-    def __init__(self):
-        # TODO: Clean
-        global _RELOAD_ENGINE
-        if _RELOAD_ENGINE:
-            print("reload engine")
-            __import__("importlib").reload(engine)
-        else:
-            _RELOAD_ENGINE = True
-
     def update(self, data, scene):
         engine.update(self, data, scene)
 
@@ -121,16 +110,19 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
 
 from . import ui
 from . import props
+from . import operators
 from . import engine
 
 
 def register():
+    bpy.utils.register_class(ArnoldRenderEngine)
     ui.register()
     props.register()
-    bpy.utils.register_class(ArnoldRenderEngine)
+    operators.register()
 
 
 def unregister():
+    bpy.utils.unregister_class(ArnoldRenderEngine)
     ui.unregister()
     props.unregister()
-    bpy.utils.unregister_class(ArnoldRenderEngine)
+    operators.unregister()

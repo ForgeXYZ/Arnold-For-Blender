@@ -21,6 +21,7 @@ import arnold
 _M = 1 / 255
 _P = [ 1, 1, 0, 1 ]
 
+
 class Shaders:
     def __init__(self):
         self._shaders = {}
@@ -44,10 +45,7 @@ class Shaders:
                     node = self._shaders.get(mat)
                     if node is None:
                         idx = len(shaders)
-                        node = arnold.AiNode('lambert')
-                        arnold.AiNodeSetStr(node, "name", mat.name)
-                        arnold.AiNodeSetFlt(node, "Kd", mat.diffuse_intensity)
-                        arnold.AiNodeSetRGB(node, "Kd_color", *mat.diffuse_color)
+                        node = self._export(mat)
                         self._shaders[mat] = node
                         shaders.append(node)
                     else:
@@ -58,7 +56,7 @@ class Shaders:
                             shaders.append(node)
                 elif default < 0:
                     idx = default = len(shaders)
-                    node = None
+                    node = None # TODO: Default shader
                     #node = arnold.AiNode('lambert')
                     #arnold.AiNodeSetStr(node, "name", "__default")
                     #arnold.AiNodeSetFlt(node, "Kd", 0.8)
@@ -72,6 +70,40 @@ class Shaders:
 
         return idxs, shaders
 
+    def _export(self, mat):
+        node = None
+        shader = mat.arnold
+        if mat.type == 'SURFACE':
+            if shader.type == 'LAMBERT':
+                node = arnold.AiNode('lambert')
+                arnold.AiNodeSetRGB(node, "opacity", *shader.opacity)
+            elif shader.type == 'STANDARD':
+                standard = shader.standard
+                node = arnold.AiNode('standard')
+                arnold.AiNodeSetFlt(node, "diffuse_roughness", standard.diffuse_roughness)
+                arnold.AiNodeSetFlt(node, "Ks", standard.ks)
+                arnold.AiNodeSetRGB(node, "Ks_color", *standard.ks_color)
+                arnold.AiNodeSetFlt(node, "specular_roughness", standard.specular_roughness)
+                arnold.AiNodeSetFlt(node, "specular_anisotropy", standard.specular_anisotropy)
+                arnold.AiNodeSetFlt(node, "specular_rotation", standard.specular_rotation)
+            else:
+                return None
+            arnold.AiNodeSetStr(node, "name", mat.name)
+            arnold.AiNodeSetFlt(node, "Kd", mat.diffuse_intensity)
+            arnold.AiNodeSetRGB(node, "Kd_color", *mat.diffuse_color)
+        elif mat.type == 'WIRE':
+            wire = shader.wire
+            node = arnold.AiNode('wireframe')
+            arnold.AiNodeSetStr(node, "name", mat.name)
+            arnold.AiNodeSetStr(node, "edge_type", wire.edge_type)
+            arnold.AiNodeSetRGB(node, "line_color", *mat.diffuse_color)
+            arnold.AiNodeSetRGB(node, "fill_color", *wire.fill_color)
+            arnold.AiNodeSetFlt(node, "line_width", wire.line_width)
+            arnold.AiNodeSetBool(node, "raster_space", wire.raster_space)
+        else:
+            return None
+        return node
+
 
 def _amatrix(m):
     """
@@ -84,20 +116,20 @@ def _amatrix(m):
     return matrix
 
 
-def update(self, data, scene):
-    print("-- update --")
-    self._session = {}
+def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
     shaders = Shaders()
 
+    opts = scene.arnold
+
     arnold.AiBegin()
-    #arnold.AiMsgSetConsoleFlags(arnold.AI_LOG_ALL)
+    arnold.AiMsgSetConsoleFlags(opts.get("console_log_flags", 0))
 
     for ob in scene.objects:
         if ob.hide_render:
             continue
         
         if ob.type in ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT'):
-            mesh = ob.to_mesh(scene, True, 'RENDER')
+            mesh = ob.to_mesh(scene, True, 'RENDER', False)
             try:
                 mesh.calc_normals_split()
                 # No need to call mesh.free_normals_split later, as this mesh is deleted anyway!
@@ -147,54 +179,71 @@ def update(self, data, scene):
                 data.meshes.remove(mesh)
         elif ob.type == 'LAMP':
             lamp = ob.data
+            light = lamp.arnold
             if lamp.type == 'POINT':
                 node = arnold.AiNode("point_light")
-                arnold.AiNodeSetStr(node, "name", ob.name)
-                arnold.AiNodeSetRGB(node, "color", *lamp.color)
-                arnold.AiNodeSetStr(node, "decay_type", lamp.arnold.point.decay_type)
-                arnold.AiNodeSetFlt(node, "intensity", lamp.arnold.point.intensity)
-                arnold.AiNodeSetFlt(node, "exposure", lamp.arnold.point.exposure)
-                arnold.AiNodeSetBool(node, "cast_shadows", lamp.arnold.point.cast_shadows)
-                arnold.AiNodeSetBool(node, "cast_volumetric_shadows", lamp.arnold.point.cast_volumetric_shadows)
-                arnold.AiNodeSetFlt(node, "shadow_density", lamp.arnold.point.shadow_density)
-                arnold.AiNodeSetRGB(node, "shadow_color", *lamp.arnold.point.shadow_color)
-                arnold.AiNodeSetInt(node, "samples", lamp.arnold.point.samples)
-                arnold.AiNodeSetBool(node, "normalize", lamp.arnold.point.normalize)
-                arnold.AiNodeSetArray(node, "matrix", _amatrix(ob.matrix_world))
+                arnold.AiNodeSetFlt(node, "radius", light.point.radius)
+            #elif lamp.type == 'HEMI':
+            #    node = arnold.AiNode("ambient_light")  # there is no such node in current sdk
+            else:
+                continue
+            arnold.AiNodeSetStr(node, "name", ob.name)
+            arnold.AiNodeSetRGB(node, "color", *lamp.color)
+            arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
+            #arnold.AiNodeSetInt(node, "decay_type", light.get('decay_type', 1))
+            arnold.AiNodeSetFlt(node, "intensity", light.intensity)
+            arnold.AiNodeSetFlt(node, "exposure", light.exposure)
+            arnold.AiNodeSetBool(node, "cast_shadows", light.cast_shadows)
+            arnold.AiNodeSetBool(node, "cast_volumetric_shadows", light.cast_volumetric_shadows)
+            arnold.AiNodeSetFlt(node, "shadow_density", light.shadow_density)
+            arnold.AiNodeSetRGB(node, "shadow_color", *light.shadow_color)
+            arnold.AiNodeSetInt(node, "samples", light.samples)
+            arnold.AiNodeSetBool(node, "normalize", light.normalize)
+            arnold.AiNodeSetArray(node, "matrix", _amatrix(ob.matrix_world))
 
-    ob = self.camera_override
-    mw = ob.matrix_world
-    camera = arnold.AiNode("persp_camera")
-    arnold.AiNodeSetStr(camera, "name", ob.name)
-    arnold.AiNodeSetFlt(camera, "fov", math.degrees(ob.data.angle))
-    arnold.AiNodeSetArray(camera, "matrix", _amatrix(ob.matrix_world))
+    camera_node = arnold.AiNode("persp_camera")
+    arnold.AiNodeSetStr(camera_node, "name", camera.name)
+    arnold.AiNodeSetFlt(camera_node, "fov", math.degrees(camera.data.angle))
+    arnold.AiNodeSetArray(camera_node, "matrix", _amatrix(camera.matrix_world))
 
-    filter = arnold.AiNode("gaussian_filter")
+    filter = arnold.AiNode("cook_filter")
     arnold.AiNodeSetStr(filter, "name", "outfilter")
     display = arnold.AiNode("driver_display")
     arnold.AiNodeSetStr(display, "name", "outdriver")
     outputs = arnold.AiArray(1, 1, arnold.AI_TYPE_STRING, b"RGBA RGBA outfilter outdriver")
-    self._session['display'] = display
+    if session is not None:
+        session['display'] = display
 
-    opts = scene.arnold
     options = arnold.AiUniverseGetOptions()
-    arnold.AiNodeSetInt(options, "xres", self.resolution_x)
-    arnold.AiNodeSetInt(options, "yres", self.resolution_y)
+    arnold.AiNodeSetInt(options, "xres", xres)
+    arnold.AiNodeSetInt(options, "yres", yres)
     arnold.AiNodeSetBool(options, "skip_license_check", opts.skip_license_check)
     arnold.AiNodeSetInt(options, "AA_samples", opts.aa_samples)
     arnold.AiNodeSetInt(options, "AA_seed", opts.aa_seed)
     arnold.AiNodeSetInt(options, "threads", opts.threads)
     arnold.AiNodeSetStr(options, "thread_priority", opts.thread_priority)
-    arnold.AiNodeSetPtr(options, "camera", camera)
+    arnold.AiNodeSetPtr(options, "camera", camera_node)
     arnold.AiNodeSetArray(options, "outputs", outputs)
 
-    if 0:
-        arnold.AiNodeSetBool(options, "preserve_scene_data", True)
-        arnold.AiASSWrite(r"D:\Tools\Dev\Src\blender\everything.ass", arnold.AI_NODE_ALL, False, False)
+    if ass_filepath:
+        # TODO: options
+        arnold.AiASSWrite(ass_filepath, arnold.AI_NODE_ALL, False, False)
+        arnold.AiEnd()
+
+
+def update(self, data, scene):
+    self._session = {}
+    export(
+        data,
+        scene,
+        self.camera_override,
+        self.resolution_x,
+        self.resolution_y,
+        session=self._session
+    )
 
 
 def render(self, scene):
-    print("-- render --")
     try:
         self._peak = 0
         self._tiles = {}
@@ -245,7 +294,7 @@ def render(self, scene):
         # display callback must be a variable
         cb = arnold.AtDisplayCallBack(display_callback)
         arnold.AiNodeSetPtr(self._session['display'], "callback", cb)
-        res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
+        arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
     finally:
         del self._session
         arnold.AiEnd()
