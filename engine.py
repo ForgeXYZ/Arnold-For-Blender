@@ -18,9 +18,6 @@ if sdk not in sys.path:
 
 import arnold
 
-_M = 1 / 255
-_P = [ 1, 1, 0, 1 ]
-
 
 class Shaders:
     def __init__(self):
@@ -190,7 +187,6 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
             arnold.AiNodeSetStr(node, "name", ob.name)
             arnold.AiNodeSetRGB(node, "color", *lamp.color)
             arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
-            #arnold.AiNodeSetInt(node, "decay_type", light.get('decay_type', 1))
             arnold.AiNodeSetFlt(node, "intensity", light.intensity)
             arnold.AiNodeSetFlt(node, "exposure", light.exposure)
             arnold.AiNodeSetBool(node, "cast_shadows", light.cast_shadows)
@@ -247,6 +243,19 @@ def render(self, scene):
     try:
         self._peak = 0
         self._tiles = {}
+        self._tile = 0  # color index
+
+        _COLORS = [
+            [0, 0, 0, 1],
+            [1, 0, 0, 1],
+            [0, 1, 0, 1],
+            [0, 0, 1, 1],
+            [1, 1, 0, 1],
+            [0, 1, 1, 1],
+            [1, 0, 1, 1],
+            [1, 1, 1, 1]
+        ]
+        _M = 1 / 255
 
         def display_callback(x, y, width, height, buffer, data):
             if self.test_break():
@@ -264,25 +273,37 @@ def render(self, scene):
                 a = numpy.frombuffer(t.from_address(ctypes.addressof(buffer.contents)), numpy.uint8)
                 rect = numpy.reshape(numpy.flipud(numpy.reshape(a * _M, [height, width * 4])), [-1, 4])
             else:
+                if (x, y) in self._tiles:
+                    print("exists:", x, y)
                 self._tiles[(x, y)] = (width, height)
                 rect = numpy.ndarray([width * height, 4])
-                rect[:] = [1, 1, 1, 0.05]
-                rect[0: 4] = _P
-                rect[width - 4: width + 1] = _P
+
+                color = _COLORS[self._tile]
+                if self._tile == 7:
+                    self._tile = 0
+                else:
+                    self._tile += 1
+                
+                color[3] = 0.05
+                rect[:] = color
+                color[3] = 1
+
+                rect[0: 4] = color
+                rect[width - 4: width + 1] = color
                 _x = width * 2 - 1
-                rect[_x: _x + 2] = _P
+                rect[_x: _x + 2] = color
                 _x += width
-                rect[_x: _x + 2] = _P
-                rect[_x + width] = _P
+                rect[_x: _x + 2] = color
+                rect[_x + width] = color
                 _x = width * height
-                rect[_x - 4: _x] = _P
+                rect[_x - 4: _x] = color
                 _x -= width + 1
-                rect[_x: _x + 5] = _P
+                rect[_x: _x + 5] = color
                 _x -= width
-                rect[_x: _x + 2] = _P
+                rect[_x: _x + 2] = color
                 _x -= width
-                rect[_x: _x + 2] = _P
-                rect[_x - width + 1] = _P
+                rect[_x: _x + 2] = color
+                rect[_x - width + 1] = color
             result.layers[0].passes[0].rect = rect
             self.end_result(result)
 
