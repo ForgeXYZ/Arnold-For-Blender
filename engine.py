@@ -53,11 +53,8 @@ class Shaders:
                             shaders.append(node)
                 elif default < 0:
                     idx = default = len(shaders)
-                    node = None # TODO: Default shader
-                    #node = arnold.AiNode('lambert')
-                    #arnold.AiNodeSetStr(node, "name", "__default")
-                    #arnold.AiNodeSetFlt(node, "Kd", 0.8)
-                    #arnold.AiNodeSetRGB(node, "Kd_color", 0.8, 0.8, 0.8)
+                    node = arnold.AiNode('utility')
+                    arnold.AiNodeSetStr(node, "name", "__default")
                     self._default = node
                     shaders.append(node)
                 else:
@@ -273,21 +270,16 @@ def render(self, scene):
                 a = numpy.frombuffer(t.from_address(ctypes.addressof(buffer.contents)), numpy.uint8)
                 rect = numpy.reshape(numpy.flipud(numpy.reshape(a * _M, [height, width * 4])), [-1, 4])
             else:
-                if (x, y) in self._tiles:
-                    print("exists:", x, y)
                 self._tiles[(x, y)] = (width, height)
-                rect = numpy.ndarray([width * height, 4])
-
                 color = _COLORS[self._tile]
                 if self._tile == 7:
                     self._tile = 0
                 else:
                     self._tile += 1
-                
                 color[3] = 0.05
+                rect = numpy.ndarray([width * height, 4])
                 rect[:] = color
                 color[3] = 1
-
                 rect[0: 4] = color
                 rect[width - 4: width + 1] = color
                 _x = width * 2 - 1
