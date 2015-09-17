@@ -22,7 +22,8 @@ import arnold
 class Shaders:
     def __init__(self):
         self._shaders = {}
-        self._default = None
+        self._default = None  # default shader, if used
+        self._textures = {}
 
     def get(self, mesh):
         if not mesh.materials:
@@ -43,6 +44,7 @@ class Shaders:
                     if node is None:
                         idx = len(shaders)
                         node = self._export(mat)
+                        # TODO: if node is None go to creating default shader
                         self._shaders[mat] = node
                         shaders.append(node)
                     else:
@@ -91,11 +93,9 @@ class Shaders:
                 arnold.AiNodeSetFlt(node, "opacity", utility.opacity)
             else:
                 return None
-            arnold.AiNodeSetStr(node, "name", mat.name)
         elif mat.type == 'WIRE':
             wire = shader.wire
             node = arnold.AiNode('wireframe')
-            arnold.AiNodeSetStr(node, "name", mat.name)
             arnold.AiNodeSetStr(node, "edge_type", wire.edge_type)
             arnold.AiNodeSetRGB(node, "line_color", *mat.diffuse_color)
             arnold.AiNodeSetRGB(node, "fill_color", *wire.fill_color)
@@ -103,7 +103,17 @@ class Shaders:
             arnold.AiNodeSetBool(node, "raster_space", wire.raster_space)
         else:
             return None
+        arnold.AiNodeSetStr(node, "name", mat.name)
+        self._images(mat)
         return node
+
+    def _images(self, mat):
+        for slot in mat.texture_slots:
+            if slot and slot.use:
+                tex = slot.texture
+                node = arnold.AiNode('image')
+                arnold.AiNodeSetStr(node, "name", tex.image.name)
+                arnold.AiNodeSetStr(node, "filename", tex.image.filepath_from_user())
 
 
 def _amatrix(m):
@@ -162,6 +172,17 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
                 arnold.AiNodeSetArray(node, "nsides", nsides)
                 arnold.AiNodeSetArray(node, "vidxs", vidxs)
                 arnold.AiNodeSetArray(node, "nidxs", nidxs)
+                # uv
+                for i, uvt in enumerate(mesh.uv_textures):
+                    if uvt.active_render:
+                        uvd = mesh.uv_layers[i].data
+                        uvidxs = arnold.AiArrayAllocate(len(uvd), 1, arnold.AI_TYPE_UINT)
+                        uvlist = arnold.AiArrayAllocate(len(uvd), 1, arnold.AI_TYPE_POINT2)
+                        for i, d in enumerate(uvd):
+                            arnold.AiArraySetUInt(uvidxs, i, i)
+                            arnold.AiArraySetPnt2(uvlist, i, arnold.AtPoint2(*d.uv))
+                        arnold.AiNodeSetArray(node, "uvidxs", uvidxs)
+                        arnold.AiNodeSetArray(node, "uvlist", uvlist)
                 # materials
                 idxs, _shaders = shaders.get(mesh)
                 if idxs:
