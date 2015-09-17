@@ -199,6 +199,13 @@ class ArnoldStandardShader(PropertyGroup):
     )
 
 
+class ArnoldUtilityShader(PropertyGroup):
+    opacity = FloatProperty(
+        name="Opacity",
+        default=1.0
+    )
+
+
 
 class ArnoldWireShader(PropertyGroup):
     edge_type = EnumProperty(
@@ -232,11 +239,12 @@ class ArnoldShader(PropertyGroup):
         name="Type",
         items=[
             ('LAMBERT', "Lambert", "Lambert"),
-            ('STANDARD', "Standard", "Standard")
+            ('STANDARD', "Standard", "Standard"),
+            ('UTILITY', "Utility", "Utility")
         ],
         default='LAMBERT'
     )
-    # Lambert opacity
+    # Lambert/Standard opacity
     opacity = FloatVectorProperty(
         name="Opacity",
         size=3,
@@ -245,6 +253,7 @@ class ArnoldShader(PropertyGroup):
         subtype='COLOR'
     )
     standard = PointerProperty(type=ArnoldStandardShader)
+    utility = PointerProperty(type=ArnoldUtilityShader)
     wire = PointerProperty(type=ArnoldWireShader)
 
     @classmethod
@@ -263,6 +272,7 @@ def register():
     register_class(ArnoldPointLight)
     register_class(ArnoldLight)
     register_class(ArnoldStandardShader)
+    register_class(ArnoldUtilityShader)
     register_class(ArnoldWireShader)
     register_class(ArnoldShader)
 
@@ -274,5 +284,6 @@ def unregister():
     unregister_class(ArnoldPointLight)
     unregister_class(ArnoldLight)
     unregister_class(ArnoldStandardShader)
+    unregister_class(ArnoldUtilityShader)
     unregister_class(ArnoldWireShader)
     unregister_class(ArnoldShader)

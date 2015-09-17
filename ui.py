@@ -106,7 +106,7 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
         shader = mat.arnold
         mat_type = mat.type
         if mat_type == 'SURFACE':
-            layout.prop(shader, "type", expand=True)
+            layout.prop(shader, "type")
             col = layout.column(align=True)
             col.label("Diffuse:")
             row = col.row(align=True)
