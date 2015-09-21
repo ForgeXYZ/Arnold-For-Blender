@@ -10,13 +10,7 @@ import numpy
 import math
 
 from mathutils import Matrix, Vector
-
-
-sdk = os.path.join(os.path.dirname(__file__), 'arnold', 'python')
-if sdk not in sys.path:
-    sys.path.append(sdk)
-
-import arnold
+from . import arnold
 
 
 class Shaders:
