@@ -62,6 +62,10 @@ class Shaders:
 
     def _export(self, mat):
         node = None
+
+        if mat.use_nodes:
+            return None
+
         shader = mat.arnold
         if mat.type == 'SURFACE':
             if shader.type == 'LAMBERT':
@@ -257,24 +261,24 @@ def update(self, data, scene):
         session=self._session
     )
 
+_TILE_COLORS = [
+    [0, 0, 0, 1],
+    [1, 0, 0, 1],
+    [0, 1, 0, 1],
+    [0, 0, 1, 1],
+    [1, 1, 0, 1],
+    [0, 1, 1, 1],
+    [1, 0, 1, 1],
+    [1, 1, 1, 1]
+]
+_M = 1 / 255
+
 
 def render(self, scene):
     try:
         self._peak = 0
         self._tiles = {}
         self._tile = 0  # color index
-
-        _COLORS = [
-            [0, 0, 0, 1],
-            [1, 0, 0, 1],
-            [0, 1, 0, 1],
-            [0, 0, 1, 1],
-            [1, 1, 0, 1],
-            [0, 1, 1, 1],
-            [1, 0, 1, 1],
-            [1, 1, 1, 1]
-        ]
-        _M = 1 / 255
 
         def display_callback(x, y, width, height, buffer, data):
             if self.test_break():
@@ -293,7 +297,7 @@ def render(self, scene):
                 rect = numpy.reshape(numpy.flipud(numpy.reshape(a * _M, [height, width * 4])), [-1, 4])
             else:
                 self._tiles[(x, y)] = (width, height)
-                color = _COLORS[self._tile]
+                color = _TILE_COLORS[self._tile]
                 if self._tile == 7:
                     self._tile = 0
                 else:

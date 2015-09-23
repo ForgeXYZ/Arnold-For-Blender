@@ -5,6 +5,7 @@ __email__ = "nildar@users.sourceforge.net"
 
 import bpy
 from bpy.types import Panel
+
 from . import ArnoldRenderEngine
 
 ##

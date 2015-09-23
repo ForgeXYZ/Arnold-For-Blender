@@ -14,13 +14,17 @@ bl_info = {
 }
 
 import bpy
+from . import engine
 
 
 class ArnoldRenderEngine(bpy.types.RenderEngine):
     bl_idname = "ARNOLD_RENDER"
     bl_label = "Arnold Render"
 
-    use_highlight_tiles = True
+    bl_use_shading_nodes = True  # use some cycles ui
+    bl_use_shading_nodes_custom = False  # TODO: posible bug
+    
+    use_highlight_tiles = True  # TODO: seems doesn't work
 
     _COMPATIBLE_PANELS = (
         ("properties_render", ((
@@ -101,6 +105,10 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
         for mod, panels in cls._COMPATIBLE_PANELS:
             cls._compatible(mod, panels, True)
 
+    @classmethod
+    def is_active(cls, context):
+        return context.scene.render.engine == cls.bl_idname
+
     def update(self, data, scene):
         engine.update(self, data, scene)
 
@@ -108,21 +116,23 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
         engine.render(self, scene)
 
 
-from . import ui
 from . import props
+from . import nodes
 from . import operators
-from . import engine
+from . import ui
 
 
 def register():
     bpy.utils.register_class(ArnoldRenderEngine)
-    ui.register()
     props.register()
+    nodes.register()
     operators.register()
+    ui.register()
 
 
 def unregister():
     bpy.utils.unregister_class(ArnoldRenderEngine)
-    ui.unregister()
     props.unregister()
+    nodes.unregister()
     operators.unregister()
+    ui.unregister()

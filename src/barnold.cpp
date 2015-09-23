@@ -11,7 +11,7 @@ enum BlendType
 	BLEND_SCREEN
 };
 
-enum ShaderParams
+enum BlendParams
 {
 	P_COLOR_1,
 	P_COLOR_2,
@@ -19,29 +19,32 @@ enum ShaderParams
 	P_FACTOR
 };
 
+static const char* BlendNames[] =
+{
+	"blend",
+	"multiply",
+	"screen",
+	NULL
+};
+
 node_parameters
 {
-	printf("node_parameters\n");
-
 	AiParameterRGBA("color1", 0, 0, 0, 1);
 	AiParameterRGBA("color2", 1, 1, 1, 1);
-	AiParameterUInt("blend", 0);
+	AiParameterENUM("blend", 0, BlendNames);
 	AiParameterFlt("factor", 0.5f);
 }
 
 node_initialize
 {
-	printf("node_initialize\n");
 }
 
 node_update
 {
-	printf("node_update\n");
 }
 
 node_finish
 {
-	printf("node_finish\n");
 }
 
 shader_evaluate
@@ -50,7 +53,6 @@ shader_evaluate
 	AtRGBA c2 = AiShaderEvalParamRGBA(P_COLOR_2);
 	int blend = AiShaderEvalParamUInt(P_BLEND);
 	float factor = AiShaderEvalParamFlt(P_FACTOR);
-	//printf("shader_evaluate %d %f\n", blend, factor);
 	switch (blend)
 	{
 	case BLEND_MIX:
@@ -67,13 +69,12 @@ shader_evaluate
 
 node_loader
 {
-	printf("node_loader\n");
 	if (i > 0)
 		return false;
 
 	node->node_type = AI_NODE_SHADER;
 	node->output_type = AI_TYPE_RGBA;
-	node->name = "ba:blend";
+	node->name = "barnold:blend";
 	node->methods = methods;
 	strcpy(node->version, AI_VERSION);
 	return true;
