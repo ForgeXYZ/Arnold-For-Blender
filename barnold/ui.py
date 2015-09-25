@@ -15,6 +15,7 @@ from . import ArnoldRenderEngine
 from bl_ui.properties_render import RenderButtonsPanel
 
 
+@ArnoldRenderEngine.register_class
 class ArnoldRenderPanel(RenderButtonsPanel, Panel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
     bl_label = "Arnold Render"
@@ -45,6 +46,7 @@ class ArnoldRenderPanel(RenderButtonsPanel, Panel):
 from bl_ui.properties_data_lamp import DataButtonsPanel as LightButtonsPanel
 
 
+@ArnoldRenderEngine.register_class
 class ArnoldLightPanel(LightButtonsPanel, Panel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
     bl_label = "Light"
@@ -71,6 +73,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
             # Shadows params
 
 
+@ArnoldRenderEngine.register_class
 class ArnoldLightShadowsPanel(LightButtonsPanel, Panel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
     bl_label = "Shadow"
@@ -96,6 +99,7 @@ class ArnoldLightShadowsPanel(LightButtonsPanel, Panel):
 from bl_ui.properties_material import MaterialButtonsPanel
 
 
+@ArnoldRenderEngine.register_class
 class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
     bl_label = "Shader"
@@ -135,21 +139,3 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
             row = layout.row()
             row.prop(wire, "line_width")
             row.prop(wire, "raster_space")
-
-
-def register():
-    from bpy.utils import register_class
-
-    register_class(ArnoldRenderPanel)
-    register_class(ArnoldLightPanel)
-    register_class(ArnoldLightShadowsPanel)
-    register_class(ArnoldShaderPanel)
-
-
-def unregister():
-    from bpy.utils import unregister_class
-
-    unregister_class(ArnoldRenderPanel)
-    unregister_class(ArnoldLightPanel)
-    unregister_class(ArnoldLightShadowsPanel)
-    unregister_class(ArnoldShaderPanel)

@@ -10,6 +10,7 @@ from bpy.props import BoolProperty
 from . import ArnoldRenderEngine
 
 
+@ArnoldRenderEngine.register_class
 class ArnoldOutputNode(bpy.types.Node):
     bl_label = "Output"
     bl_icon = 'MATERIAL'
@@ -37,6 +38,7 @@ class ArnoldOutputNode(bpy.types.Node):
         layout.prop(self, "is_active", icon='RADIOBUT_ON' if self.is_active else 'RADIOBUT_OFF')
 
 
+@ArnoldRenderEngine.register_class
 class ArnoldLambertNode(bpy.types.Node):
     bl_label = "Lambert"
     bl_icon = 'MATERIAL'
@@ -76,9 +78,6 @@ def register():
     ShaderNewNodeCategory.poll = _poll(ShaderNewNodeCategory.poll)
     ShaderOldNodeCategory.poll = _poll(ShaderOldNodeCategory.poll)
 
-    bpy.utils.register_class(ArnoldOutputNode)
-    bpy.utils.register_class(ArnoldLambertNode)
-
     node_categories = [
         ArnoldNodeCategory("ARNOLD_OUTPUT_NODES", "Output", items=[
             nodeitems_utils.NodeItem("ArnoldOutputNode")
@@ -92,6 +91,3 @@ def register():
 
 def unregister():
     nodeitems_utils.unregister_node_categories("ARNOLD_NODES")
-
-    bpy.utils.unregister_class(ArnoldOutputNode)
-    bpy.utils.unregister_class(ArnoldLambertNode)

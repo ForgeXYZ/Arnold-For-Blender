@@ -64,6 +64,10 @@ class Shaders:
         node = None
 
         if mat.use_nodes:
+            from .. import nodes
+
+            for n in mat.node_tree.nodes:
+                print(n)
             return None
 
         shader = mat.arnold

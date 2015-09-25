@@ -9,6 +9,8 @@ from bpy.props import StringProperty
 
 from . import ArnoldRenderEngine
 
+
+@ArnoldRenderEngine.register_class
 class ExportASS(Operator, ExportHelper):
     bl_idname = "arnold.export_ass"
     bl_label = "Export ASS"
@@ -50,15 +52,3 @@ class ExportASS(Operator, ExportHelper):
             self.layout.operator(cls.bl_idname, text="Arnold Render (.ass)")
 
         bpy.types.INFO_MT_file_export.append(menu_func)
-
-
-def register():
-    from bpy.utils import register_class
-
-    register_class(ExportASS)
-
-
-def unregister():
-    from bpy.utils import unregister_class
-
-    unregister_class(ExportASS)

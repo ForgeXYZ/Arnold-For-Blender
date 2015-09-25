@@ -26,6 +26,8 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
     
     use_highlight_tiles = True  # TODO: seems doesn't work
 
+    _CLASSES = []  # classes for (un)register
+
     _COMPATIBLE_PANELS = (
         ("properties_render", ((
             "RENDER_PT_render",
@@ -96,14 +98,23 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
                         ce.add(cls.bl_idname)
 
     @classmethod
+    def register_class(cls, _cls):
+        cls._CLASSES.append(_cls)
+        return _cls
+
+    @classmethod
     def register(cls):
         for mod, panels in cls._COMPATIBLE_PANELS:
             cls._compatible(mod, panels)
+        for _cls in cls._CLASSES:
+            bpy.utils.register_class(_cls)
 
     @classmethod
     def unregister(cls):
         for mod, panels in cls._COMPATIBLE_PANELS:
             cls._compatible(mod, panels, True)
+        for _cls in cls._CLASSES:
+            bpy.utils.unregister_class(_cls)
 
     @classmethod
     def is_active(cls, context):
@@ -124,15 +135,9 @@ from . import ui
 
 def register():
     bpy.utils.register_class(ArnoldRenderEngine)
-    props.register()
     nodes.register()
-    operators.register()
-    ui.register()
 
 
 def unregister():
     bpy.utils.unregister_class(ArnoldRenderEngine)
-    props.unregister()
     nodes.unregister()
-    operators.unregister()
-    ui.unregister()
