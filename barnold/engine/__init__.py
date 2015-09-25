@@ -13,7 +13,14 @@ from mathutils import Matrix, Vector
 from . import arnold
 
 
+_AiNodeSet = {
+    "NodeSocketFloat": lambda n, i, v: arnold.AiNodeSetFlt(n, i, v),
+    "NodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v[:3])
+}
+
+
 class Shaders:
+
     def __init__(self):
         self._shaders = {}
         self._default = None  # default shader, if used
@@ -66,9 +73,24 @@ class Shaders:
         if mat.use_nodes:
             from .. import nodes
 
-            for n in mat.node_tree.nodes:
-                print(n)
-            return None
+            for _node in mat.node_tree.nodes:
+                if type(_node) is nodes.ArnoldOutputNode and _node.is_active:
+                    input = _node.inputs[0]
+                    if input.is_linked:
+                        _node = input.links[0].from_node
+                        if isinstance(_node, nodes.ArnoldShader):
+                            break
+                    return None
+            else:
+                return None
+            node = arnold.AiNode(_node.AI_NAME)
+            arnold.AiNodeSetStr(node, "name", "%s:%s" % (mat.name, _node.name))
+            for input in _node.inputs:
+                if input.is_linked:
+                    pass
+                else:
+                    _AiNodeSet[input.bl_idname](node, input.identifier, input.default_value)
+            return node
 
         shader = mat.arnold
         if mat.type == 'SURFACE':
@@ -338,6 +360,9 @@ def render(self, scene):
         cb = arnold.AtDisplayCallBack(display_callback)
         arnold.AiNodeSetPtr(self._session['display'], "callback", cb)
         arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
+    except:
+        # cancel render on error
+        self.end_result(None, True)
     finally:
         del self._session
         arnold.AiEnd()

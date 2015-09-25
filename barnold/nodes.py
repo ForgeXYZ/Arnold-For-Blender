@@ -20,7 +20,7 @@ class ArnoldOutputNode(bpy.types.Node):
 
     def _set_active(self, value=True):
         for node in self.id_data.nodes:
-            if isinstance(node, ArnoldOutputNode):
+            if type(node) is ArnoldOutputNode:
                 node.mute = (self != node)
 
     is_active = BoolProperty(
@@ -38,10 +38,16 @@ class ArnoldOutputNode(bpy.types.Node):
         layout.prop(self, "is_active", icon='RADIOBUT_ON' if self.is_active else 'RADIOBUT_OFF')
 
 
+class ArnoldShader:
+    pass
+
+
 @ArnoldRenderEngine.register_class
-class ArnoldLambertNode(bpy.types.Node):
+class ArnoldLambertNode(bpy.types.Node, ArnoldShader):
     bl_label = "Lambert"
     bl_icon = 'MATERIAL'
+
+    AI_NAME = "lambert"
 
     def init(self, context):
         sock = self.inputs.new("NodeSocketFloat", "Kd")
@@ -66,14 +72,15 @@ class ArnoldNodeCategory(nodeitems_utils.NodeCategory):
 def register():
     from nodeitems_builtins import ShaderNewNodeCategory, ShaderOldNodeCategory
 
+    # HACK: hide BI and Cycles nodes from 'Add' menu in Node editor
     def _poll(fn):
         @classmethod
-        def wrapped(cls, context):
+        def _fn(cls, context):
             return (
                 not ArnoldRenderEngine.is_active(context) and
                 fn(context)
             )
-        return wrapped
+        return _fn
 
     ShaderNewNodeCategory.poll = _poll(ShaderNewNodeCategory.poll)
     ShaderOldNodeCategory.poll = _poll(ShaderOldNodeCategory.poll)
