@@ -151,7 +151,7 @@ class Shaders:
                 arnold.AiNodeSetStr(node, "filename", tex.image.filepath_from_user())
 
 
-def _amatrix(m):
+def _AiMatrix(m):
     """
     m: mathutils.Matrix
     returns: pointer to AtArray
@@ -182,7 +182,7 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
                 node = arnold.AiNode('polymesh')
                 arnold.AiNodeSetStr(node, "name", ob.name)
                 arnold.AiNodeSetBool(node, "smoothing", True)
-                arnold.AiNodeSetArray(node, "matrix", _amatrix(ob.matrix_world))
+                arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
                 # vertices
                 vlist = arnold.AiArrayAllocate(len(mesh.vertices), 1, arnold.AI_TYPE_POINT)
                 for i, v in enumerate(mesh.vertices):
@@ -255,12 +255,12 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
             arnold.AiNodeSetRGB(node, "shadow_color", *light.shadow_color)
             arnold.AiNodeSetInt(node, "samples", light.samples)
             arnold.AiNodeSetBool(node, "normalize", light.normalize)
-            arnold.AiNodeSetArray(node, "matrix", _amatrix(ob.matrix_world))
+            arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
 
     camera_node = arnold.AiNode("persp_camera")
     arnold.AiNodeSetStr(camera_node, "name", camera.name)
     arnold.AiNodeSetFlt(camera_node, "fov", math.degrees(camera.data.angle))
-    arnold.AiNodeSetArray(camera_node, "matrix", _amatrix(camera.matrix_world))
+    arnold.AiNodeSetArray(camera_node, "matrix", _AiMatrix(camera.matrix_world))
 
     filter = arnold.AiNode("cook_filter")
     arnold.AiNodeSetStr(filter, "name", "outfilter")
