@@ -20,7 +20,6 @@ _AiNodeSet = {
 
 
 class Shaders:
-
     def __init__(self):
         self._shaders = {}
         self._default = None  # default shader, if used
@@ -43,9 +42,15 @@ class Shaders:
                 if mat:
                     node = self._shaders.get(mat)
                     if node is None:
-                        idx = len(shaders)
                         node = self._export(mat)
-                        # TODO: if node is None go to creating default shader
+                        if node is None:
+                            node = self.default
+                            if default < 0:
+                                idx = default = len(shaders)
+                            else:
+                                idx = default
+                        else:
+                            idx = len(shaders)
                         self._shaders[mat] = node
                         shaders.append(node)
                     else:
@@ -56,16 +61,22 @@ class Shaders:
                             shaders.append(node)
                 elif default < 0:
                     idx = default = len(shaders)
-                    node = arnold.AiNode('utility')
-                    arnold.AiNodeSetStr(node, "name", "__default")
-                    self._default = node
-                    shaders.append(node)
+                    shaders.append(self.default)
                 else:
                     idx = default
                 midxs[mi] = idx
             idxs.append(idx)
 
         return idxs, shaders
+
+    @property
+    def default(self):
+        node = self._default
+        if node is None:
+            node = arnold.AiNode('utility')
+            arnold.AiNodeSetStr(node, "name", "__default")
+            self._default = node
+        return node
 
     def _export(self, mat):
         node = None
