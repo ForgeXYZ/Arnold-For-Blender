@@ -5,17 +5,36 @@ __email__ = "nildar@users.sourceforge.net"
 
 import bpy
 import nodeitems_utils
+from bpy.props import BoolProperty
 
 from . import ArnoldRenderEngine
 
 
-class ArnoldOutputNode(bpy.types.ShaderNode):
+class ArnoldOutputNode(bpy.types.Node):
     bl_label = "Output"
     bl_icon = 'MATERIAL'
 
+    def _get_active(self):
+        return not self.mute
+
+    def _set_active(self, value=True):
+        for node in self.id_data.nodes:
+            if isinstance(node, ArnoldOutputNode):
+                node.mute = (self != node)
+
+    is_active = BoolProperty(
+        name="Active",
+        description="Active Output",
+        get=_get_active,
+        set=_set_active
+    )
+
     def init(self, context):
-        print("init", self)
+        self._set_active()
         sock = self.inputs.new("NodeSocketShader", "Shader")
+
+    def draw_buttons(self, context, layout):
+        layout.prop(self, "is_active", icon='RADIOBUT_ON' if self.is_active else 'RADIOBUT_OFF')
 
 
 class ArnoldLambertNode(bpy.types.Node):
@@ -64,7 +83,7 @@ def register():
         ArnoldNodeCategory("ARNOLD_OUTPUT_NODES", "Output", items=[
             nodeitems_utils.NodeItem("ArnoldOutputNode")
         ]),
-        ArnoldNodeCategory("ARNOLD_INPUT_NODES", "Input", items=[
+        ArnoldNodeCategory("ARNOLD_SHADERS_NODES", "Shaders", items=[
             nodeitems_utils.NodeItem("ArnoldLambertNode")
         ]),
     ]
