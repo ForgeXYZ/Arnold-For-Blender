@@ -14,7 +14,6 @@ bl_info = {
 }
 
 import bpy
-from . import engine
 
 
 class ArnoldRenderEngine(bpy.types.RenderEngine):
@@ -127,9 +126,10 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
         engine.render(self, scene)
 
 
+from . import engine
 from . import props
 from . import nodes
-from . import operators
+from . import ops
 from . import ui
 
 

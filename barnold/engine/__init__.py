@@ -10,20 +10,35 @@ import numpy
 import math
 
 from mathutils import Matrix, Vector
+from ..nodes import ArnoldNode, ArnoldNodeOutput
 from . import arnold
 
 
+_TILE_COLORS = [
+    [0, 0, 0, 1],
+    [1, 0, 0, 1],
+    [0, 1, 0, 1],
+    [0, 0, 1, 1],
+    [1, 1, 0, 1],
+    [0, 1, 1, 1],
+    [1, 0, 1, 1],
+    [1, 1, 1, 1]
+]
+_M = 1 / 255
+
 _AiNodeSet = {
     "NodeSocketFloat": lambda n, i, v: arnold.AiNodeSetFlt(n, i, v),
-    "NodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v[:3])
+    "NodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v[:3]),
+    "ArnoldSocketMixRGB": lambda n, i, v: arnold.AiNodeSetStr(n, i, v)
 }
 
 
 class Shaders:
-    def __init__(self):
+    def __init__(self, data):
+        self._data = data
+
         self._shaders = {}
         self._default = None  # default shader, if used
-        self._textures = {}
 
     def get(self, mesh):
         if not mesh.materials:
@@ -78,30 +93,47 @@ class Shaders:
             self._default = node
         return node
 
+    def _export_node(self, node, prefix, nodes):
+        """
+        Args:
+            node (bpy.types.Node): blender node.
+            prefix (str): node name prefix.
+            nodes (dict): created nodes.
+        Returns:
+            arnold.AiNode or None
+        """
+        if not isinstance(node, ArnoldNode):
+            return None
+
+        name = "%s:%s" % (prefix, node.name)
+        anode = nodes.get(name)
+        if anode is None:
+            anode = arnold.AiNode(node.AI_NAME)
+            arnold.AiNodeSetStr(anode, "name", name)
+            for input in node.inputs:
+                if input.is_linked:
+                    _anode = self._export_node(input.links[0].from_node, prefix, nodes)
+                    if not _anode is None:
+                        arnold.AiNodeLink(_anode, input.identifier, anode)
+                        continue
+                _AiNodeSet[input.bl_idname](anode, input.identifier, input.default_value)
+            for p_name, (p_type, p_value) in node.ai_properties.items():
+                if p_type == 'TEXTURE':
+                    tex = self._data.textures.get(p_value)
+                    if tex:
+                        arnold.AiNodeSetStr(anode, p_name, tex.image.filepath_from_user())
+            nodes[name] = anode
+        return anode
+
     def _export(self, mat):
-        node = None
-
         if mat.use_nodes:
-            from .. import nodes
-
             for _node in mat.node_tree.nodes:
-                if type(_node) is nodes.ArnoldOutputNode and _node.is_active:
+                if type(_node) is ArnoldNodeOutput and _node.is_active:
                     input = _node.inputs[0]
                     if input.is_linked:
-                        _node = input.links[0].from_node
-                        if isinstance(_node, nodes.ArnoldShader):
-                            break
-                    return None
-            else:
-                return None
-            node = arnold.AiNode(_node.AI_NAME)
-            arnold.AiNodeSetStr(node, "name", "%s:%s" % (mat.name, _node.name))
-            for input in _node.inputs:
-                if input.is_linked:
-                    pass
-                else:
-                    _AiNodeSet[input.bl_idname](node, input.identifier, input.default_value)
-            return node
+                        return self._export_node(input.links[0].from_node, mat.name, {})
+                    break
+            return None
 
         shader = mat.arnold
         if mat.type == 'SURFACE':
@@ -139,16 +171,15 @@ class Shaders:
         else:
             return None
         arnold.AiNodeSetStr(node, "name", mat.name)
-        self._images(mat)
         return node
 
-    def _images(self, mat):
-        for slot in mat.texture_slots:
-            if slot and slot.use:
-                tex = slot.texture
-                node = arnold.AiNode('image')
-                arnold.AiNodeSetStr(node, "name", tex.image.name)
-                arnold.AiNodeSetStr(node, "filename", tex.image.filepath_from_user())
+    #def _images(self, mat):
+    #    for slot in mat.texture_slots:
+    #        if slot and slot.use:
+    #            tex = slot.texture
+    #            node = arnold.AiNode('image')
+    #            arnold.AiNodeSetStr(node, "name", tex.image.name)
+    #            arnold.AiNodeSetStr(node, "filename", tex.image.filepath_from_user())
 
 
 def _AiMatrix(m):
@@ -163,12 +194,15 @@ def _AiMatrix(m):
 
 
 def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
-    shaders = Shaders()
+    shaders = Shaders(data)
 
     opts = scene.arnold
 
     arnold.AiBegin()
     arnold.AiMsgSetConsoleFlags(opts.get("console_log_flags", 0))
+
+    plugins_path = os.path.normpath(os.path.join(os.path.dirname(__file__), os.path.pardir, "bin"))
+    arnold.AiLoadPlugins(plugins_path)
 
     for ob in scene.objects:
         if ob.hide_render:
@@ -283,6 +317,7 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
 
     if ass_filepath:
         # TODO: options
+        arnold.AiNodeSetStr(options, "shader_searchpath", plugins_path)
         arnold.AiASSWrite(ass_filepath, arnold.AI_NODE_ALL, False, False)
         arnold.AiEnd()
 
@@ -297,18 +332,6 @@ def update(self, data, scene):
         self.resolution_y,
         session=self._session
     )
-
-_TILE_COLORS = [
-    [0, 0, 0, 1],
-    [1, 0, 0, 1],
-    [0, 1, 0, 1],
-    [0, 0, 1, 1],
-    [1, 1, 0, 1],
-    [0, 1, 1, 1],
-    [1, 0, 1, 1],
-    [1, 1, 1, 1]
-]
-_M = 1 / 255
 
 
 def render(self, scene):

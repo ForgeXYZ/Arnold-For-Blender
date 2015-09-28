@@ -1,27 +1,27 @@
 #include "stdafx.h"
 
-#include <stdio.h>
+AI_SHADER_NODE_EXPORT_METHODS(BlendMethods);
 
-AI_SHADER_NODE_EXPORT_METHODS(methods);
+enum BlendParams
+{
+	P_BLEND,
+	P_COLOR_1,
+	P_COLOR_2,
+	P_FACTOR
+};
 
-enum BlendType
+enum BlendTypes
 {
 	BLEND_MIX,
+	BLEND_ADD,
 	BLEND_MUL,
 	BLEND_SCREEN
 };
 
-enum BlendParams
-{
-	P_COLOR_1,
-	P_COLOR_2,
-	P_BLEND,
-	P_FACTOR
-};
-
 static const char* BlendNames[] =
 {
-	"blend",
+	"mix",
+	"add",
 	"multiply",
 	"screen",
 	NULL
@@ -29,9 +29,9 @@ static const char* BlendNames[] =
 
 node_parameters
 {
-	AiParameterRGBA("color1", 0, 0, 0, 1);
-	AiParameterRGBA("color2", 1, 1, 1, 1);
 	AiParameterENUM("blend", 0, BlendNames);
+	AiParameterRGB("color1", 0, 0, 0);
+	AiParameterRGB("color2", 1, 1, 1);
 	AiParameterFlt("factor", 0.5f);
 }
 
@@ -49,22 +49,45 @@ node_finish
 
 shader_evaluate
 {
-	AtRGBA c1 = AiShaderEvalParamRGBA(P_COLOR_1);
-	AtRGBA c2 = AiShaderEvalParamRGBA(P_COLOR_2);
-	int blend = AiShaderEvalParamUInt(P_BLEND);
-	float factor = AiShaderEvalParamFlt(P_FACTOR);
+	AtRGB c1 = AiShaderEvalParamRGB(P_COLOR_1);
+	AtRGB c2 = AiShaderEvalParamRGB(P_COLOR_2);
+	float f = AiShaderEvalParamFlt(P_FACTOR);
+	BlendParams blend = static_cast<BlendParams>(AiShaderEvalParamEnum(P_BLEND));
+#if 1
+	// <blender sources>/source/blender/render/intern/source/render_texture.c:1349
+	// <blender sources>/source/blender/blenkernel/intern/material.c:1516
 	switch (blend)
 	{
 	case BLEND_MIX:
-		sg->out.RGBA = (c1 * factor) + (c2 * (1.0f - factor));
+		sg->out.RGB = (c1 * (1.0f - f)) + (c2 * f);
+		break;
+	case BLEND_ADD:
+		sg->out.RGB = c1 + (c2 * f);
 		break;
 	case BLEND_MUL:
-		sg->out.RGBA = (c1 * factor + (1.0f - factor)) * c2;
+		sg->out.RGB = c1 * ((c2 - 1) * f + 1.0f);
 		break;
 	case BLEND_SCREEN:
-		sg->out.RGBA = 1.0f - (1.0f - c1 * factor) * (1.0f - c2);
+		sg->out.RGB = 1.0f - (1.0f - c1) * (1.0f - f * c2);
 		break;
 	}
+#else
+	// https://en.wikipedia.org/wiki/Blend_modes
+	c1 *= 1.0f - f;
+	c2 *= factor;
+	switch (blend)
+	{
+	case BLEND_MIX:
+		sg->out.RGB = c1 + c2;
+		break;
+	case BLEND_MUL:
+		sg->out.RGB = c1 * c2;
+		break;
+	case BLEND_SCREEN:
+		sg->out.RGB = 1.0f - (1.0f - c1) * (1.0f - c2);
+		break;
+	}
+#endif
 }
 
 node_loader
@@ -73,9 +96,9 @@ node_loader
 		return false;
 
 	node->node_type = AI_NODE_SHADER;
-	node->output_type = AI_TYPE_RGBA;
-	node->name = "barnold:blend";
-	node->methods = methods;
+	node->output_type = AI_TYPE_RGB;
+	node->name = "BarnoldMixRGB";
+	node->methods = BlendMethods;
 	strcpy(node->version, AI_VERSION);
 	return true;
 }
