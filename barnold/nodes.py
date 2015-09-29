@@ -87,8 +87,13 @@ class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldSocketMixRGB(bpy.types.NodeSocket):
-    default_value = bpy.props.EnumProperty(
+class ArnoldNodeMixRGB(bpy.types.Node, ArnoldNode):
+    bl_label = "Mix RGB"
+    bl_icon = 'MATERIAL'
+
+    AI_NAME = "BArnoldMixRGB"
+
+    blend_type = bpy.props.EnumProperty(
         name="Blend Type",
         items=[
             ('mix', "Mix", "Mix"),
@@ -113,27 +118,7 @@ class ArnoldSocketMixRGB(bpy.types.NodeSocket):
         default='mix'
     )
 
-    def draw(self, context, layout, node, text):
-        if self.is_output or self.is_linked:
-            layout.label(text)
-        else:
-            layout.prop(self, "default_value", text="")
-
-    def draw_color(self, context, node):
-        # bpy.types.NodeSocketInt color
-        # <blender_sources>/source/blender/editors/space_node/drawnode.c:3010
-        return (0.06, 0.52, 0.15, 1)
-
-
-@ArnoldRenderEngine.register_class
-class ArnoldNodeMixRGB(bpy.types.Node, ArnoldNode):
-    bl_label = "Mix RGB"
-    bl_icon = 'MATERIAL'
-
-    AI_NAME = "BArnoldMixRGB"
-
     def init(self, context):
-        self.inputs.new("ArnoldSocketMixRGB", "Blend", "blend")
         sock = self.inputs.new("NodeSocketColor", "Color1", "color1")
         sock.default_value = (0.8, 0.8, 0.8, 1)
         sock = self.inputs.new("NodeSocketColor", "Color2", "color2")
@@ -142,6 +127,15 @@ class ArnoldNodeMixRGB(bpy.types.Node, ArnoldNode):
         sock.default_value = 0.5
 
         self.outputs.new("NodeSocketColor", "Color", "output")
+
+    def draw_buttons(self, context, layout):
+        layout.prop(self, "blend_type", text="")
+
+    @property
+    def ai_properties(self):
+        return {
+            "blend": ('STRING', self.blend_type)
+        }
 
 
 class ArnoldNodeCategory(nodeitems_utils.NodeCategory):

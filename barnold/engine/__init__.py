@@ -122,6 +122,8 @@ class Shaders:
                     tex = self._data.textures.get(p_value)
                     if tex:
                         arnold.AiNodeSetStr(anode, p_name, tex.image.filepath_from_user())
+                elif p_type == 'STRING':
+                    arnold.AiNodeSetStr(anode, p_name, p_value)
             nodes[name] = anode
         return anode
 
