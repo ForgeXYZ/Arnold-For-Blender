@@ -63,6 +63,70 @@ class ArnoldNodeLambert(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
+class ArnoldNodeStandard(bpy.types.Node, ArnoldNode):
+    bl_label = "Standard"
+    bl_icon = 'MATERIAL'
+
+    AI_NAME = "standard"
+
+    def init(self, context):
+        # Diffuse
+        sock = self.inputs.new("NodeSocketColor", "Diffuse", "Kd_color")
+        sock.default_value = (1, 1, 1, 1)
+        sock = self.inputs.new("NodeSocketFloat", "Weight", "Kd")
+        sock.default_value = 0.7
+        sock = self.inputs.new("NodeSocketFloat", "Roughness", "diffuse_roughness")
+        sock.default_value = 0
+        sock = self.inputs.new("NodeSocketFloat", "Backlight", "Kb")
+        sock.default_value = 0
+        sock = self.inputs.new("NodeSocketBool", "Fresnel", "Fresnel")
+        sock.default_value = False
+        # Specular
+        sock = self.inputs.new("NodeSocketColor", "Specular", "Ks_color")
+        sock.default_value = (1, 1, 1, 1)
+        sock = self.inputs.new("NodeSocketFloat", "Weight", "Ks")
+        sock.default_value = 0
+        sock = self.inputs.new("NodeSocketFloat", "Roughness", "specular_roughness")
+        sock.default_value = 0.466905
+        sock = self.inputs.new("NodeSocketFloat", "Anisotropy", "specular_anisotropy")
+        sock.default_value = 0.5
+        sock = self.inputs.new("NodeSocketFloat", "Rotation", "specular_rotation")
+        sock.default_value = 0
+        sock = self.inputs.new("NodeSocketBool", "Fresnel", "specular_Fresnel")
+        sock.default_value = False
+        sock = self.inputs.new("NodeSocketFloat", "Reflectance at Normal", "Krn")
+        sock.default_value = 0
+        # Reflection
+        sock = self.inputs.new("NodeSocketColor", "Reflection", "Kr_color")
+        sock.default_value = (1, 1, 1, 1)
+        sock = self.inputs.new("NodeSocketFloat", "Weight", "Kr")
+        sock.default_value = 0
+        sock = self.inputs.new("NodeSocketColor", "Exit Color", "reflection_exit_color")
+        sock.default_value = (0, 0, 0, 1)
+        sock = self.inputs.new("NodeSocketBool", "Exit Use Environment", "reflection_exit_use_environment")
+        sock.default_value = False
+        # Transparency (Refraction)
+        sock = self.inputs.new("NodeSocketColor", "Transparency", "Kt_color")
+        sock.default_value = (1, 1, 1, 1)
+        sock = self.inputs.new("NodeSocketFloat", "Weight", "Kt")
+        sock.default_value = 0
+        sock = self.inputs.new("NodeSocketFloat", "IOR", "IOR")
+        sock.default_value = 1
+        sock = self.inputs.new("NodeSocketFloat", "Abbe", "dispersion_abbe")
+        sock.default_value = 0
+        sock = self.inputs.new("NodeSocketFloat", "Roughness", "refraction_roughness")
+        sock.default_value = 0
+        sock = self.inputs.new("NodeSocketColor", "Exit Color", "refraction_exit_color")
+        sock.default_value = (0, 0, 0, 1)
+        sock = self.inputs.new("NodeSocketBool", "Exit Use Environment", "refraction_exit_use_environment")
+        sock.default_value = False
+        sock = self.inputs.new("NodeSocketColor", "Transmittance", "transmittance")
+        sock.default_value = (1, 1, 1, 1)
+
+        self.outputs.new("NodeSocketShader", "RGB", "output")
+
+
+@ArnoldRenderEngine.register_class
 class ArnoldNodeUtility(bpy.types.Node, ArnoldNode):
     bl_label = "Utility"
     bl_icon = 'MATERIAL'
@@ -305,6 +369,7 @@ def register():
         ]),
         ArnoldNodeCategory("ARNOLD_SHADERS_NODES", "Shaders", items=[
             nodeitems_utils.NodeItem("ArnoldNodeLambert"),
+            nodeitems_utils.NodeItem("ArnoldNodeStandard"),
             nodeitems_utils.NodeItem("ArnoldNodeUtility"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),
             nodeitems_utils.NodeItem("ArnoldNodeImage"),
