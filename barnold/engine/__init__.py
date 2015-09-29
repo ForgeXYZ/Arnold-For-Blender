@@ -27,6 +27,7 @@ _TILE_COLORS = [
 _M = 1 / 255
 
 _AiNodeSet = {
+    "NodeSocketBool": lambda n, i, v: arnold.AiNodeSetBool(n, i, v),
     "NodeSocketFloat": lambda n, i, v: arnold.AiNodeSetFlt(n, i, v),
     "NodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v[:3]),
     "ArnoldSocketMixRGB": lambda n, i, v: arnold.AiNodeSetStr(n, i, v)

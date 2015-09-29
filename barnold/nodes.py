@@ -145,6 +145,22 @@ class ArnoldNodeUtility(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
+class ArnoldNodeFlat(bpy.types.Node, ArnoldNode):
+    bl_label = "Flat"
+    bl_icon = 'MATERIAL'
+
+    AI_NAME = "flat"
+
+    def init(self, context):
+        sock = self.inputs.new("NodeSocketColor", "Color", "color")
+        sock.default_value = (1, 1, 1, 1)
+        sock = self.inputs.new("NodeSocketColor", "Opacity", "opacity")
+        sock.default_value = (1, 1, 1, 1)
+
+        self.outputs.new("NodeSocketShader", "RGB", "output")
+
+
+@ArnoldRenderEngine.register_class
 class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
     bl_label = "Image"
     bl_icon = 'IMAGEFILE'
@@ -165,6 +181,44 @@ class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
     def ai_properties(self):
         return {
             "filename": ('TEXTURE', self.texture)
+        }
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeWireframe(bpy.types.Node, ArnoldNode):
+    bl_label = "Wireframe"
+    bl_icon = 'MATERIAL'
+
+    AI_NAME = "wireframe"
+
+    edge_type = bpy.props.EnumProperty(
+        name="Edge Type",
+        items=[
+            ('polygons', "Polygons", "Polygons"),
+            ('triangles', "Triangles", "Triangles")
+        ],
+        default='triangles'
+    )
+
+    def init(self, context):
+        sock = self.inputs.new("NodeSocketFloat", "Line Width", "line_width")
+        sock.default_value = 1
+        sock = self.inputs.new("NodeSocketColor", "Fill Color", "fill_color")
+        sock.default_value = (1, 1, 1, 1)
+        sock = self.inputs.new("NodeSocketColor", "Line Color", "line_color")
+        sock.default_value = (0, 0, 0, 1)
+        sock = self.inputs.new("NodeSocketBool", "Raster space", "raster_space")
+        sock.default_value = True
+
+        self.outputs.new("NodeSocketShader", "RGB", "output")
+
+    def draw_buttons(self, context, layout):
+        layout.prop(self, "edge_type", text="")
+
+    @property
+    def ai_properties(self):
+        return {
+            "edge_type": ('STRING', self.edge_type)
         }
 
 
@@ -252,7 +306,9 @@ def register():
         ArnoldNodeCategory("ARNOLD_SHADERS_NODES", "Shaders", items=[
             nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeUtility"),
-            nodeitems_utils.NodeItem("ArnoldNodeImage")
+            nodeitems_utils.NodeItem("ArnoldNodeFlat"),
+            nodeitems_utils.NodeItem("ArnoldNodeImage"),
+            nodeitems_utils.NodeItem("ArnoldNodeWireframe"),
         ]),
         ArnoldNodeCategory("ARNOLD_COLOR_NODES", "Color", items=[
             nodeitems_utils.NodeItem("ArnoldNodeMixRGB")
