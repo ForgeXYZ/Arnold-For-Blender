@@ -17,6 +17,7 @@
     <InterpreterVersion />
     <IsWindowsApplication>False</IsWindowsApplication>
     <Name>addon</Name>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />

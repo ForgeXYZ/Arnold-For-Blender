@@ -176,14 +176,6 @@ class Shaders:
         arnold.AiNodeSetStr(node, "name", mat.name)
         return node
 
-    #def _images(self, mat):
-    #    for slot in mat.texture_slots:
-    #        if slot and slot.use:
-    #            tex = slot.texture
-    #            node = arnold.AiNode('image')
-    #            arnold.AiNodeSetStr(node, "name", tex.image.name)
-    #            arnold.AiNodeSetStr(node, "filename", tex.image.filepath_from_user())
-
 
 def _AiMatrix(m):
     """
@@ -391,7 +383,6 @@ def render(self, scene):
             mem = arnold.AiMsgUtilGetUsedMemory() / 1048576  # 1024*1024
             self._peak = max(self._peak, mem)
             self.update_memory_stats(mem, self._peak)
-            #self.update_stats("", "Tile: %dx%d" % (x, y))
 
         # display callback must be a variable
         cb = arnold.AtDisplayCallBack(display_callback)
