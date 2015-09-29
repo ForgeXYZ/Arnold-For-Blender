@@ -89,11 +89,26 @@ class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
 @ArnoldRenderEngine.register_class
 class ArnoldSocketMixRGB(bpy.types.NodeSocket):
     default_value = bpy.props.EnumProperty(
-        name="Blend",
+        name="Blend Type",
         items=[
             ('mix', "Mix", "Mix"),
+            ('add', "Add", "Add"),
             ('multiply', "Multiply", "Multiply"),
-            ('screen', "Screen", "Screen")
+            ('screen', "Screen", "Screen"),
+            ('overlay', "Overlay", "Overlay"),
+            ('subtract', "Subtract", "Subtract"),
+            ('divide', "Divide", "Divide"),
+            ('difference', "Difference", "Difference"),
+            ('darken', "Darken", "Darken Only"),
+            ('lighten', "Lighten", "Lighten Only"),
+            ('dodge', "Dodge", "Dodge"),
+            ('burn', "Burn", "Burn"),
+            ('hue', "Hue", "Hue"),
+            ('saturation', "Saturation", "Saturation"),
+            ('value', "Value", "Value"),
+            ('color', "Color", "Color"),
+            ('soft', "Soft Light", "Soft Light"),
+            ('linear', "Linear Light", "Linear Light")
         ],
         default='mix'
     )
@@ -115,7 +130,7 @@ class ArnoldNodeMixRGB(bpy.types.Node, ArnoldNode):
     bl_label = "Mix RGB"
     bl_icon = 'MATERIAL'
 
-    AI_NAME = "BarnoldMixRGB"
+    AI_NAME = "BArnoldMixRGB"
 
     def init(self, context):
         self.inputs.new("ArnoldSocketMixRGB", "Blend", "blend")

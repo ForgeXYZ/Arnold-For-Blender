@@ -148,6 +148,7 @@
   <ItemGroup>
     <ClInclude Include="..\src\stdafx.h" />
     <ClInclude Include="..\src\targetver.h" />
+    <ClInclude Include="..\src\blend.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\barnold.cpp" />
