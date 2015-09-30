@@ -298,9 +298,45 @@ class ArnoldNodeWireframe(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
+class ArnoldNodeNoise(bpy.types.Node, ArnoldNode):
+    bl_label = "Noise"
+    bl_icon = 'TEXTURE'
+
+    AI_NAME = "noise"
+
+    coord_space = bpy.props.EnumProperty(
+        name="Space Coordinates",
+        items=[
+            ('world', "World", "World space"),
+            ('object', "Object", "Object space"),
+            ('Pref', "Pref", "Pref")
+        ],
+        default='object'
+    )
+
+    def init(self, context):
+        self.outputs.new("NodeSocketFloat", "Value", "output")
+        self.inputs.new("NodeSocketInt", "Octaves", "octaves").default_value = 1
+        self.inputs.new("NodeSocketFloat", "Distortion", "distortion")
+        self.inputs.new("NodeSocketFloat", "Lacunarity", "lacunarity").default_value = 1.92
+        self.inputs.new("NodeSocketFloat", "Amplitude", "amplitude").default_value = 1
+        self.inputs.new("NodeSocketVector", "Scale", "scale").default_value = (1, 1, 1)
+        self.inputs.new("NodeSocketVector", "Offset", "offset")
+
+    def draw_buttons(self, context, layout):
+        layout.prop(self, "coord_space", text="")
+
+    @property
+    def ai_properties(self):
+        return {
+            "coord_space": ('STRING', self.coord_space)
+        }
+
+
+@ArnoldRenderEngine.register_class
 class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
     bl_label = "Image"
-    bl_icon = 'IMAGEFILE'
+    bl_icon = 'TEXTURE'
 
     AI_NAME = "image"
 
@@ -411,6 +447,7 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeBump3D"),
             nodeitems_utils.NodeItem("ArnoldNodeWireframe"),
             nodeitems_utils.NodeItem("ArnoldNodeImage"),
+            nodeitems_utils.NodeItem("ArnoldNodeNoise"),
         ]),
         ArnoldNodeCategory("ARNOLD_NODES_COLOR", "Color", items=[
             nodeitems_utils.NodeItem("ArnoldNodeMixRGB")

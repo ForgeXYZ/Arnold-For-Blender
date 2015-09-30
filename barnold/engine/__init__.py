@@ -29,8 +29,10 @@ _M = 1 / 255
 _AiNodeSet = {
     "NodeSocketShader": lambda n, i, v: True,
     "NodeSocketBool": lambda n, i, v: arnold.AiNodeSetBool(n, i, v),
+    "NodeSocketInt": lambda n, i, v: arnold.AiNodeSetInt(n, i, v),
     "NodeSocketFloat": lambda n, i, v: arnold.AiNodeSetFlt(n, i, v),
     "NodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGBA(n, i, *v),
+    "NodeSocketVector": lambda n, i, v: arnold.AiNodeSetVec(n, i, *v),
     "ArnoldNodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v)
 }
 
