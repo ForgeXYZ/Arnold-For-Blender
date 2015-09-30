@@ -33,6 +33,7 @@ _AiNodeSet = {
     "NodeSocketFloat": lambda n, i, v: arnold.AiNodeSetFlt(n, i, v),
     "NodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGBA(n, i, *v),
     "NodeSocketVector": lambda n, i, v: arnold.AiNodeSetVec(n, i, *v),
+    "NodeSocketString": lambda n, i, v: arnold.AiNodeSetStr(n, i, v),
     "ArnoldNodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v)
 }
 

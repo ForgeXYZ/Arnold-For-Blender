@@ -370,6 +370,64 @@ class ArnoldNodeNoise(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
+class ArnoldNodeVolumeScattering(bpy.types.Node, ArnoldNode):
+    bl_label = "Volume Scattering"
+    bl_icon = 'TEXTURE'
+
+    AI_NAME = "volume_scattering"
+
+    def init(self, context):
+        self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.inputs.new("NodeSocketFloat", "density")
+        self.inputs.new("NodeSocketInt", "Samples", "samples").default_value = 5
+        self.inputs.new("NodeSocketFloat", "eccentricity")
+        self.inputs.new("NodeSocketFloat", "attenuation")
+        self.inputs.new("NodeSocketFloat", "affect_camera").default_value = 1
+        self.inputs.new("NodeSocketFloat", "affect_diffuse")
+        self.inputs.new("NodeSocketFloat", "affect_reflection").default_value = 1
+        self.inputs.new("ArnoldNodeSocketColor", "rgb_density")
+        self.inputs.new("ArnoldNodeSocketColor", "rgb_attenuation")
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeDensity(bpy.types.Node, ArnoldNode):
+    bl_label = "Density"
+    bl_icon = 'TEXTURE'
+
+    AI_NAME = "density"
+
+    interpolation = bpy.props.EnumProperty(
+        name="Interpolation",
+        items=[
+            ('closest', "closest", "closest"),
+            ('trilinear', "trilinear", "trilinear"),
+            ('tricubic', "tricubic", "tricubic")
+        ],
+        default='trilinear'
+    )
+
+    def init(self, context):
+        self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.inputs.new("NodeSocketString", "scatter_channel")
+        self.inputs.new("ArnoldNodeSocketColor", "scatter_color")
+        self.inputs.new("NodeSocketFloat", "scatter_g")
+        self.inputs.new("NodeSocketString", "absorption_channel")
+        self.inputs.new("ArnoldNodeSocketColor", "absorption_color")
+        self.inputs.new("NodeSocketString", "emission_channel")
+        self.inputs.new("ArnoldNodeSocketColor", "emission_color")
+        self.inputs.new("NodeSocketVector", "position_offset")
+
+    def draw_buttons(self, context, layout):
+        layout.prop(self, "interpolation", text="")
+
+    @property
+    def ai_properties(self):
+        return {
+            "interpolation": ('STRING', self.interpolation)
+        }
+
+
+@ArnoldRenderEngine.register_class
 class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
     bl_label = "Image"
     bl_icon = 'TEXTURE'
@@ -486,6 +544,8 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeMotionVector"),
             nodeitems_utils.NodeItem("ArnoldNodeImage"),
             nodeitems_utils.NodeItem("ArnoldNodeNoise"),
+            nodeitems_utils.NodeItem("ArnoldNodeVolumeScattering"),
+            nodeitems_utils.NodeItem("ArnoldNodeDensity"),
         ]),
         ArnoldNodeCategory("ARNOLD_NODES_COLOR", "Color", items=[
             nodeitems_utils.NodeItem("ArnoldNodeMixRGB")
