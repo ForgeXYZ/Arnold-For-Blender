@@ -11,6 +11,31 @@ from . import ArnoldRenderEngine
 
 
 @ArnoldRenderEngine.register_class
+class ArnoldNodeSocketColor(bpy.types.NodeSocket):
+    bl_label = "Color"
+
+    default_value = bpy.props.FloatVectorProperty(
+        name="Color",
+        subtype='COLOR',
+        default=(1, 1, 1),
+        min=0, max=1
+    )
+
+    def draw(self, context, layout, node, text):
+        if self.is_output or self.is_linked:
+            layout.label(text)
+        else:
+            row = layout.row(align=True)
+            row.alignment = 'LEFT'
+            row.prop(self, "default_value", text="")
+            row.label(text)
+
+    def draw_color(self, context, node):
+        # <blender_sources>/source/blender/editors/space_node/drawnode.c:3010 (SOCK_RGBA)
+        return (0.78, 0.78, 0.16, 1.0)
+
+
+@ArnoldRenderEngine.register_class
 class ArnoldNodeOutput(bpy.types.Node):
     bl_label = "Output"
     bl_icon = 'MATERIAL'
@@ -52,116 +77,71 @@ class ArnoldNodeLambert(bpy.types.Node, ArnoldNode):
     AI_NAME = "lambert"
 
     def init(self, context):
-        sock = self.inputs.new("NodeSocketFloat", "Kd")
-        sock.default_value = 0.7
-        sock = self.inputs.new("NodeSocketColor", "Kd_color")
-        sock.default_value = (1, 1, 1, 1)
-        sock = self.inputs.new("NodeSocketColor", "Opacity", "opacity")
-        sock.default_value = (1, 1, 1, 1)
-
         self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.inputs.new("ArnoldNodeSocketColor", "Diffuse", "Kd_color")
+        self.inputs.new("NodeSocketFloat", "Weight", "Kd").default_value = 0.7
+        self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
 
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeStandard(bpy.types.Node, ArnoldNode):
     bl_label = "Standard"
     bl_icon = 'MATERIAL'
+    bl_width_default = 250
 
     AI_NAME = "standard"
 
     def init(self, context):
-        # Diffuse
-        sock = self.inputs.new("NodeSocketColor", "Diffuse Color", "Kd_color")
-        sock.default_value = (1, 1, 1, 1)
-        sock = self.inputs.new("NodeSocketFloat", "Diffuse Weight", "Kd")
-        sock.default_value = 0.7
-        sock = self.inputs.new("NodeSocketFloat", "Diffuse Roughness", "diffuse_roughness")
-        sock.default_value = 0
-        sock = self.inputs.new("NodeSocketFloat", "Diffuse Backlight", "Kb")
-        sock.default_value = 0
-        sock = self.inputs.new("NodeSocketBool", "Fresnel affects Diffuse", "Fresnel_affect_diff")
-        sock.default_value = True
-        sock = self.inputs.new("NodeSocketFloat", "Direct Diffuse", "direct_diffuse")
-        sock.default_value = 1
-        sock = self.inputs.new("NodeSocketFloat", "Indirect Diffuse", "indirect_diffuse")
-        sock.default_value = 1
-        # Specular
-        sock = self.inputs.new("NodeSocketColor", "Specular Color", "Ks_color")
-        sock.default_value = (1, 1, 1, 1)
-        sock = self.inputs.new("NodeSocketFloat", "Specular Weight", "Ks")
-        sock.default_value = 0
-        sock = self.inputs.new("NodeSocketFloat", "Specular Roughness", "specular_roughness")
-        sock.default_value = 0.466905
-        sock = self.inputs.new("NodeSocketFloat", "Specular Anisotropy", "specular_anisotropy")
-        sock.default_value = 0.5
-        sock = self.inputs.new("NodeSocketFloat", "Specular Rotation", "specular_rotation")
-        sock.default_value = 0
-        sock = self.inputs.new("NodeSocketBool", "Specular Fresnel", "specular_Fresnel")
-        sock.default_value = False
-        sock = self.inputs.new("NodeSocketFloat", "Reflectance at Normal (Specular)", "Ksn")
-        sock.default_value = 0
-        sock = self.inputs.new("NodeSocketFloat", "Direct Specular", "direct_specular")
-        sock.default_value = 1
-        sock = self.inputs.new("NodeSocketFloat", "Indirect Specular", "indirect_specular")
-        sock.default_value = 1
-        # Reflection
-        sock = self.inputs.new("NodeSocketColor", "Reflection Color", "Kr_color")
-        sock.default_value = (1, 1, 1, 1)
-        sock = self.inputs.new("NodeSocketFloat", "Reflection Weight", "Kr")
-        sock.default_value = 0
-        sock = self.inputs.new("NodeSocketBool", "Reflection Fresnel", "Fresnel")
-        sock.default_value = False
-        sock = self.inputs.new("NodeSocketFloat", "Reflectance at Normal (Reflection)", "Krn")
-        sock.default_value = 0
-        sock = self.inputs.new("NodeSocketBool", "Reflection Exit Use Environment", "reflection_exit_use_environment")
-        sock.default_value = False
-        sock = self.inputs.new("NodeSocketColor", "Reflection Exit Color", "reflection_exit_color")
-        sock.default_value = (0, 0, 0, 1)
-        # Refraction (Transparency)
-        sock = self.inputs.new("NodeSocketColor", "Refraction Color", "Kt_color")
-        sock.default_value = (1, 1, 1, 1)
-        sock = self.inputs.new("NodeSocketFloat", "Refraction Weight", "Kt")
-        sock.default_value = 0
-        sock = self.inputs.new("NodeSocketFloat", "IOR", "IOR")
-        sock.default_value = 1
-        sock = self.inputs.new("NodeSocketFloat", "Abbe Number", "dispersion_abbe")
-        sock.default_value = 0
-        sock = self.inputs.new("NodeSocketFloat", "Refraction Roughness", "refraction_roughness")
-        sock.default_value = 0
-        sock = self.inputs.new("NodeSocketBool", "Fresnel use IOR", "Fresnel_use_IOR")
-        sock.default_value = False
-        sock = self.inputs.new("NodeSocketColor", "Transmittance", "transmittance")
-        sock.default_value = (1, 1, 1, 1)
-        sock = self.inputs.new("NodeSocketColor", "Opacity", "opacity")
-        sock.default_value = (1, 1, 1, 1)
-        sock = self.inputs.new("NodeSocketBool", "Refraction Exit Use Environment", "refraction_exit_use_environment")
-        sock.default_value = False
-        sock = self.inputs.new("NodeSocketColor", "Refraction Exit Color", "refraction_exit_color")
-        sock.default_value = (0, 0, 0, 1)
-        # Sub-Surface Scattering
-        sock = self.inputs.new("NodeSocketColor", "SSS Color", "Ksss_color")
-        sock.default_value = (1, 1, 1, 1)
-        sock = self.inputs.new("NodeSocketFloat", "SSS Weight", "Ksss")
-        sock.default_value = 0
-        sock = self.inputs.new("NodeSocketFloat", "SSS Radius", "sss_radius")
-        sock.default_value = 0
-        # Emission
-        sock = self.inputs.new("NodeSocketColor", "Emission Color", "emission_color")
-        sock.default_value = (1, 1, 1, 1)
-        sock = self.inputs.new("NodeSocketFloat", "Emission Weight", "emission")
-        sock.default_value = 0
-        # Caustics
-        sock = self.inputs.new("NodeSocketBool", "Glossy Caustics", "enable_glossy_caustics")
-        sock.default_value = False
-        sock = self.inputs.new("NodeSocketBool", "Reflective Caustics", "enable_reflective_caustics")
-        sock.default_value = False
-        sock = self.inputs.new("NodeSocketBool", "Refractive Caustics", "enable_refractive_caustics")
-        sock.default_value = False
-        # Advanced
-        sock = self.inputs.new("NodeSocketFloat", "Bounce Factor", "bounce_factor")
-        sock.default_value = 1
-
         self.outputs.new("NodeSocketShader", "RGB", "output")
+        # Diffuse
+        self.inputs.new("ArnoldNodeSocketColor", "Diffuse: Color", "Kd_color")
+        self.inputs.new("NodeSocketFloat", "Diffuse: Weight", "Kd").default_value = 0.7
+        self.inputs.new("NodeSocketFloat", "Diffuse: Roughness", "diffuse_roughness")
+        self.inputs.new("NodeSocketFloat", "Diffuse: Backlight", "Kb")
+        self.inputs.new("NodeSocketBool", "Fresnel affects Diffuse", "Fresnel_affect_diff").default_value = True
+        self.inputs.new("NodeSocketFloat", "Diffuse: Direct", "direct_diffuse").default_value = 1
+        self.inputs.new("NodeSocketFloat", "Diffuse: Indirect", "indirect_diffuse").default_value = 1
+        # Specular
+        self.inputs.new("ArnoldNodeSocketColor", "Specular: Color", "Ks_color")
+        self.inputs.new("NodeSocketFloat", "Specular: Weight", "Ks")
+        self.inputs.new("NodeSocketFloat", "Specular: Roughness", "specular_roughness").default_value = 0.466905
+        self.inputs.new("NodeSocketFloat", "Specular: Anisotropy", "specular_anisotropy").default_value = 0.5
+        self.inputs.new("NodeSocketFloat", "Specular: Rotation", "specular_rotation")
+        self.inputs.new("NodeSocketBool", "Specular: Fresnel", "specular_Fresnel")
+        self.inputs.new("NodeSocketFloat", "Specular: Reflectance at Normal", "Ksn")
+        self.inputs.new("NodeSocketFloat", "Specular: Direct", "direct_specular").default_value = 1
+        self.inputs.new("NodeSocketFloat", "Specular: Indirect", "indirect_specular").default_value = 1
+        # Reflection
+        self.inputs.new("ArnoldNodeSocketColor", "Reflection: Color", "Kr_color")
+        self.inputs.new("NodeSocketFloat", "Reflection: Weight", "Kr")
+        self.inputs.new("NodeSocketBool", "Reflection: Fresnel", "Fresnel")
+        self.inputs.new("NodeSocketFloat", "Reflection: Reflectance at Normal", "Krn")
+        self.inputs.new("NodeSocketBool", "Reflection: Exit Use Environment", "reflection_exit_use_environment").default_value = False
+        self.inputs.new("ArnoldNodeSocketColor", "Reflection: Exit Color", "reflection_exit_color").default_value = (0, 0, 0)
+        # Refraction (Transparency)
+        self.inputs.new("ArnoldNodeSocketColor", "Refraction: Color", "Kt_color")
+        self.inputs.new("NodeSocketFloat", "Refraction: Weight", "Kt")
+        self.inputs.new("NodeSocketFloat", "Refraction: IOR", "IOR").default_value = 1
+        self.inputs.new("NodeSocketFloat", "Refraction: Abbe Number", "dispersion_abbe")
+        self.inputs.new("NodeSocketFloat", "Refraction: Roughness", "refraction_roughness")
+        self.inputs.new("NodeSocketBool", "Fresnel use IOR", "Fresnel_use_IOR")
+        self.inputs.new("ArnoldNodeSocketColor", "Transmittance", "transmittance")
+        self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
+        self.inputs.new("NodeSocketBool", "Refraction: Exit Use Environment", "refraction_exit_use_environment")
+        self.inputs.new("ArnoldNodeSocketColor", "Refraction: Exit Color", "refraction_exit_color").default_value = (0, 0, 0)
+        # Sub-Surface Scattering
+        self.inputs.new("ArnoldNodeSocketColor", "SSS: Color", "Ksss_color")
+        self.inputs.new("NodeSocketFloat", "SSS: Weight", "Ksss")
+        self.inputs.new("ArnoldNodeSocketColor", "SSS: Radius", "sss_radius").default_value = (0.1, 0.1, 0.1)
+        # Emission
+        self.inputs.new("ArnoldNodeSocketColor", "Emission: Color", "emission_color")
+        self.inputs.new("NodeSocketFloat", "Emission: Weight", "emission")
+        # Caustics
+        self.inputs.new("NodeSocketBool", "Glossy Caustics", "enable_glossy_caustics")
+        self.inputs.new("NodeSocketBool", "Reflective Caustics", "enable_reflective_caustics")
+        self.inputs.new("NodeSocketBool", "Refractive Caustics", "enable_refractive_caustics")
+        # Advanced
+        self.inputs.new("NodeSocketFloat", "Bounce Factor", "bounce_factor").default_value = 1
 
 
 @ArnoldRenderEngine.register_class
@@ -223,14 +203,10 @@ class ArnoldNodeUtility(bpy.types.Node, ArnoldNode):
     )
 
     def init(self, context):
-        sock = self.inputs.new("NodeSocketColor", "Color", "color")
-        sock.default_value = (1, 1, 1, 1)
-        sock = self.inputs.new("NodeSocketFloat", "Opacity", "opacity")
-        sock.default_value = 1
-        sock = self.inputs.new("NodeSocketFloat", "AO Distance", "ao_distance")
-        sock.default_value = 100
-
         self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.inputs.new("ArnoldNodeSocketColor", "Color", "color")
+        self.inputs.new("NodeSocketFloat", "Opacity", "opacity").default_value = 1
+        self.inputs.new("NodeSocketFloat", "AO Distance", "ao_distance").default_value = 100
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "color_mode", text="")
@@ -254,12 +230,9 @@ class ArnoldNodeFlat(bpy.types.Node, ArnoldNode):
     AI_NAME = "flat"
 
     def init(self, context):
-        sock = self.inputs.new("NodeSocketColor", "Color", "color")
-        sock.default_value = (1, 1, 1, 1)
-        sock = self.inputs.new("NodeSocketColor", "Opacity", "opacity")
-        sock.default_value = (1, 1, 1, 1)
-
         self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.inputs.new("ArnoldNodeSocketColor", "Color", "color")
+        self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
 
 
 @ArnoldRenderEngine.register_class
@@ -303,16 +276,11 @@ class ArnoldNodeWireframe(bpy.types.Node, ArnoldNode):
     )
 
     def init(self, context):
-        sock = self.inputs.new("NodeSocketFloat", "Line Width", "line_width")
-        sock.default_value = 1
-        sock = self.inputs.new("NodeSocketColor", "Fill Color", "fill_color")
-        sock.default_value = (1, 1, 1, 1)
-        sock = self.inputs.new("NodeSocketColor", "Line Color", "line_color")
-        sock.default_value = (0, 0, 0, 1)
-        sock = self.inputs.new("NodeSocketBool", "Raster space", "raster_space")
-        sock.default_value = True
-
         self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.inputs.new("ArnoldNodeSocketColor", "Fill Color", "fill_color")
+        self.inputs.new("ArnoldNodeSocketColor", "Line Color", "line_color").default_value = (0, 0, 0)
+        self.inputs.new("NodeSocketFloat", "Line Width", "line_width").default_value = 1
+        self.inputs.new("NodeSocketBool", "Raster space", "raster_space").default_value = True
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "edge_type", text="")
@@ -357,14 +325,10 @@ class ArnoldNodeMixRGB(bpy.types.Node, ArnoldNode):
     )
 
     def init(self, context):
-        sock = self.inputs.new("NodeSocketColor", "Color1", "color1")
-        sock.default_value = (0.8, 0.8, 0.8, 1)
-        sock = self.inputs.new("NodeSocketColor", "Color2", "color2")
-        sock.default_value = (0.8, 0.8, 0.8, 1)
-        sock = self.inputs.new("NodeSocketFloat", "Factor", "factor")
-        sock.default_value = 0.5
-
         self.outputs.new("NodeSocketColor", "Color", "output")
+        self.inputs.new("ArnoldNodeSocketColor", "Color #1", "color1").default_value = (0.5, 0.5, 0.5)
+        self.inputs.new("ArnoldNodeSocketColor", "Color #2", "color2").default_value = (0.5, 0.5, 0.5)
+        self.inputs.new("NodeSocketFloat", "Factor", "factor").default_value = 0.5
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "blend_type", text="")
