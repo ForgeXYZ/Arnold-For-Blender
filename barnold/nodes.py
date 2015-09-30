@@ -236,27 +236,32 @@ class ArnoldNodeFlat(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
-    bl_label = "Image"
-    bl_icon = 'IMAGEFILE'
+class ArnoldNodeBump2D(bpy.types.Node, ArnoldNode):
+    bl_label = "Bump2D"
+    bl_icon = 'MATERIAL'
 
-    AI_NAME = "image"
-
-    texture = bpy.props.StringProperty(
-        name="Texture"
-    )
+    AI_NAME = "bump2d"
 
     def init(self, context):
-        self.outputs.new("NodeSocketColor", "RGBA", "output")
+        self.outputs.new("NodeSocketShader", "RGBA", "output")
+        self.inputs.new("NodeSocketFloat", "Map", "bump_map")
+        self.inputs.new("NodeSocketFloat", "Height", "bump_height")
+        self.inputs.new("NodeSocketShader", "Shader", "shader")
 
-    def draw_buttons(self, context, layout):
-        layout.prop_search(self, "texture", context.blend_data, "textures", text="")
 
-    @property
-    def ai_properties(self):
-        return {
-            "filename": ('TEXTURE', self.texture)
-        }
+@ArnoldRenderEngine.register_class
+class ArnoldNodeBump3D(bpy.types.Node, ArnoldNode):
+    bl_label = "Bump3D"
+    bl_icon = 'MATERIAL'
+
+    AI_NAME = "bump3d"
+
+    def init(self, context):
+        self.outputs.new("NodeSocketShader", "RGBA", "output")
+        self.inputs.new("NodeSocketFloat", "Map", "bump_map")
+        self.inputs.new("NodeSocketFloat", "Height", "bump_height")
+        self.inputs.new("NodeSocketFloat", "Epsilon", "epsilon")
+        self.inputs.new("NodeSocketShader", "Shader", "shader")
 
 
 @ArnoldRenderEngine.register_class
@@ -293,6 +298,30 @@ class ArnoldNodeWireframe(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
+class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
+    bl_label = "Image"
+    bl_icon = 'IMAGEFILE'
+
+    AI_NAME = "image"
+
+    texture = bpy.props.StringProperty(
+        name="Texture"
+    )
+
+    def init(self, context):
+        self.outputs.new("NodeSocketColor", "RGBA", "output")
+
+    def draw_buttons(self, context, layout):
+        layout.prop_search(self, "texture", context.blend_data, "textures", text="")
+
+    @property
+    def ai_properties(self):
+        return {
+            "filename": ('TEXTURE', self.texture)
+        }
+
+
+@ArnoldRenderEngine.register_class
 class ArnoldNodeMixRGB(bpy.types.Node, ArnoldNode):
     bl_label = "Mix RGB"
     bl_icon = 'MATERIAL'
@@ -325,7 +354,7 @@ class ArnoldNodeMixRGB(bpy.types.Node, ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketColor", "Color", "output")
+        self.outputs.new("ArnoldNodeSocketColor", "Color", "output")
         self.inputs.new("ArnoldNodeSocketColor", "Color #1", "color1").default_value = (0.5, 0.5, 0.5)
         self.inputs.new("ArnoldNodeSocketColor", "Color #2", "color2").default_value = (0.5, 0.5, 0.5)
         self.inputs.new("NodeSocketFloat", "Factor", "factor").default_value = 0.5
@@ -378,8 +407,10 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeStandard"),
             nodeitems_utils.NodeItem("ArnoldNodeUtility"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),
-            nodeitems_utils.NodeItem("ArnoldNodeImage"),
+            nodeitems_utils.NodeItem("ArnoldNodeBump2D"),
+            nodeitems_utils.NodeItem("ArnoldNodeBump3D"),
             nodeitems_utils.NodeItem("ArnoldNodeWireframe"),
+            nodeitems_utils.NodeItem("ArnoldNodeImage"),
         ]),
         ArnoldNodeCategory("ARNOLD_NODES_COLOR", "Color", items=[
             nodeitems_utils.NodeItem("ArnoldNodeMixRGB")

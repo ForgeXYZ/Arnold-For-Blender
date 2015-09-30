@@ -27,11 +27,11 @@ _TILE_COLORS = [
 _M = 1 / 255
 
 _AiNodeSet = {
+    "NodeSocketShader": lambda n, i, v: True,
     "NodeSocketBool": lambda n, i, v: arnold.AiNodeSetBool(n, i, v),
     "NodeSocketFloat": lambda n, i, v: arnold.AiNodeSetFlt(n, i, v),
-    "NodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v[:3]),
-    "ArnoldNodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v),
-    "ArnoldSocketMixRGB": lambda n, i, v: arnold.AiNodeSetStr(n, i, v)
+    "NodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGBA(n, i, *v),
+    "ArnoldNodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v)
 }
 
 
@@ -98,7 +98,7 @@ class Shaders:
     def _export_node(self, node, prefix, nodes):
         """
         Args:
-            node (bpy.types.Node): blender node.
+            node (ArnoldNode): node.
             prefix (str): node name prefix.
             nodes (dict): created nodes.
         Returns:
