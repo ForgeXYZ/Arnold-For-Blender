@@ -298,6 +298,42 @@ class ArnoldNodeWireframe(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
+class ArnoldNodeAmbientOcclusion(bpy.types.Node, ArnoldNode):
+    bl_label = "Ambient Occlusion"
+    bl_icon = 'MATERIAL'
+
+    AI_NAME = "ambient_occlusion"
+
+    def init(self, context):
+        self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.inputs.new("NodeSocketInt", "Samples", "samples").default_value = 3
+        self.inputs.new("NodeSocketFloat", "Spread", "spread").default_value = 1
+        self.inputs.new("NodeSocketFloat", "Falloff", "falloff")
+        self.inputs.new("NodeSocketFloat", "Near Clip", "near_clip")
+        self.inputs.new("NodeSocketFloat", "Far Clip", "far_clip").default_value = 100
+        self.inputs.new("ArnoldNodeSocketColor", "White", "white")
+        self.inputs.new("ArnoldNodeSocketColor", "Black", "black").default_value = (0, 0, 0)
+        self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
+        self.inputs.new("NodeSocketBool", "Invert Normals", "invert_normals")
+        self.inputs.new("NodeSocketBool", "Self Only", "self_only")
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeMotionVector(bpy.types.Node, ArnoldNode):
+    bl_label = "Motion Vector"
+    bl_icon = 'MATERIAL'
+
+    AI_NAME = "motion_vector"
+
+    def init(self, context):
+        self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.inputs.new("NodeSocketFloat", "Start Time", "time0")
+        self.inputs.new("NodeSocketFloat", "End Time", "time1").default_value = 1
+        self.inputs.new("NodeSocketBool", "Encode Raw Vector", "raw")
+        self.inputs.new("NodeSocketFloat", "Max Displace", "max_displace")
+
+
+@ArnoldRenderEngine.register_class
 class ArnoldNodeNoise(bpy.types.Node, ArnoldNode):
     bl_label = "Noise"
     bl_icon = 'TEXTURE'
@@ -446,6 +482,8 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeBump2D"),
             nodeitems_utils.NodeItem("ArnoldNodeBump3D"),
             nodeitems_utils.NodeItem("ArnoldNodeWireframe"),
+            nodeitems_utils.NodeItem("ArnoldNodeAmbientOcclusion"),
+            nodeitems_utils.NodeItem("ArnoldNodeMotionVector"),
             nodeitems_utils.NodeItem("ArnoldNodeImage"),
             nodeitems_utils.NodeItem("ArnoldNodeNoise"),
         ]),
