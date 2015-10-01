@@ -515,11 +515,12 @@ class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
     @property
     def ai_properties(self):
         props = {
-            "filename": ('FILE_PATH', self.filename),
             "filter": ('STRING', self.filter),
             "swrap": ('STRING', self.swrap),
             "twrap": ('STRING', self.twrap),
         }
+        if self.filename:
+            props["filename"] = ('FILE_PATH', self.filename)
         if self.uvset:
             props["uvset"] = ('STRING', self.uvset)
         return props
