@@ -55,4 +55,12 @@ docs/_build/
 
 # PyBuilder
 target/
-/arnold/
+
+/deps/*/
+/barnold/bin/
+/barnold/engine/arnold/
+/vs2015/.vs/
+/vs2015/ipch/
+/vs2015/*.vcxproj.user
+/vs2015/*.sdf
+/vs2015/*.opensdf
