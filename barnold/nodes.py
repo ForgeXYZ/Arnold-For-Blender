@@ -334,6 +334,57 @@ class ArnoldNodeMotionVector(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
+class ArnoldNodeRaySwitch(bpy.types.Node, ArnoldNode):
+    bl_label = "Ray Switch"
+    bl_icon = 'MATERIAL'
+
+    AI_NAME = "ray_switch"
+
+    def init(self, context):
+        self.outputs.new("NodeSocketShader", "RGBA", "output")
+        self.inputs.new("NodeSocketColor", "Camera", "camera").default_value = (1, 1, 1, 1)
+        self.inputs.new("NodeSocketColor", "Shadow", "shadow").default_value = (1, 1, 1, 1)
+        self.inputs.new("NodeSocketColor", "Reflection", "reflection").default_value = (1, 1, 1, 1)
+        self.inputs.new("NodeSocketColor", "Refraction", "refraction").default_value = (1, 1, 1, 1)
+        self.inputs.new("NodeSocketColor", "Diffuse", "diffuse").default_value = (1, 1, 1, 1)
+        self.inputs.new("NodeSocketColor", "Glossy", "glossy").default_value = (1, 1, 1, 1)
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeHair(bpy.types.Node, ArnoldNode):
+    bl_label = "Hair"
+    bl_icon = 'MATERIAL'
+    bl_width_default = 200
+
+    AI_NAME = "hair"
+
+    def init(self, context):
+        self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.inputs.new("ArnoldNodeSocketColor", "Root Color", "rootcolor").default_value = (0.1, 0.1, 0.1)
+        self.inputs.new("ArnoldNodeSocketColor", "Tip Color", "tipcolor").default_value = (0.5, 0.5, 0.5)
+        self.inputs.new("NodeSocketFloat", "Ambient diffuse", "ambdiff").default_value = 0.6
+        self.inputs.new("NodeSocketFloat", "Indirect diffuse", "kd_ind")
+        self.inputs.new("NodeSocketBool", "Diffuse cache", "diffuse_cache")
+        # Specular #1
+        self.inputs.new("ArnoldNodeSocketColor", "Specular: Color", "spec_color")
+        self.inputs.new("NodeSocketFloat", "Specular: Glossiness", "gloss").default_value = 10
+        self.inputs.new("NodeSocketFloat", "Specular: Weight", "spec").default_value = 1
+        self.inputs.new("NodeSocketFloat", "Specular: Angular shift", "spec_shift")
+        # Specular #2
+        self.inputs.new("ArnoldNodeSocketColor", "Spec. #2: Color", "spec2_color").default_value = (1, 0.4, 0.1)
+        self.inputs.new("NodeSocketFloat", "Spec. #2: Glossiness", "gloss2").default_value = 7
+        self.inputs.new("NodeSocketFloat", "Spec. #2: Weight", "spec2").default_value = 0
+        self.inputs.new("NodeSocketFloat", "Spec. #2: Angular shift", "spec2_shift")
+        # Transmission
+        self.inputs.new("ArnoldNodeSocketColor", "Transmission: Color", "transmission_color").default_value = (1, 0.4, 0.1)
+        self.inputs.new("NodeSocketFloat", "Transmission", "transmission")
+        self.inputs.new("NodeSocketFloat", "Transmission: Spread", "transmission_spread").default_value = 1
+        self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
+        self.inputs.new("NodeSocketString", "Uparam", "uparam")
+        self.inputs.new("NodeSocketString", "Vparam", "vparam")
+
+
+@ArnoldRenderEngine.register_class
 class ArnoldNodeNoise(bpy.types.Node, ArnoldNode):
     bl_label = "Noise"
     bl_icon = 'TEXTURE'
@@ -366,6 +417,30 @@ class ArnoldNodeNoise(bpy.types.Node, ArnoldNode):
     def ai_properties(self):
         return {
             "coord_space": ('STRING', self.coord_space)
+        }
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
+    bl_label = "Image"
+    bl_icon = 'TEXTURE'
+
+    AI_NAME = "image"
+
+    texture = bpy.props.StringProperty(
+        name="Texture"
+    )
+
+    def init(self, context):
+        self.outputs.new("NodeSocketColor", "RGBA", "output")
+
+    def draw_buttons(self, context, layout):
+        layout.prop_search(self, "texture", context.blend_data, "textures", text="")
+
+    @property
+    def ai_properties(self):
+        return {
+            "filename": ('TEXTURE', self.texture)
         }
 
 
@@ -424,30 +499,6 @@ class ArnoldNodeDensity(bpy.types.Node, ArnoldNode):
     def ai_properties(self):
         return {
             "interpolation": ('STRING', self.interpolation)
-        }
-
-
-@ArnoldRenderEngine.register_class
-class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
-    bl_label = "Image"
-    bl_icon = 'TEXTURE'
-
-    AI_NAME = "image"
-
-    texture = bpy.props.StringProperty(
-        name="Texture"
-    )
-
-    def init(self, context):
-        self.outputs.new("NodeSocketColor", "RGBA", "output")
-
-    def draw_buttons(self, context, layout):
-        layout.prop_search(self, "texture", context.blend_data, "textures", text="")
-
-    @property
-    def ai_properties(self):
-        return {
-            "filename": ('TEXTURE', self.texture)
         }
 
 
@@ -533,19 +584,19 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeOutput")
         ]),
         ArnoldNodeCategory("ARNOLD_NODES_SHADERS", "Shaders", items=[
-            nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeStandard"),
-            nodeitems_utils.NodeItem("ArnoldNodeUtility"),
+            nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),
-            nodeitems_utils.NodeItem("ArnoldNodeBump2D"),
-            nodeitems_utils.NodeItem("ArnoldNodeBump3D"),
+            nodeitems_utils.NodeItem("ArnoldNodeHair"),
+            nodeitems_utils.NodeItem("ArnoldNodeUtility"),
             nodeitems_utils.NodeItem("ArnoldNodeWireframe"),
             nodeitems_utils.NodeItem("ArnoldNodeAmbientOcclusion"),
             nodeitems_utils.NodeItem("ArnoldNodeMotionVector"),
+            nodeitems_utils.NodeItem("ArnoldNodeRaySwitch"),
+            nodeitems_utils.NodeItem("ArnoldNodeBump2D"),
+            nodeitems_utils.NodeItem("ArnoldNodeBump3D"),
             nodeitems_utils.NodeItem("ArnoldNodeImage"),
             nodeitems_utils.NodeItem("ArnoldNodeNoise"),
-            nodeitems_utils.NodeItem("ArnoldNodeVolumeScattering"),
-            nodeitems_utils.NodeItem("ArnoldNodeDensity"),
         ]),
         ArnoldNodeCategory("ARNOLD_NODES_COLOR", "Color", items=[
             nodeitems_utils.NodeItem("ArnoldNodeMixRGB")
