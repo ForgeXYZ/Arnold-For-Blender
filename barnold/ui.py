@@ -4,7 +4,7 @@ __author__ = "Ildar Nikolaev"
 __email__ = "nildar@users.sourceforge.net"
 
 import bpy
-from bpy.types import Panel
+from bpy.types import Panel, Menu
 
 from . import ArnoldRenderEngine
 
@@ -139,3 +139,45 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
             row = layout.row()
             row.prop(wire, "line_width")
             row.prop(wire, "raster_space")
+
+##
+## Textures
+##
+
+from bl_ui.properties_texture import TextureButtonsPanel
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeTexturesMenu(Menu):
+    bl_label = "Image Node"
+
+    def draw(self, context):
+        print(self)
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldTexturePanel(TextureButtonsPanel, Panel):
+    COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
+    bl_options = {'HIDE_HEADER'}
+    bl_label = ""
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.render.engine in cls.COMPAT_ENGINES
+
+    def draw(self, context):
+        layout = self.layout
+
+        space = context.space_data
+
+        layout.prop(space, "texture_context", expand=True)
+        if space.texture_context == 'WORLD':
+            pass
+        elif space.texture_context == 'MATERIAL':
+            mat = context.material
+            if mat and mat.use_nodes:
+                ntree = mat.node_tree
+                print(ntree, ntree.nodes.active)
+                layout.menu("ArnoldNodeTexturesMenu", text="* Select Node *", icon='NODE')
+        elif space.texture_context == 'OTHER':
+            layout.template_texture_user()

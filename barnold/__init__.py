@@ -47,8 +47,8 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
             #"MATERIAL_PT_preview",
             "MATERIAL_PT_custom_props",
         ), False)),
-        ("properties_texture", None),
-        #("properties_texture", (
+        #("properties_texture", None),
+        #("properties_texture", ((
         #    "TEXTURE_PT_context_texture",
         #    "TEXTURE_PT_preview",
         #    "TEXTURE_PT_image",

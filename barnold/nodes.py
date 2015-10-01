@@ -9,6 +9,14 @@ from bpy.props import BoolProperty
 
 from . import ArnoldRenderEngine
 
+_WRAP_ITEMS = [
+    ('periodic', "Periodic", "Periodic"),
+    ('black', "Black", "Black"),
+    ('clamp', "Clamp", "Clamp"),
+    ('mirror', "Mirror", "Mirror"),
+    ('file', "File", "File")
+]
+
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeSocketColor(bpy.types.NodeSocket):
@@ -29,6 +37,27 @@ class ArnoldNodeSocketColor(bpy.types.NodeSocket):
             row.alignment = 'LEFT'
             row.prop(self, "default_value", text="")
             row.label(text)
+
+    def draw_color(self, context, node):
+        # <blender_sources>/source/blender/editors/space_node/drawnode.c:3010 (SOCK_RGBA)
+        return (0.78, 0.78, 0.16, 1.0)
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeSocketByte(bpy.types.NodeSocket):
+    bl_label = "Value"
+
+    default_value = bpy.props.IntProperty(
+        name="Value",
+        subtype='UNSIGNED',
+        min=0, max=255
+    )
+
+    def draw(self, context, layout, node, text):
+        if self.is_output or self.is_linked:
+            layout.label(text)
+        else:
+            layout.prop(self, "default_value", text=text)
 
     def draw_color(self, context, node):
         # <blender_sources>/source/blender/editors/space_node/drawnode.c:3010 (SOCK_RGBA)
@@ -424,24 +453,76 @@ class ArnoldNodeNoise(bpy.types.Node, ArnoldNode):
 class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
     bl_label = "Image"
     bl_icon = 'TEXTURE'
+    bl_width_default = 170
 
     AI_NAME = "image"
 
-    texture = bpy.props.StringProperty(
-        name="Texture"
+    filename = bpy.props.StringProperty(
+        name="Filename",
+        subtype='FILE_PATH'
+    )
+    filter = bpy.props.EnumProperty(
+        name="Filter",
+        items=[
+            ('closest', "Closest", "Closest"),
+            ('bilinear', "Bilinear", "Bilinear"),
+            ('bicubic', "Bicubic", "Bicubic"),
+            ('smart_bicubic', "Smart Bicubic", "Smart Bicubic")
+        ],
+        default='smart_bicubic'
+    )
+    swrap = bpy.props.EnumProperty(
+        name="U wrap",
+        items=_WRAP_ITEMS,
+        default='periodic'
+    )
+    twrap = bpy.props.EnumProperty(
+        name="V wrap",
+        items=_WRAP_ITEMS,
+        default='periodic'
+    )
+    uvset = bpy.props.StringProperty(
+        name="UV set"
     )
 
     def init(self, context):
         self.outputs.new("NodeSocketColor", "RGBA", "output")
+        # Image attributes
+        self.inputs.new("NodeSocketInt", "Mipmap Bias", "mipmap_bias")
+        self.inputs.new("ArnoldNodeSocketColor", "Multiply", "multiply")
+        self.inputs.new("ArnoldNodeSocketColor", "Offset", "offset")
+        self.inputs.new("NodeSocketBool", "Single channel", "single_channel")
+        self.inputs.new("ArnoldNodeSocketByte", "Start channel", "start_channel")
+        self.inputs.new("NodeSocketBool", "Ignore missing tiles", "ignore_missing_tiles")
+        self.inputs.new("NodeSocketColor", "Missing tile color", "missing_tile_color")
+        # UV coordinates
+        self.inputs.new("NodeSocketFloat", "U scale", "sscale").default_value = 1
+        self.inputs.new("NodeSocketFloat", "V scale", "tscale").default_value = 1
+        self.inputs.new("NodeSocketFloat", "U offset", "soffset")
+        self.inputs.new("NodeSocketFloat", "V offset", "toffset")
+        self.inputs.new("NodeSocketBool", "U flip", "sflip")
+        self.inputs.new("NodeSocketBool", "V flip", "tflip")
+        self.inputs.new("NodeSocketBool", "UV swap", "swap_st")
+        self.inputs.new("NodeSocketVector", "UV coords", "uvcoords").hide_value = True
 
     def draw_buttons(self, context, layout):
-        layout.prop_search(self, "texture", context.blend_data, "textures", text="")
+        layout.prop(self, "filename", text="", icon='IMAGEFILE')
+        layout.prop(self, "filter", text="")
+        layout.prop(self, "uvset")
+        layout.prop(self, "swrap")
+        layout.prop(self, "twrap")
 
     @property
     def ai_properties(self):
-        return {
-            "filename": ('TEXTURE', self.texture)
+        props = {
+            "filename": ('FILE_PATH', self.filename),
+            "filter": ('STRING', self.filter),
+            "swrap": ('STRING', self.swrap),
+            "twrap": ('STRING', self.twrap),
         }
+        if self.uvset:
+            props["uvset"] = ('STRING', self.uvset)
+        return props
 
 
 @ArnoldRenderEngine.register_class

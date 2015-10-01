@@ -9,6 +9,7 @@ import ctypes
 import numpy
 import math
 
+import bpy
 from mathutils import Matrix, Vector
 from ..nodes import ArnoldNode, ArnoldNodeOutput
 from . import arnold
@@ -34,7 +35,8 @@ _AiNodeSet = {
     "NodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGBA(n, i, *v),
     "NodeSocketVector": lambda n, i, v: arnold.AiNodeSetVec(n, i, *v),
     "NodeSocketString": lambda n, i, v: arnold.AiNodeSetStr(n, i, v),
-    "ArnoldNodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v)
+    "ArnoldNodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v),
+    "ArnoldNodeSocketByte": lambda n, i, v: arnold.AiNodeSetByte(n, i, v)
 }
 
 
@@ -121,12 +123,11 @@ class Shaders:
                     if not _anode is None:
                         arnold.AiNodeLink(_anode, input.identifier, anode)
                         continue
-                _AiNodeSet[input.bl_idname](anode, input.identifier, input.default_value)
+                if not input.hide_value:
+                    _AiNodeSet[input.bl_idname](anode, input.identifier, input.default_value)
             for p_name, (p_type, p_value) in node.ai_properties.items():
-                if p_type == 'TEXTURE':
-                    tex = self._data.textures.get(p_value)
-                    if tex:
-                        arnold.AiNodeSetStr(anode, p_name, tex.image.filepath_from_user())
+                if p_type == 'FILE_PATH':
+                    arnold.AiNodeSetStr(anode, p_name, bpy.path.abspath(p_value))
                 elif p_type == 'STRING':
                     arnold.AiNodeSetStr(anode, p_name, p_value)
             nodes[name] = anode

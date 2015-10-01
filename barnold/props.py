@@ -159,7 +159,7 @@ class ArnoldLight(PropertyGroup):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldStandardShader(PropertyGroup):
+class ArnoldShaderStandard(PropertyGroup):
     diffuse_roughness = FloatProperty(
         name="Roughness",
         description="Diffuse Roughness",
@@ -206,7 +206,7 @@ class ArnoldStandardShader(PropertyGroup):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldUtilityShader(PropertyGroup):
+class ArnoldShaderUtility(PropertyGroup):
     opacity = FloatProperty(
         name="Opacity",
         default=1.0
@@ -214,7 +214,7 @@ class ArnoldUtilityShader(PropertyGroup):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldWireShader(PropertyGroup):
+class ArnoldShaderWireframe(PropertyGroup):
     edge_type = EnumProperty(
         name="Edge Type",
         items=[
@@ -260,9 +260,11 @@ class ArnoldShader(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    standard = PointerProperty(type=ArnoldStandardShader)
-    utility = PointerProperty(type=ArnoldUtilityShader)
-    wire = PointerProperty(type=ArnoldWireShader)
+    standard = PointerProperty(type=ArnoldShaderStandard)
+    utility = PointerProperty(type=ArnoldShaderUtility)
+    wire = PointerProperty(type=ArnoldShaderWireframe)
+
+    active_image_node = StringProperty()
 
     @classmethod
     def register(cls):
