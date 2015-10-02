@@ -281,13 +281,15 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
             if lamp.type == 'POINT':
                 node = arnold.AiNode("point_light")
                 arnold.AiNodeSetFlt(node, "radius", light.point.radius)
+                arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
             #elif lamp.type == 'HEMI':
             #    node = arnold.AiNode("ambient_light")  # there is no such node in current sdk
+            elif lamp.type == 'SUN':
+                node = arnold.AiNode("distant_light")
             else:
                 continue
             arnold.AiNodeSetStr(node, "name", ob.name)
             arnold.AiNodeSetRGB(node, "color", *lamp.color)
-            arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
             arnold.AiNodeSetFlt(node, "intensity", light.intensity)
             arnold.AiNodeSetFlt(node, "exposure", light.exposure)
             arnold.AiNodeSetBool(node, "cast_shadows", light.cast_shadows)
@@ -375,7 +377,7 @@ def render(self, scene):
                 t = ctypes.c_byte * (width * height * 4)
                 a = numpy.frombuffer(t.from_address(ctypes.addressof(buffer.contents)), numpy.uint8)
                 rect = numpy.reshape(numpy.flipud(numpy.reshape(a * _M, [height, width * 4])), [-1, 4])
-                rect **= 2.2 # gamma correct
+                rect **= 2.2  # gamma correction
             else:
                 self._tiles[(x, y)] = (width, height)
                 color = _TILE_COLORS[self._tile]
