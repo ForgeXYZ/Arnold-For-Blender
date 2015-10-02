@@ -60,21 +60,25 @@ class ArnoldNodeSocketByte(bpy.types.NodeSocket):
             layout.prop(self, "default_value", text=text)
 
     def draw_color(self, context, node):
-        # <blender_sources>/source/blender/editors/space_node/drawnode.c:3010 (SOCK_RGBA)
-        return (0.78, 0.78, 0.16, 1.0)
+        # <blender_sources>/source/blender/editors/space_node/drawnode.c:3010 (SOCK_INT)
+        return (0.6, 0.52, 0.15, 1.0)
 
 
-@ArnoldRenderEngine.register_class
-class ArnoldNodeOutput(bpy.types.Node):
+class ArnoldNode(bpy.types.Node):
+    @property
+    def ai_properties(self):
+        return {}
+
+
+class _NodeOutput:
     bl_label = "Output"
-    bl_icon = 'MATERIAL'
 
     def _get_active(self):
         return not self.mute
 
     def _set_active(self, value=True):
         for node in self.id_data.nodes:
-            if type(node) is ArnoldNodeOutput:
+            if isinstance(node, _NodeOutput):
                 node.mute = (self != node)
 
     is_active = BoolProperty(
@@ -86,24 +90,36 @@ class ArnoldNodeOutput(bpy.types.Node):
 
     def init(self, context):
         self._set_active()
-        sock = self.inputs.new("NodeSocketShader", "Shader")
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "is_active", icon='RADIOBUT_ON' if self.is_active else 'RADIOBUT_OFF')
 
 
-class ArnoldNode:
-    @property
-    def ai_properties(self):
-        return {}
+@ArnoldRenderEngine.register_class
+class ArnoldNodeOutput(_NodeOutput, bpy.types.Node):
+    bl_icon = 'MATERIAL'
+
+    def init(self, context):
+        super().init(context)
+        self.inputs.new("NodeSocketShader", "Shader", "shader")
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeLambert(bpy.types.Node, ArnoldNode):
+class ArnoldNodeWorldOutput(_NodeOutput, bpy.types.Node):
+    bl_icon = 'WORLD'
+
+    def init(self, context):
+        super().init(context)
+        self.inputs.new("NodeSocketShader", "Background", "background")
+        self.inputs.new("NodeSocketShader", "Atmosphere", "atmosphere")
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeLambert(ArnoldNode):
     bl_label = "Lambert"
     bl_icon = 'MATERIAL'
 
-    AI_NAME = "lambert"
+    ai_name = "lambert"
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
@@ -113,12 +129,12 @@ class ArnoldNodeLambert(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeStandard(bpy.types.Node, ArnoldNode):
+class ArnoldNodeStandard(ArnoldNode):
     bl_label = "Standard"
     bl_icon = 'MATERIAL'
     bl_width_default = 250
 
-    AI_NAME = "standard"
+    ai_name = "standard"
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
@@ -174,11 +190,11 @@ class ArnoldNodeStandard(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeUtility(bpy.types.Node, ArnoldNode):
+class ArnoldNodeUtility(ArnoldNode):
     bl_label = "Utility"
     bl_icon = 'MATERIAL'
 
-    AI_NAME = "utility"
+    ai_name = "utility"
 
     color_mode = bpy.props.EnumProperty(
         name="Color Mode",
@@ -252,11 +268,11 @@ class ArnoldNodeUtility(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeFlat(bpy.types.Node, ArnoldNode):
+class ArnoldNodeFlat(ArnoldNode):
     bl_label = "Flat"
     bl_icon = 'MATERIAL'
 
-    AI_NAME = "flat"
+    ai_name = "flat"
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
@@ -265,11 +281,11 @@ class ArnoldNodeFlat(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeBump2D(bpy.types.Node, ArnoldNode):
+class ArnoldNodeBump2D(ArnoldNode):
     bl_label = "Bump2D"
     bl_icon = 'MATERIAL'
 
-    AI_NAME = "bump2d"
+    ai_name = "bump2d"
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGBA", "output")
@@ -279,11 +295,11 @@ class ArnoldNodeBump2D(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeBump3D(bpy.types.Node, ArnoldNode):
+class ArnoldNodeBump3D(ArnoldNode):
     bl_label = "Bump3D"
     bl_icon = 'MATERIAL'
 
-    AI_NAME = "bump3d"
+    ai_name = "bump3d"
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGBA", "output")
@@ -294,11 +310,11 @@ class ArnoldNodeBump3D(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeWireframe(bpy.types.Node, ArnoldNode):
+class ArnoldNodeWireframe(ArnoldNode):
     bl_label = "Wireframe"
     bl_icon = 'MATERIAL'
 
-    AI_NAME = "wireframe"
+    ai_name = "wireframe"
 
     edge_type = bpy.props.EnumProperty(
         name="Edge Type",
@@ -327,11 +343,11 @@ class ArnoldNodeWireframe(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeAmbientOcclusion(bpy.types.Node, ArnoldNode):
+class ArnoldNodeAmbientOcclusion(ArnoldNode):
     bl_label = "Ambient Occlusion"
     bl_icon = 'MATERIAL'
 
-    AI_NAME = "ambient_occlusion"
+    ai_name = "ambient_occlusion"
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
@@ -348,11 +364,11 @@ class ArnoldNodeAmbientOcclusion(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeMotionVector(bpy.types.Node, ArnoldNode):
+class ArnoldNodeMotionVector(ArnoldNode):
     bl_label = "Motion Vector"
     bl_icon = 'MATERIAL'
 
-    AI_NAME = "motion_vector"
+    ai_name = "motion_vector"
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
@@ -363,11 +379,11 @@ class ArnoldNodeMotionVector(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeRaySwitch(bpy.types.Node, ArnoldNode):
+class ArnoldNodeRaySwitch(ArnoldNode):
     bl_label = "Ray Switch"
     bl_icon = 'MATERIAL'
 
-    AI_NAME = "ray_switch"
+    ai_name = "ray_switch"
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGBA", "output")
@@ -380,12 +396,12 @@ class ArnoldNodeRaySwitch(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeHair(bpy.types.Node, ArnoldNode):
+class ArnoldNodeHair(ArnoldNode):
     bl_label = "Hair"
     bl_icon = 'MATERIAL'
     bl_width_default = 200
 
-    AI_NAME = "hair"
+    ai_name = "hair"
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
@@ -414,11 +430,11 @@ class ArnoldNodeHair(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeNoise(bpy.types.Node, ArnoldNode):
+class ArnoldNodeNoise(ArnoldNode):
     bl_label = "Noise"
     bl_icon = 'TEXTURE'
 
-    AI_NAME = "noise"
+    ai_name = "noise"
 
     coord_space = bpy.props.EnumProperty(
         name="Space Coordinates",
@@ -450,12 +466,12 @@ class ArnoldNodeNoise(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
+class ArnoldNodeImage(ArnoldNode):
     bl_label = "Image"
     bl_icon = 'TEXTURE'
     bl_width_default = 170
 
-    AI_NAME = "image"
+    ai_name = "image"
 
     filename = bpy.props.StringProperty(
         name="Filename",
@@ -490,7 +506,7 @@ class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
         # Image attributes
         self.inputs.new("NodeSocketInt", "Mipmap Bias", "mipmap_bias")
         self.inputs.new("ArnoldNodeSocketColor", "Multiply", "multiply")
-        self.inputs.new("ArnoldNodeSocketColor", "Offset", "offset")
+        self.inputs.new("ArnoldNodeSocketColor", "Offset", "offset").default_value = (0, 0, 0)
         self.inputs.new("NodeSocketBool", "Single channel", "single_channel")
         self.inputs.new("ArnoldNodeSocketByte", "Start channel", "start_channel")
         self.inputs.new("NodeSocketBool", "Ignore missing tiles", "ignore_missing_tiles")
@@ -527,11 +543,45 @@ class ArnoldNodeImage(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeVolumeScattering(bpy.types.Node, ArnoldNode):
+class ArnoldNodeSky(ArnoldNode):
+    bl_label = "Sky"
+    bl_icon = 'WORLD'
+
+    ai_name = "sky"
+
+    def init(self, context):
+        self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.inputs.new("ArnoldNodeSocketColor", "Color", "color")
+        self.inputs.new("NodeSocketFloat", "Intensity", "intensity").default_value = 1
+        self.inputs.new("NodeSocketInt", "Visibility", "visibility").default_value = 255
+        self.inputs.new("NodeSocketBool", "Opaque Alpha", "opaque_alpha").default_value = True
+        self.inputs.new("NodeSocketFloat", "X angle", "X_angle")
+        self.inputs.new("NodeSocketFloat", "Y angle", "Y_angle")
+        self.inputs.new("NodeSocketFloat", "Z angle", "Z_angle")
+        self.inputs.new("NodeSocketVector", "X").default_value = (1, 0, 0)
+        self.inputs.new("NodeSocketVector", "Y").default_value = (0, 1, 0)
+        self.inputs.new("NodeSocketVector", "Z").default_value = (0, 0, 1)
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodePhysicalSky(ArnoldNode):
+    bl_label = "Physical Sky"
+    bl_icon = 'WORLD'
+
+    ai_name = "physical_sky"
+
+    def init(self, context):
+        self.outputs.new("NodeSocketShader", "RGB", "output")
+        #self.inputs.new("ArnoldNodeSocketColor", "Color", "color")
+        self.inputs.new("NodeSocketFloat", "Intensity", "intensity").default_value = 1
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeVolumeScattering(ArnoldNode):
     bl_label = "Volume Scattering"
     bl_icon = 'TEXTURE'
 
-    AI_NAME = "volume_scattering"
+    ai_name = "volume_scattering"
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
@@ -547,11 +597,11 @@ class ArnoldNodeVolumeScattering(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeDensity(bpy.types.Node, ArnoldNode):
+class ArnoldNodeDensity(ArnoldNode):
     bl_label = "Density"
     bl_icon = 'TEXTURE'
 
-    AI_NAME = "density"
+    ai_name = "density"
 
     interpolation = bpy.props.EnumProperty(
         name="Interpolation",
@@ -585,11 +635,11 @@ class ArnoldNodeDensity(bpy.types.Node, ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeMixRGB(bpy.types.Node, ArnoldNode):
+class ArnoldNodeMixRGB(ArnoldNode):
     bl_label = "Mix RGB"
     bl_icon = 'MATERIAL'
 
-    AI_NAME = "BArnoldMixRGB"
+    ai_name = "BArnoldMixRGB"
 
     blend_type = bpy.props.EnumProperty(
         name="Blend Type",
@@ -633,12 +683,23 @@ class ArnoldNodeMixRGB(bpy.types.Node, ArnoldNode):
 
 
 class ArnoldNodeCategory(nodeitems_utils.NodeCategory):
+    _shader_type = {'OBJECT', 'WORLD'}
+
     @classmethod
     def poll(cls, context):
         return (
             ArnoldRenderEngine.is_active(context) and
-            context.space_data.tree_type == 'ShaderNodeTree'
+            context.space_data.tree_type == 'ShaderNodeTree' and
+            context.space_data.shader_type in cls._shader_type
         )
+
+
+class ArnoldObjectNodeCategory(ArnoldNodeCategory):
+    _shader_type = {'OBJECT'}
+
+
+class ArnoldWorldNodeCategory(ArnoldNodeCategory):
+    _shader_type = {'WORLD'}
 
 
 def register():
@@ -662,10 +723,11 @@ def register():
     ShaderOldNodeCategory.poll = _poll(ShaderOldNodeCategory.poll)
 
     node_categories = [
-        ArnoldNodeCategory("ARNOLD_NODES_OUTPUT", "Output", items=[
+        # surface
+        ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_OUTPUT", "Output", items=[
             nodeitems_utils.NodeItem("ArnoldNodeOutput")
         ]),
-        ArnoldNodeCategory("ARNOLD_NODES_SHADERS", "Shaders", items=[
+        ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_SHADERS", "Shaders", items=[
             nodeitems_utils.NodeItem("ArnoldNodeStandard"),
             nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),
@@ -680,6 +742,15 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeImage"),
             nodeitems_utils.NodeItem("ArnoldNodeNoise"),
         ]),
+        # world
+        ArnoldWorldNodeCategory("ARNOLD_NODES_WORLD_OUTPUT", "Output", items=[
+            nodeitems_utils.NodeItem("ArnoldNodeWorldOutput")
+        ]),
+        ArnoldWorldNodeCategory("ARNOLD_NODES_WORLD_SHADERS", "Shaders", items=[
+            nodeitems_utils.NodeItem("ArnoldNodeSky"),
+            nodeitems_utils.NodeItem("ArnoldNodePhysicalSky"),
+        ]),
+        # common
         ArnoldNodeCategory("ARNOLD_NODES_COLOR", "Color", items=[
             nodeitems_utils.NodeItem("ArnoldNodeMixRGB")
         ]),

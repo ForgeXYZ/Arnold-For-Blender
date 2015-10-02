@@ -174,10 +174,21 @@ class ArnoldTexturePanel(TextureButtonsPanel, Panel):
         if space.texture_context == 'WORLD':
             pass
         elif space.texture_context == 'MATERIAL':
-            mat = context.material
-            if mat and mat.use_nodes:
-                ntree = mat.node_tree
-                print(ntree, ntree.nodes.active)
-                layout.menu("ArnoldNodeTexturesMenu", text="* Select Node *", icon='NODE')
+            idblock = context.material
+            print(context.active_object)
+            if idblock is None and context.active_object:
+                idblock = context.active_object.active_material
+            if idblock:
+                row = layout.row()
+                row.template_list("TEXTURE_UL_texslots", "", idblock, "texture_slots", idblock, "active_texture_index", rows=2)
+                col = row.column(align=True)
+                col.operator("texture.slot_move", text="", icon='TRIA_UP').type = 'UP'
+                col.operator("texture.slot_move", text="", icon='TRIA_DOWN').type = 'DOWN'
+                col.menu("TEXTURE_MT_specials", icon='DOWNARROW_HLT', text="")
+
+            #if mat and mat.use_nodes:
+            #    ntree = mat.node_tree
+            #    print(ntree, ntree.nodes.active)
+            #    layout.menu("ArnoldNodeTexturesMenu", text="* Select Node *", icon='NODE')
         elif space.texture_context == 'OTHER':
             layout.template_texture_user()

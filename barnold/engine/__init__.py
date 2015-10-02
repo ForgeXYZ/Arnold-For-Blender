@@ -11,7 +11,8 @@ import math
 
 import bpy
 from mathutils import Matrix, Vector
-from ..nodes import ArnoldNode, ArnoldNodeOutput
+from ..nodes import ArnoldNode, ArnoldNodeOutput, ArnoldNodeWorldOutput
+
 from . import arnold
 
 
@@ -38,6 +39,51 @@ _AiNodeSet = {
     "ArnoldNodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v),
     "ArnoldNodeSocketByte": lambda n, i, v: arnold.AiNodeSetByte(n, i, v)
 }
+
+
+def _AiNode(node, prefix, nodes):
+    """
+    Args:
+        node (ArnoldNode): node.
+        prefix (str): node name prefix.
+        nodes (dict): created nodes (str => AiNode).
+    Returns:
+        arnold.AiNode or None
+    """
+    if not isinstance(node, ArnoldNode):
+        return None
+
+    name = "%s:%s" % (prefix, node.name)
+    name = name.replace(" ", "_")
+    anode = nodes.get(name)
+    if anode is None:
+        anode = arnold.AiNode(node.ai_name)
+        arnold.AiNodeSetStr(anode, "name", name)
+        for input in node.inputs:
+            if input.is_linked:
+                _anode = _AiNode(input.links[0].from_node, prefix, nodes)
+                if not _anode is None:
+                    arnold.AiNodeLink(_anode, input.identifier, anode)
+                    continue
+            if not input.hide_value:
+                _AiNodeSet[input.bl_idname](anode, input.identifier, input.default_value)
+        for p_name, (p_type, p_value) in node.ai_properties.items():
+            if p_type == 'FILE_PATH':
+                arnold.AiNodeSetStr(anode, p_name, bpy.path.abspath(p_value))
+            elif p_type == 'STRING':
+                arnold.AiNodeSetStr(anode, p_name, p_value)
+        nodes[name] = anode
+    return anode
+
+
+def _AiNodeTree(prefix, ntree):
+    for node in ntree.nodes:
+        if isinstance(node, ArnoldNodeOutput) and node.is_active:
+            input = node.inputs[0]
+            if input.is_linked:
+                return _AiNode(input.links[0].from_node, prefix, {})
+            break
+    return None
 
 
 class Shaders:
@@ -100,48 +146,9 @@ class Shaders:
             self._default = node
         return node
 
-    def _export_node(self, node, prefix, nodes):
-        """
-        Args:
-            node (ArnoldNode): node.
-            prefix (str): node name prefix.
-            nodes (dict): created nodes.
-        Returns:
-            arnold.AiNode or None
-        """
-        if not isinstance(node, ArnoldNode):
-            return None
-
-        name = "%s:%s" % (prefix, node.name)
-        anode = nodes.get(name)
-        if anode is None:
-            anode = arnold.AiNode(node.AI_NAME)
-            arnold.AiNodeSetStr(anode, "name", name)
-            for input in node.inputs:
-                if input.is_linked:
-                    _anode = self._export_node(input.links[0].from_node, prefix, nodes)
-                    if not _anode is None:
-                        arnold.AiNodeLink(_anode, input.identifier, anode)
-                        continue
-                if not input.hide_value:
-                    _AiNodeSet[input.bl_idname](anode, input.identifier, input.default_value)
-            for p_name, (p_type, p_value) in node.ai_properties.items():
-                if p_type == 'FILE_PATH':
-                    arnold.AiNodeSetStr(anode, p_name, bpy.path.abspath(p_value))
-                elif p_type == 'STRING':
-                    arnold.AiNodeSetStr(anode, p_name, p_value)
-            nodes[name] = anode
-        return anode
-
     def _export(self, mat):
         if mat.use_nodes:
-            for _node in mat.node_tree.nodes:
-                if type(_node) is ArnoldNodeOutput and _node.is_active:
-                    input = _node.inputs[0]
-                    if input.is_linked:
-                        return self._export_node(input.links[0].from_node, mat.name, {})
-                    break
-            return None
+            return _AiNodeTree(mat.name, mat.node_tree)
 
         shader = mat.arnold
         if mat.type == 'SURFACE':
@@ -291,11 +298,6 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
             arnold.AiNodeSetBool(node, "normalize", light.normalize)
             arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
 
-    camera_node = arnold.AiNode("persp_camera")
-    arnold.AiNodeSetStr(camera_node, "name", camera.name)
-    arnold.AiNodeSetFlt(camera_node, "fov", math.degrees(camera.data.angle))
-    arnold.AiNodeSetArray(camera_node, "matrix", _AiMatrix(camera.matrix_world))
-
     filter = arnold.AiNode("cook_filter")
     arnold.AiNodeSetStr(filter, "name", "outfilter")
     display = arnold.AiNode("driver_display")
@@ -312,8 +314,26 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
     arnold.AiNodeSetInt(options, "AA_seed", opts.aa_seed)
     arnold.AiNodeSetInt(options, "threads", opts.threads)
     arnold.AiNodeSetStr(options, "thread_priority", opts.thread_priority)
-    arnold.AiNodeSetPtr(options, "camera", camera_node)
     arnold.AiNodeSetArray(options, "outputs", outputs)
+
+    if camera:
+        node = arnold.AiNode("persp_camera")
+        arnold.AiNodeSetStr(node, "name", camera.name)
+        arnold.AiNodeSetFlt(node, "fov", math.degrees(camera.data.angle))
+        arnold.AiNodeSetArray(node, "matrix", _AiMatrix(camera.matrix_world))
+        arnold.AiNodeSetPtr(options, "camera", node)
+    
+    world = scene.world
+    if world:
+        if world.use_nodes:
+            for _node in world.node_tree.nodes:
+                if isinstance(_node, ArnoldNodeWorldOutput) and _node.is_active:
+                    for input in _node.inputs:
+                        if input.is_linked:
+                            node = _AiNode(input.links[0].from_node, world.name, {})
+                            if node:
+                                arnold.AiNodeSetPtr(options, input.identifier, node)
+                    break
 
     if ass_filepath:
         # TODO: options
@@ -355,6 +375,7 @@ def render(self, scene):
                 t = ctypes.c_byte * (width * height * 4)
                 a = numpy.frombuffer(t.from_address(ctypes.addressof(buffer.contents)), numpy.uint8)
                 rect = numpy.reshape(numpy.flipud(numpy.reshape(a * _M, [height, width * 4])), [-1, 4])
+                rect **= 2.2 # gamma correct
             else:
                 self._tiles[(x, y)] = (width, height)
                 color = _TILE_COLORS[self._tile]

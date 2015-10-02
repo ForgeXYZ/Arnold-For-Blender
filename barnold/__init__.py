@@ -20,10 +20,10 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
     bl_idname = "ARNOLD_RENDER"
     bl_label = "Arnold Render"
 
-    bl_use_shading_nodes = True  # use some cycles ui
-    bl_use_shading_nodes_custom = False  # TODO: posible bug
+    bl_use_shading_nodes = True  # use cycles ui in node editor
+    bl_use_shading_nodes_custom = False
     
-    use_highlight_tiles = True  # TODO: seems doesn't work
+    use_highlight_tiles = True  # TODO: how use it??
 
     _CLASSES = []  # classes for (un)register
 
