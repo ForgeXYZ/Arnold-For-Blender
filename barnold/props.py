@@ -63,6 +63,16 @@ class ArnoldOptions(PropertyGroup):
         name="AA Seed",
         default=1
     )
+    aa_sample_clamp = FloatProperty(
+        name="AA Sample clamp",
+        description="AA Sample clamp",
+        soft_min=0.001, soft_max=100.0,
+        default=10.0
+    )
+    aa_sample_clamp_affects_aovs = BoolProperty(
+        name="AA Sample clamp affects AOVs",
+        description="AA sample clamp affects AOVs",
+    )
     threads = IntProperty(
         name="Threads"
     )
