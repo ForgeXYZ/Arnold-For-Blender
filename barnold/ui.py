@@ -37,6 +37,11 @@ class ArnoldRenderPanel(RenderButtonsPanel, Panel):
         col.prop(opts, "threads")
         col.prop(opts, "thread_priority", text="")
 
+        row = layout.row()
+        col = row.column(align=True)
+        col.prop(opts, "bucket_size")
+        col.prop(opts, "bucket_scanning", text="")
+
         layout.prop(opts, "skip_license_check")
 
 ##

@@ -75,6 +75,20 @@ class ArnoldOptions(PropertyGroup):
     skip_license_check = BoolProperty(
         name="Skip License Check"
     )
+    bucket_size = IntProperty(
+        name="Bucket Size",
+        min=16,
+        soft_max = 256,
+        default=64,
+        #options = set(),
+    )
+    bucket_scanning = EnumProperty(
+        name="Bucket Scanning",
+        items=[
+            ('spiral', "Spiral", "Spiral"),
+        ],
+        default='spiral'
+    )
 
     @classmethod
     def register(cls):

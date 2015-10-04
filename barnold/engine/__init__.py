@@ -6,6 +6,7 @@ __email__ = "nildar@users.sourceforge.net"
 import os
 import sys
 import ctypes
+import itertools
 import numpy
 import math
 
@@ -17,16 +18,28 @@ from . import arnold
 
 
 _TILE_COLORS = [
-    [0, 0, 0, 1],
-    [1, 0, 0, 1],
-    [0, 1, 0, 1],
-    [0, 0, 1, 1],
-    [1, 1, 0, 1],
-    [0, 1, 1, 1],
-    [1, 0, 1, 1],
-    [1, 1, 1, 1]
+    (0, 0, 0),
+    (1, 0, 0),
+    (0, 1, 0),
+    (0, 0, 1),
+    (1, 1, 0),
+    (0, 1, 1),
+    (1, 0, 1),
+    (1, 1, 1)
 ]
 _M = 1 / 255
+
+
+def _AiMatrix(m):
+    """
+    m: mathutils.Matrix
+    returns: pointer to AtArray
+    """
+    t = numpy.reshape(m.transposed(), [-1])
+    matrix = arnold.AiArrayAllocate(1, 1, arnold.AI_TYPE_MATRIX)
+    arnold.AiArraySetMtx(matrix, 0, arnold.AtMatrix(*t))
+    return matrix
+
 
 _AiNodeSet = {
     "NodeSocketShader": lambda n, i, v: True,
@@ -189,21 +202,15 @@ class Shaders:
         return node
 
 
-def _AiMatrix(m):
-    """
-    m: mathutils.Matrix
-    returns: pointer to AtArray
-    """
-    t = (v for r in m.transposed() for v in r)
-    matrix = arnold.AiArrayAllocate(1, 1, arnold.AI_TYPE_MATRIX)
-    arnold.AiArraySetMtx(matrix, 0, arnold.AtMatrix(*t))
-    return matrix
-
-
 def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
-    shaders = Shaders(data)
-
+    render = scene.render
     opts = scene.arnold
+
+    xoff = 0
+    yoff = 0
+
+    layers = [i for i, x in enumerate(scene.layers) if x]
+    shaders = Shaders(data)
 
     arnold.AiBegin()
     arnold.AiMsgSetConsoleFlags(opts.get("console_log_flags", 0))
@@ -214,7 +221,11 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
     for ob in scene.objects:
         if ob.hide_render:
             continue
-        
+        for i in layers:
+            if ob.layers[i]:
+                break
+        else:
+            continue
         if ob.type in ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT'):
             mesh = ob.to_mesh(scene, True, 'RENDER', False)
             try:
@@ -300,23 +311,24 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
             arnold.AiNodeSetBool(node, "normalize", light.normalize)
             arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
 
-    filter = arnold.AiNode("cook_filter")
-    arnold.AiNodeSetStr(filter, "name", "outfilter")
-    display = arnold.AiNode("driver_display")
-    arnold.AiNodeSetStr(display, "name", "outdriver")
-    outputs = arnold.AiArray(1, 1, arnold.AI_TYPE_STRING, b"RGBA RGBA outfilter outdriver")
-    if session is not None:
-        session['display'] = display
-
     options = arnold.AiUniverseGetOptions()
     arnold.AiNodeSetInt(options, "xres", xres)
     arnold.AiNodeSetInt(options, "yres", yres)
+    arnold.AiNodeSetFlt(options, "aspect_ratio", render.pixel_aspect_y / render.pixel_aspect_x)  # TODO: fix
+    if render.use_border:
+        xoff = int(xres * render.border_min_x)
+        yoff = int(yres * render.border_min_y) + 1
+        arnold.AiNodeSetInt(options, "region_min_x", xoff)
+        arnold.AiNodeSetInt(options, "region_max_x", int(xres * render.border_max_x) - 1)
+        arnold.AiNodeSetInt(options, "region_min_y", int(yres * (1.0 - render.border_max_y)))
+        arnold.AiNodeSetInt(options, "region_max_y", int(yres * (1.0 - render.border_min_y)) - 1)
     arnold.AiNodeSetBool(options, "skip_license_check", opts.skip_license_check)
     arnold.AiNodeSetInt(options, "AA_samples", opts.aa_samples)
     arnold.AiNodeSetInt(options, "AA_seed", opts.aa_seed)
     arnold.AiNodeSetInt(options, "threads", opts.threads)
     arnold.AiNodeSetStr(options, "thread_priority", opts.thread_priority)
-    arnold.AiNodeSetArray(options, "outputs", outputs)
+    arnold.AiNodeSetInt(options, "bucket_size", opts.bucket_size)
+    arnold.AiNodeSetStr(options, "bucket_scanning", opts.bucket_scanning)
 
     if camera:
         node = arnold.AiNode("persp_camera")
@@ -336,6 +348,21 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
                             if node:
                                 arnold.AiNodeSetPtr(options, input.identifier, node)
                     break
+        else:
+            # TODO: export worl settings
+            pass
+
+    filter = arnold.AiNode("cook_filter")
+    arnold.AiNodeSetStr(filter, "name", "outfilter")
+    display = arnold.AiNode("driver_display")
+    arnold.AiNodeSetStr(display, "name", "outdriver")
+    outputs = arnold.AiArray(1, 1, arnold.AI_TYPE_STRING, b"RGBA RGBA outfilter outdriver")
+    arnold.AiNodeSetArray(options, "outputs", outputs)
+
+    if session is not None:
+        session["display"] = display
+        session["xoff"] = xoff
+        session["yoff"] = yoff
 
     if ass_filepath:
         # TODO: options
@@ -344,51 +371,54 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
         arnold.AiEnd()
 
 
-def update(self, data, scene):
-    self._session = {}
+def update(engine, data, scene):
+    engine._session = {}
     export(
         data,
         scene,
-        self.camera_override,
-        self.resolution_x,
-        self.resolution_y,
-        session=self._session
+        engine.camera_override,
+        engine.resolution_x,
+        engine.resolution_y,
+        session=engine._session
     )
 
 
-def render(self, scene):
+def render(engine, scene):
     try:
-        self._peak = 0
-        self._tiles = {}
-        self._tile = 0  # color index
+        session = engine._session
+        xoff = session['xoff']
+        yoff = session['yoff']
+
+        _tiles = {}
+        _colors = itertools.cycle(_TILE_COLORS)
+        session["peak"] = 0  # memory peak usage
 
         def display_callback(x, y, width, height, buffer, data):
-            if self.test_break():
+            if engine.test_break():
                 arnold.AiRenderAbort()
-                for (x , y), (w, h) in self._tiles.items():
-                    result = self.begin_result(x, self.resolution_y - y - h, w, h)
+                for (_x , _y), (w, h) in _tiles.items():
+                    result = engine.begin_result(_x, _y, w, h)
                     result.layers[0].passes[0].rect = numpy.zeros([w * h, 4])
-                    self.end_result(result)
+                    engine.end_result(result)
                 return
 
-            result = self.begin_result(x, self.resolution_y - y - height, width, height)
+            x -= xoff
+            y = engine.resolution_y - y - height - yoff
+            result = engine.begin_result(x, y, width, height)
             if buffer:
-                self._tiles.pop((x, y))
+                _tiles.pop((x, y))
                 t = ctypes.c_byte * (width * height * 4)
-                a = numpy.frombuffer(t.from_address(ctypes.addressof(buffer.contents)), numpy.uint8)
-                rect = numpy.reshape(numpy.flipud(numpy.reshape(a * _M, [height, width * 4])), [-1, 4])
-                rect **= 2.2  # gamma correction
+                a = t.from_address(ctypes.addressof(buffer.contents))
+                rect = numpy.frombuffer(a, numpy.uint8) * _M
+                rect = numpy.reshape(rect, [height, width * 4])
+                rect = numpy.reshape(numpy.flipud(rect), [-1, 4])
+                rect **= 2  # gamma correction
             else:
-                self._tiles[(x, y)] = (width, height)
-                color = _TILE_COLORS[self._tile]
-                if self._tile == 7:
-                    self._tile = 0
-                else:
-                    self._tile += 1
-                color[3] = 0.05
+                _tiles[(x, y)] = (width, height)
+                color = next(_colors)
                 rect = numpy.ndarray([width * height, 4])
-                rect[:] = color
-                color[3] = 1
+                rect[:] = color + (0.05, )
+                color = color + (1.0, )
                 rect[0: 4] = color
                 rect[width - 4: width + 1] = color
                 _x = width * 2 - 1
@@ -406,19 +436,19 @@ def render(self, scene):
                 rect[_x: _x + 2] = color
                 rect[_x - width + 1] = color
             result.layers[0].passes[0].rect = rect
-            self.end_result(result)
+            engine.end_result(result)
 
             mem = arnold.AiMsgUtilGetUsedMemory() / 1048576  # 1024*1024
-            self._peak = max(self._peak, mem)
-            self.update_memory_stats(mem, self._peak)
+            peak = session["peak"] = max(session["peak"], mem)
+            engine.update_memory_stats(mem, peak)
 
         # display callback must be a variable
         cb = arnold.AtDisplayCallBack(display_callback)
-        arnold.AiNodeSetPtr(self._session['display'], "callback", cb)
+        arnold.AiNodeSetPtr(session['display'], "callback", cb)
         arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
     except:
         # cancel render on error
-        self.end_result(None, True)
+        engine.end_result(None, True)
     finally:
-        del self._session
+        del engine._session
         arnold.AiEnd()
