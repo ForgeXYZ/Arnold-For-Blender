@@ -433,7 +433,7 @@ def render(engine, scene):
                 rect = numpy.frombuffer(a, numpy.uint8) * _M
                 rect = numpy.reshape(rect, [height, width * 4])
                 rect = numpy.reshape(numpy.flipud(rect), [-1, 4])
-                rect **= 2  # gamma correction
+                rect **= 2.2  # gamma correction
             else:
                 _tiles[(x, y)] = (width, height)
                 color = next(_colors)

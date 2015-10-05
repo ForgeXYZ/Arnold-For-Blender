@@ -139,6 +139,21 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
             col.prop(opts, "light_gamma")
             col.prop(opts, "shader_gamma")
 
+        sublayout = _subpanel(layout, "Textures", opts.ui_textures, opts_path, "ui_textures", "scene")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(opts, "texture_automip")
+            col.prop(opts, "texture_accept_unmipped")
+            col.separator()
+            col.prop(opts, "texture_accept_untiled")
+            col.prop(opts, "texture_autotile")
+            col.separator()
+            col.prop(opts, "texture_max_memory_MB")
+            col.prop(opts, "texture_max_open_files")
+            col.separator()
+            col.prop(opts, "texture_diffuse_blur")
+            col.prop(opts, "texture_glossy_blur")
+
 
 @ArnoldRenderEngine.register_class
 class ArnoldRenderSystemPanel(RenderButtonsPanel, Panel):
@@ -148,32 +163,39 @@ class ArnoldRenderSystemPanel(RenderButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
         opts = context.scene.arnold
+        opts_path = opts.path_from_id()
 
         layout.prop(opts, "logfile")
         row = layout.row()
         row.prop_menu_enum(opts, "logfile_flags")
         row.prop_menu_enum(opts, "console_log_flags")
 
-        row = layout.row()
-        col = row.column(align=True)
-        col.prop(opts, "AA_samples")
-        col = row.column(align=True)
-        col.prop(opts, "AA_sample_clamp")
-        col.prop(opts, "AA_sample_clamp_affects_aovs")
+        sublayout = _subpanel(layout, "Render Settings", opts.ui_render, opts_path, "ui_render", "scene")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(opts, "bucket_scanning")
+            col.prop(opts, "bucket_size")
+            # overscan
+            col.separator()
+            col.prop(opts, "threads")
+            col.prop(opts, "thread_priority")
+            col.prop(opts, "pin_threads")
+            col.separator()
+            col.prop(opts, "abort_on_error")
 
-        split = layout.split(0.5)
-        col = split.column(align=True)
-        col.prop(opts, "bucket_size")
-        col.prop(opts, "bucket_scanning", text="")
-        col = split.column(align=True)
-        col.prop(opts, "threads")
-        row = col.row(align=True)
-        row.prop(opts, "thread_priority", text="")
-        row.prop(opts, "pin_threads", text="")
+        sublayout = _subpanel(layout, "Search paths", opts.ui_paths, opts_path, "ui_paths", "scene")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(opts, "procedural_searchpath")
+            col.prop(opts, "shader_searchpath")
+            col.prop(opts, "texture_searchpath")
 
-        layout.prop(opts, "abort_on_error")
-        layout.prop(opts, "abort_on_license_fail")
-        layout.prop(opts, "skip_license_check")
+        sublayout = _subpanel(layout, "Licensing", opts.ui_licensing, opts_path, "ui_licensing", "scene")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(opts, "abort_on_license_fail")
+            col.prop(opts, "skip_license_check")
+
 
 ##
 ## Lights

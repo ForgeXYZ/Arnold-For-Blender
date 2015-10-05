@@ -53,6 +53,18 @@ class ArnoldOptions(PropertyGroup):
     ui_gamma = BoolProperty(
         name="Gamma Correction"
     )
+    ui_textures = BoolProperty(
+        name="Textures"
+    )
+    ui_render = BoolProperty(
+        name="Render Settings"
+    )
+    ui_paths = BoolProperty(
+        name="Search paths"
+    )
+    ui_licensing = BoolProperty(
+        name="Licensing"
+    )
     logfile = StringProperty(
         name="Logging Filename",
         subtype='FILE_PATH',
@@ -270,18 +282,45 @@ class ArnoldOptions(PropertyGroup):
         name="Threshold",
         default=0.99
     )
-    #texture_max_open_files
-    #texture_max_memory_MB
+    texture_max_open_files = IntProperty(
+        name="Max Open Files",
+        default=0
+    )
+    texture_max_memory_MB = FloatProperty(
+        name="Max Cache Size (MB)",
+        default=1024
+    )
     #texture_per_file_stats
-    #texture_searchpath
-    #texture_automip
-    #texture_autotile
-    #texture_accept_untiled
-    #texture_accept_unmipped
+    texture_searchpath = StringProperty(
+        name="Texture",
+        subtype='DIR_PATH'
+    )
+    texture_automip = BoolProperty(
+        name="Auto mipmap",
+        default=True
+    )
+    texture_autotile = IntProperty(
+        name="Auto-Tile",
+        default=64
+    )
+    texture_accept_untiled = BoolProperty(
+        name="Accept Untiled",
+        default=True
+    )
+    texture_accept_unmipped = BoolProperty(
+        name="Accept Unmipped",
+        default=True
+    )
     #texture_failure_retries
     #texture_conservative_lookups
-    #texture_glossy_blur
-    #texture_diffuse_blur
+    texture_glossy_blur = FloatProperty(
+        name="Glossy Blur",
+        default=0.015625
+    )
+    texture_diffuse_blur = FloatProperty(
+        name="Diffuse Blur",
+        default=0.03125
+    )
     #texture_sss_blur
     #texture_max_sharpen
     #background_visibility
@@ -309,8 +348,14 @@ class ArnoldOptions(PropertyGroup):
     #reference_time
     #CCW_points
     #max_subdivisions
-    #procedural_searchpath
-    #shader_searchpath
+    procedural_searchpath = StringProperty(
+        name="Procedural",
+        subtype='DIR_PATH'
+    )
+    shader_searchpath = StringProperty(
+        name="Shader",
+        subtype='DIR_PATH'
+    )
     #preserve_scene_data
     #curved_motionblur
     texture_gamma = FloatProperty(
