@@ -4,9 +4,48 @@ __author__ = "Ildar Nikolaev"
 __email__ = "nildar@users.sourceforge.net"
 
 import bpy
-from bpy.types import Panel, Menu
+from bpy.types import (
+    Operator,
+    Panel,
+    Menu
+)
+from bpy.props import (
+    StringProperty
+)
 
 from . import ArnoldRenderEngine
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldUiToggle(Operator):
+    bl_idname = "barnold.ui_toggle"
+    bl_options = {'INTERNAL'}
+    bl_label = "Open / Close"
+    bl_description = "Open / close options"
+
+    path = StringProperty(options={'HIDDEN'})
+    attr = StringProperty(options={'HIDDEN'})
+    ctx = StringProperty(options={'HIDDEN'})
+
+    def execute(self, context):
+        data = getattr(context, self.ctx)
+        if self.path:
+            data = data.path_resolve(self.path)
+        setattr(data, self.attr, not getattr(data, self.attr))
+        return {'FINISHED'}
+
+
+def _subpanel(layout, title, opened, path, attr, ctx):
+    col = layout.column(align=True)
+    box = col.box()
+    row = box.row()
+    row.alignment = 'LEFT'
+    icon = 'TRIA_DOWN' if opened else 'TRIA_RIGHT'
+    op = row.operator("barnold.ui_toggle", text=title, icon=icon, emboss=False)
+    op.path = path
+    op.attr = attr
+    op.ctx = ctx
+    return col.box() if opened else None
 
 ##
 ## Options
@@ -16,9 +55,95 @@ from bl_ui.properties_render import RenderButtonsPanel
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldRenderPanel(RenderButtonsPanel, Panel):
+class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
-    bl_label = "Arnold Render"
+    bl_label = "Arnold Render: Main"
+
+    def draw(self, context):
+        layout = self.layout
+        opts = context.scene.arnold
+        opts_path = opts.path_from_id()
+
+        sublayout = _subpanel(layout, "Sampling", opts.ui_sampling, opts_path, "ui_sampling", "scene")
+        if sublayout:
+            col = sublayout.column()
+            col.label("Samples:", icon='SETTINGS')
+            col.prop(opts, "AA_samples")
+            col.prop(opts, "GI_diffuse_samples")
+            col.prop(opts, "GI_glossy_samples")
+            col.prop(opts, "GI_refraction_samples")
+            col.prop(opts, "sss_bssrdf_samples")
+            col.prop(opts, "volume_indirect_samples")
+            col.separator()
+            col.prop(opts, "lock_sampling_pattern")
+            col.prop(opts, "sss_use_autobump")
+
+            col.separator()
+            col.label("Clamping:", icon='SETTINGS')
+            col.prop(opts, "clamp_sample_values")
+            subcol = col.column()
+            subcol.enabled = opts.clamp_sample_values
+            subcol.prop(opts, "AA_sample_clamp_affects_aovs")
+            subcol.prop(opts, "AA_sample_clamp")
+
+            col.separator()
+            col.label("Filter:", icon='SETTINGS')
+            col.prop(opts, "sample_filter_type")
+            sft = opts.sample_filter_type
+            if sft == 'blackman_harris_filter':
+                col.prop(opts, "sample_filter_bh_width")
+            elif sft == 'sinc_filter':
+                col.prop(opts, "sample_filter_sinc_width")
+            elif sft in ('cone_filter',
+                         'cook_filter',
+                         'disk_filter',
+                         'gaussian_filter',
+                         'triangle_filter'):
+                col.prop(opts, "sample_filter_width")
+            elif sft == 'farthest_filter':
+                col.prop(opts, "sample_filter_domain")
+            elif sft == 'heatmap_filter':
+                row = col.row(align=True)
+                row.prop(opts, "sample_filter_min")
+                row.prop(opts, "sample_filter_max")
+            elif sft == 'variance_filter':
+                col.prop(opts, "sample_filter_width")
+                col.prop(opts, "sample_filter_scalar_mode")
+
+        sublayout = _subpanel(layout, "Ray Depth", opts.ui_ray_depth, opts_path, "ui_ray_depth", "scene")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(opts, "GI_total_depth")
+            col.prop(opts, "GI_diffuse_depth")
+            col.prop(opts, "GI_glossy_depth")
+            col.prop(opts, "GI_reflection_depth")
+            col.prop(opts, "GI_refraction_depth")
+            col.prop(opts, "GI_volume_depth")
+            col.separator()
+            col.label("Transparency:", icon='SETTINGS')
+            col.prop(opts, "auto_transparency_mode")
+            col.prop(opts, "auto_transparency_depth")
+            col.prop(opts, "auto_transparency_threshold")
+
+        sublayout = _subpanel(layout, "Light", opts.ui_light, opts_path, "ui_light", "scene")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(opts, "low_light_threshold")
+
+        sublayout = _subpanel(layout, "Gamma Correction", opts.ui_gamma, opts_path, "ui_gamma", "scene")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(opts, "display_gamma")
+            col.separator()
+            col.prop(opts, "texture_gamma")
+            col.prop(opts, "light_gamma")
+            col.prop(opts, "shader_gamma")
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldRenderSystemPanel(RenderButtonsPanel, Panel):
+    COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
+    bl_label = "Arnold Render: System"
 
     def draw(self, context):
         layout = self.layout
@@ -31,20 +156,23 @@ class ArnoldRenderPanel(RenderButtonsPanel, Panel):
 
         row = layout.row()
         col = row.column(align=True)
-        col.prop(opts, "aa_samples")
-        col.prop(opts, "aa_seed")
+        col.prop(opts, "AA_samples")
         col = row.column(align=True)
-        col.prop(opts, "aa_sample_clamp")
-        col.prop(opts, "aa_sample_clamp_affects_aovs")
+        col.prop(opts, "AA_sample_clamp")
+        col.prop(opts, "AA_sample_clamp_affects_aovs")
 
-        row = layout.row()
-        col = row.column(align=True)
-        col.prop(opts, "threads")
-        col.prop(opts, "thread_priority", text="")
-        col = row.column(align=True)
+        split = layout.split(0.5)
+        col = split.column(align=True)
         col.prop(opts, "bucket_size")
         col.prop(opts, "bucket_scanning", text="")
+        col = split.column(align=True)
+        col.prop(opts, "threads")
+        row = col.row(align=True)
+        row.prop(opts, "thread_priority", text="")
+        row.prop(opts, "pin_threads", text="")
 
+        layout.prop(opts, "abort_on_error")
+        layout.prop(opts, "abort_on_license_fail")
         layout.prop(opts, "skip_license_check")
 
 ##

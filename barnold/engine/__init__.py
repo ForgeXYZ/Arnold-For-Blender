@@ -206,10 +206,12 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
     render = scene.render
     opts = scene.arnold
 
+    # enabled scene layers
+    layers = [i for i, x in enumerate(scene.layers) if x]
+    # offsets for border render
     xoff = 0
     yoff = 0
 
-    layers = [i for i, x in enumerate(scene.layers) if x]
     shaders = Shaders(data)
 
     arnold.AiBegin()
@@ -275,8 +277,8 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
                 if idxs:
                     if len(_shaders) > 1:
                         shidxs = arnold.AiArrayAllocate(len(idxs), 1, arnold.AI_TYPE_BYTE)
-                        for i, mi in enumerate(idxs):
-                            arnold.AiArraySetByte(shidxs, i, mi)
+                        for i, idx in enumerate(idxs):
+                            arnold.AiArraySetByte(shidxs, i, idx)
                         shader = arnold.AiArrayAllocate(len(_shaders), 1, arnold.AI_TYPE_POINTER)
                         for i, sh in enumerate(_shaders):
                             arnold.AiArraySetPtr(shader, i, sh)
@@ -314,7 +316,7 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
     options = arnold.AiUniverseGetOptions()
     arnold.AiNodeSetInt(options, "xres", xres)
     arnold.AiNodeSetInt(options, "yres", yres)
-    arnold.AiNodeSetFlt(options, "aspect_ratio", render.pixel_aspect_y / render.pixel_aspect_x)  # TODO: fix
+    arnold.AiNodeSetFlt(options, "aspect_ratio", render.pixel_aspect_y / render.pixel_aspect_x)  # TODO: different with blender render if ratio > 1.0
     if render.use_border:
         xoff = int(xres * render.border_min_x)
         yoff = int(yres * render.border_min_y) + 1
@@ -323,8 +325,9 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
         arnold.AiNodeSetInt(options, "region_min_y", int(yres * (1.0 - render.border_max_y)))
         arnold.AiNodeSetInt(options, "region_max_y", int(yres * (1.0 - render.border_min_y)) - 1)
     arnold.AiNodeSetBool(options, "skip_license_check", opts.skip_license_check)
-    arnold.AiNodeSetInt(options, "AA_samples", opts.aa_samples)
-    arnold.AiNodeSetInt(options, "AA_seed", opts.aa_seed)
+    arnold.AiNodeSetInt(options, "AA_samples", opts.AA_samples)
+    if not opts.lock_sampling_pattern:
+        arnold.AiNodeSetInt(options, "AA_seed", scene.frame_current)
     arnold.AiNodeSetInt(options, "threads", opts.threads)
     arnold.AiNodeSetStr(options, "thread_priority", opts.thread_priority)
     arnold.AiNodeSetInt(options, "bucket_size", opts.bucket_size)
@@ -352,17 +355,36 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
             # TODO: export worl settings
             pass
 
-    filter = arnold.AiNode("cook_filter")
-    arnold.AiNodeSetStr(filter, "name", "outfilter")
+    sft = opts.sample_filter_type
+    filter = arnold.AiNode(opts.sample_filter_type)
+    arnold.AiNodeSetStr(filter, "name", "__outfilter")
+    if sft == 'blackman_harris_filter':
+        arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_bh_width)
+    elif sft == 'sinc_filter':
+        arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_sinc_width)
+    elif sft in ('cone_filter',
+                 'cook_filter',
+                 'disk_filter',
+                 'gaussian_filter',
+                 'triangle_filter'):
+        arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
+    elif sft == 'farthest_filter':
+        arnold.AiNodeSetStr(filter, "domain", opts.sample_filter_domain)
+    elif sft == 'heatmap_filter':
+        arnold.AiNodeSetFlt(filter, "minumum", opts.sample_filter_min)
+        arnold.AiNodeSetFlt(filter, "maximum", opts.sample_filter_max)
+    elif sft == 'variance_filter':
+        arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
+        arnold.AiNodeSetBool(filter, "scalar_mode", opts.sample_filter_scalar_mode)
     display = arnold.AiNode("driver_display")
-    arnold.AiNodeSetStr(display, "name", "outdriver")
-    outputs = arnold.AiArray(1, 1, arnold.AI_TYPE_STRING, b"RGBA RGBA outfilter outdriver")
+    arnold.AiNodeSetStr(display, "name", "__outdriver")
+    arnold.AiNodeSetFlt(display, "gamma", opts.display_gamma)
+    outputs = arnold.AiArray(1, 1, arnold.AI_TYPE_STRING, b"RGBA RGBA __outfilter __outdriver")
     arnold.AiNodeSetArray(options, "outputs", outputs)
 
     if session is not None:
         session["display"] = display
-        session["xoff"] = xoff
-        session["yoff"] = yoff
+        session["offset"] = xoff, yoff
 
     if ass_filepath:
         # TODO: options
@@ -386,8 +408,7 @@ def update(engine, data, scene):
 def render(engine, scene):
     try:
         session = engine._session
-        xoff = session['xoff']
-        yoff = session['yoff']
+        xoff, yoff = session["offset"]
 
         _tiles = {}
         _colors = itertools.cycle(_TILE_COLORS)

@@ -40,9 +40,23 @@ _LOG_FLAGS = [
 
 @ArnoldRenderEngine.register_class
 class ArnoldOptions(PropertyGroup):
+    ui_sampling = BoolProperty(
+        name="Sampling",
+        default=True
+    )
+    ui_ray_depth = BoolProperty(
+        name="Ray Depth"
+    )
+    ui_light = BoolProperty(
+        name="Light"
+    )
+    ui_gamma = BoolProperty(
+        name="Gamma Correction"
+    )
     logfile = StringProperty(
         name="Logging Filename",
-        subtype='FILE_PATH'
+        subtype='FILE_PATH',
+        options=set()
     )
     logfile_flags = EnumProperty(
 
@@ -55,50 +69,303 @@ class ArnoldOptions(PropertyGroup):
         items=_LOG_FLAGS,
         options={'ENUM_FLAG'}
     )
-    aa_samples = IntProperty(
-        name="AA Samples",
+    lock_sampling_pattern = BoolProperty(
+        name="Lock Sampling Pattern"
+    )
+    clamp_sample_values = BoolProperty(
+        name="Clamp Sample Values"
+    )
+    sample_filter_type = EnumProperty(
+        name="Type",
+        items=[
+            ('blackman_harris_filter', "Blackman-Harris", "Blackman-Harris"),
+            ('box_filter', "Box", "Box"),
+            ('catrom2d_filter', "Catrom 2", "Catrom"),
+            ('catrom_filter', "Catrom", "Catrom"),
+            ('closest_filter', "Closest", "Closest"),
+            ('cone_filter', "Cone", "Cone"),
+            ('cook_filter', "Cook", "Cook"),
+            ('cubic_filter', "Cubic", "Cubic"),
+            ('disk_filter', "Disk", "Disk"),
+            ('farthest_filter', "Farthest", "Farthest"),
+            ('gaussian_filter', "Gauss", "Gauss"),
+            ('heatmap_filter', "Heatmap", "Heatmap"),
+            ('mitnet_filter', "Mitnet", "Mitnet"),
+            ('sinc_filter', "Sinc", "Sinc"),
+            ('triangle_filter', "Triangle", "Triangle"),
+            ('variance_filter', "Variance", "Variance"),
+            ('video_filter', "Video", "Video")
+        ],
+        default='gaussian_filter'
+    )
+    sample_filter_width = FloatProperty(
+        name="Width",
+        default=2
+    )
+    sample_filter_bh_width = FloatProperty(
+        name="Width",
+        default=3
+    )
+    sample_filter_sinc_width = FloatProperty(
+        name="Width",
+        default=6
+    )
+    sample_filter_domain = EnumProperty(
+        name="Domain",
+        items=[
+            ('first_hit', "First Hit", "First Hit"),
+            ('all_hits', "All Hits", "All Hits")
+        ],
+        default='first_hit'
+    )
+    sample_filter_min = FloatProperty(
+        name="Minimum"
+    )
+    sample_filter_max = FloatProperty(
+        name="Maximum",
+        default=1.0,
+    )
+    sample_filter_scalar_mode = BoolProperty(
+        name="Scalar Mode"
+    )
+    display_gamma = FloatProperty(
+        name="Display Driver",
         default=1
     )
-    aa_seed = IntProperty(
-        name="AA Seed",
+    ####
+    # options node
+    AA_samples = IntProperty(
+        name="Camera (AA)",
         default=1
     )
-    aa_sample_clamp = FloatProperty(
-        name="AA Sample clamp",
-        description="AA Sample clamp",
+    #AA_seed = scene.frame_current
+    AA_sample_clamp = FloatProperty(
+        name="Max Value",
         soft_min=0.001, soft_max=100.0,
-        default=10.0
+        default=10.0,
+        options=set()
     )
-    aa_sample_clamp_affects_aovs = BoolProperty(
-        name="AA Sample clamp affects AOVs",
-        description="AA sample clamp affects AOVs",
+    AA_sample_clamp_affects_aovs = BoolProperty(
+        name="Affect AOVs",
+        options=set()
     )
     threads = IntProperty(
-        name="Threads"
+        name="Threads",
+        options=set()
     )
     thread_priority = EnumProperty(
         name="Thread Priority",
         items=[
             ('lowest', "Lowest", "Lowest"),
-        ]
+            ('low', "Low", "Low"),
+            ('normal', "Normal", "Normal"),
+            ('high', "Hight", "Hight")
+        ],
+        default='lowest',
+        options=set()
+    )
+    pin_threads = EnumProperty(
+        name="Pin Threads",
+        items=[
+            ('off', "Off", "Off"),
+            ('on', "On", "Off"),
+            ('auto', "Auto", "Auto")
+        ],
+        default='auto',
+        options=set()
+    )
+    abort_on_error = BoolProperty(
+        name="Abort on Error",
+        default=True,
+        options=set()
+    )
+    abort_on_license_fail = BoolProperty(
+        name="Abort on License fail",
+        options=set()
     )
     skip_license_check = BoolProperty(
-        name="Skip License Check"
+        name="Skip License Check",
+        options=set()
     )
+    #error_color_bad_texture
+    #error_color_bad_pixel
+    #error_color_bad_shader
     bucket_size = IntProperty(
         name="Bucket Size",
         min=16,
         soft_max = 256,
         default=64,
-        #options = set(),
+        options=set()
     )
     bucket_scanning = EnumProperty(
         name="Bucket Scanning",
         items=[
+            ('top', "Top", "Top"),
+            ('bottom', "Bottom", "Bottom"),
+            ('left', "Left", "Left"),
+            ('right', "Right", "Right"),
+            ('random', "Random", "Random"),
+            ('woven', "Woven", "Woven"),
             ('spiral', "Spiral", "Spiral"),
+            ('hilbert', "Hilbert", "Hilbert"),
+            #('list', "List", "List")
         ],
-        default='spiral'
+        default='spiral',
+        options=set()
     )
+    ignore_textures = BoolProperty(
+        name="Ignore Textures"
+    )
+    ignore_shaders = BoolProperty(
+        name="Ignore Shaders"
+    )
+    ignore_atmosphere = BoolProperty(
+        name="Ignore Atmosphere"
+    )
+    ignore_lights = BoolProperty(
+        name="Ignore Lights"
+    )
+    ignore_shadows = BoolProperty(
+        name="Ignore Shadows"
+    )
+    ignore_direct_lighting = BoolProperty(
+        name="Ignore Direct Lighting"
+    )
+    ignore_subdivision = BoolProperty(
+        name="Ignore Subdivision"
+    )
+    ignore_displacement = BoolProperty(
+        name="Ignore Displacement"
+    )
+    ignore_bump = BoolProperty(
+        name="Ignore Bump"
+    )
+    ignore_motion_blur = BoolProperty(
+        name="Ignore Motion Blur"
+    )
+    ignore_dof = BoolProperty(
+        name="Ignore DOF"
+    )
+    ignore_smoothing = BoolProperty(
+        name="Ignore Smoothing"
+    )
+    ignore_sss = BoolProperty(
+        name="Ignore SSS"
+    )
+    #enable_fast_opacity
+    auto_transparency_mode = EnumProperty(
+        name="Mode",
+        items=[
+            ('always', "Always", "Always"),
+            ('shadow-only', "Shadow Only", "Shadow Only"),
+            ('never', "Never", "Never")
+        ],
+        default='always'
+    )
+    auto_transparency_depth = IntProperty(
+        name="Depth",
+        default=10
+    )
+    auto_transparency_threshold = FloatProperty(
+        name="Threshold",
+        default=0.99
+    )
+    #texture_max_open_files
+    #texture_max_memory_MB
+    #texture_per_file_stats
+    #texture_searchpath
+    #texture_automip
+    #texture_autotile
+    #texture_accept_untiled
+    #texture_accept_unmipped
+    #texture_failure_retries
+    #texture_conservative_lookups
+    #texture_glossy_blur
+    #texture_diffuse_blur
+    #texture_sss_blur
+    #texture_max_sharpen
+    #background_visibility
+    #bump_multiplier
+    #bump_space
+    #luminaire_bias
+    low_light_threshold = FloatProperty(
+        name="Low Light Threshold",
+        default=0.001
+    )
+    #shadow_terminator_fix
+    #shadows_obey_light_linking
+    #skip_background_atmosphere
+    sss_bssrdf_samples = IntProperty(
+        name="SSS",
+        default=0
+    )
+    sss_use_autobump = BoolProperty(
+        name="Use Autobump in SSS"
+    )
+    volume_indirect_samples = IntProperty(
+        name="Volume indirect",
+        default=2
+    )
+    #reference_time
+    #CCW_points
+    #max_subdivisions
+    #procedural_searchpath
+    #shader_searchpath
+    #preserve_scene_data
+    #curved_motionblur
+    texture_gamma = FloatProperty(
+        name="Textures",
+        default=1
+    )
+    light_gamma = FloatProperty(
+        name="Lights",
+        default=1
+    )
+    shader_gamma = FloatProperty(
+        name="Shaders",
+        default=1
+    )
+    GI_diffuse_depth = IntProperty(
+        name="Diffuse"
+    )
+    GI_glossy_depth = IntProperty(
+        name="Glossy"
+    )
+    GI_reflection_depth = IntProperty(
+        name="Reflection",
+        default=2
+    )
+    GI_refraction_depth = IntProperty(
+        name="Refraction",
+        default=2
+    )
+    GI_volume_depth = IntProperty(
+        name="Volume"
+    )
+    GI_total_depth = IntProperty(
+        name="Total",
+        default=10,
+    )
+    GI_diffuse_samples = IntProperty(
+        name="Diffuse",
+        default=2
+    )
+    #GI_single_scatter_samples
+    GI_glossy_samples = IntProperty(
+        name="Glossy",
+        default=2
+    )
+    GI_refraction_samples = IntProperty(
+        name="Refraction",
+        default=2
+    )
+    #GI_falloff_start_dist
+    #GI_falloff_stop_dist
+    #enable_displacement_derivs
+    #enable_threaded_procedurals
+    #enable_procedural_cache
+    #procedural_force_expand
+    #parallel_node_init
 
     @classmethod
     def register(cls):
