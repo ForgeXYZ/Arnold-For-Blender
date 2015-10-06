@@ -202,7 +202,7 @@ class Shaders:
         return node
 
 
-def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
+def _export(data, scene, camera, xres, yres, session=None):
     render = scene.render
     opts = scene.arnold
 
@@ -211,17 +211,17 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
     # offsets for border render
     xoff = 0
     yoff = 0
+    # nodes cache
+    inodes = {}
 
     shaders = Shaders(data)
 
-    arnold.AiBegin()
     arnold.AiMsgSetConsoleFlags(opts.get("console_log_flags", 0))
     arnold.AiMsgSetMaxWarnings(opts.max_warnings)
 
     plugins_path = os.path.normpath(os.path.join(os.path.dirname(__file__), os.path.pardir, "bin"))
     arnold.AiLoadPlugins(plugins_path)
 
-    inodes = {}
     for ob in scene.objects:
         if ob.hide_render:
             continue
@@ -458,15 +458,27 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
         session["display"] = display
         session["offset"] = xoff, yoff
 
-    if ass_filepath:
+
+def export_ass(data, scene, camera, xres, yres, filepath):
+    arnold.AiBegin()
+    try:
+        _export(
+            data,
+            scene,
+            engine.camera_override,
+            engine.resolution_x,
+            engine.resolution_y
+        )
         # TODO: options
-        arnold.AiASSWrite(ass_filepath, arnold.AI_NODE_ALL, False, False)
+        arnold.AiASSWrite(filepath, arnold.AI_NODE_ALL, False, False)
+    finally:
         arnold.AiEnd()
 
 
 def update(engine, data, scene):
     engine._session = {}
-    export(
+    arnold.AiBegin()
+    _export(
         data,
         scene,
         engine.camera_override,

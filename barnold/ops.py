@@ -4,8 +4,8 @@ import traceback
 import bpy
 
 from bpy.types import Operator
-from bpy_extras.io_utils import ExportHelper
 from bpy.props import StringProperty
+from bpy_extras.io_utils import ExportHelper
 
 from . import ArnoldRenderEngine
 
@@ -30,7 +30,7 @@ class ExportASS(Operator, ExportHelper):
                 scene = context.scene
                 render = scene.render
                 resolution = render.resolution_percentage / 100
-                engine.export(
+                engine.export_ass(
                     context.blend_data,
                     scene,
                     scene.camera,
