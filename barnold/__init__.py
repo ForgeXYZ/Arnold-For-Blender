@@ -105,6 +105,8 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
             cls._compatible(mod, panels)
         for _cls in cls._CLASSES:
             bpy.utils.register_class(_cls)
+        bpy.app.handlers.render_pre.append(cls.render_pre)
+        bpy.app.handlers.render_pre.append(cls.render_init)
 
     @classmethod
     def unregister(cls):
@@ -112,17 +114,32 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
             cls._compatible(mod, panels, True)
         for _cls in cls._CLASSES:
             bpy.utils.unregister_class(_cls)
+        bpy.app.handlers.render_pre.remove(cls.render_pre)
+        bpy.app.handlers.render_pre.remove(cls.render_init)
+
+    @staticmethod
+    @bpy.app.handlers.persistent
+    def render_pre(scene):
+        print("render_pre:", scene)
+        scene.render.tile_x=32
+        scene.render.tile_y=32
+
+    @staticmethod
+    @bpy.app.handlers.persistent
+    def render_init(scene):
+        print("render_init:", scene, scene.render.tile_x)
+        #args[0].render.tile_x=32
+        #args[0].render.tile_y=32
+
+    def __init__(self):
+        print("__init__", self)
+        self.render.tile_x = 32
 
     @classmethod
     def is_active(cls, context):
         return context.scene.render.engine == cls.bl_idname
 
     def update(self, data, scene):
-        #self.use_highlight_tiles = True
-        # highlight tiles doesn't work
-        # Y-axis in image editor different with arnold
-        # blender from botttom, arnold from top.
-        # perhaps can be used if bucket_scanning = list
         engine.update(self, data, scene)
 
     def render(self, scene):

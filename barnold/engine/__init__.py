@@ -20,16 +20,6 @@ from ..nodes import (
 from . import arnold
 
 
-_TILE_COLORS = [
-    (0, 0, 0),
-    (1, 0, 0),
-    (0, 1, 0),
-    (0, 0, 1),
-    (1, 1, 0),
-    (0, 1, 1),
-    (1, 0, 1),
-    (1, 1, 1)
-]
 _M = 1 / 255
 
 
@@ -342,7 +332,10 @@ def _export(data, scene, camera, xres, yres, session=None):
         arnold.AiNodeSetInt(options, "region_max_x", int(xres * render.border_max_x) - 1)
         arnold.AiNodeSetInt(options, "region_min_y", int(yres * (1.0 - render.border_max_y)))
         arnold.AiNodeSetInt(options, "region_max_y", int(yres * (1.0 - render.border_min_y)) - 1)
-    arnold.AiNodeSetInt(options, "AA_samples", opts.AA_samples)
+    if opts.progressive_refinement and not session is None:
+        arnold.AiNodeSetInt(options, "AA_samples", opts.AA_samples)
+    else:
+        arnold.AiNodeSetInt(options, "AA_samples", opts.AA_samples)
     if not opts.lock_sampling_pattern:
         arnold.AiNodeSetInt(options, "AA_seed", scene.frame_current)
     if opts.clamp_sample_values:
@@ -410,6 +403,8 @@ def _export(data, scene, camera, xres, yres, session=None):
         arnold.AiNodeSetStr(node, "name", camera.name)
         arnold.AiNodeSetFlt(node, "fov", math.degrees(camera.data.angle))
         arnold.AiNodeSetArray(node, "matrix", _AiMatrix(camera.matrix_world))
+        arnold.AiNodeSetPnt2(node, "screen_window_min", -1, 1)
+        arnold.AiNodeSetPnt2(node, "screen_window_max", 1, -1)
         arnold.AiNodeSetPtr(options, "camera", node)
     
     world = scene.world
@@ -457,9 +452,15 @@ def _export(data, scene, camera, xres, yres, session=None):
     outputs = arnold.AiArray(1, 1, arnold.AI_TYPE_STRING, b"RGBA RGBA __outfilter __outdriver")
     arnold.AiNodeSetArray(options, "outputs", outputs)
 
+    AA_samples = opts.AA_samples
     if session is not None:
         session["display"] = display
         session["offset"] = xoff, yoff
+        if opts.progressive_refinement:
+            isl = opts.initial_sampling_level
+            session["ipr"] = (isl, AA_samples + 1)
+            AA_samples = isl
+    arnold.AiNodeSetInt(options, "AA_samples", AA_samples)
 
 
 def export_ass(data, scene, camera, xres, yres, filepath):
@@ -479,6 +480,10 @@ def export_ass(data, scene, camera, xres, yres, filepath):
 
 
 def update(engine, data, scene):
+    #scene.render.tile_x = 32
+    #scene.render.tile_y = 32
+    print("update:", scene.render.tile_x)
+    engine.use_highlight_tiles = True
     engine._session = {}
     arnold.AiBegin()
     _export(
@@ -496,54 +501,36 @@ def render(engine, scene):
         session = engine._session
         xoff, yoff = session["offset"]
 
-        _tiles = {}
-        _colors = itertools.cycle(_TILE_COLORS)
+        print(
+            "render:",
+            (engine.tile_x, engine.tile_y),
+            (engine.render.tile_x, engine.render.tile_y),
+            (scene.render.tile_x, scene.render.tile_y)
+        )
+
+        _htiles = {}  # highlighted tiles
         session["peak"] = 0  # memory peak usage
 
         def display_callback(x, y, width, height, buffer, data):
             if engine.test_break():
                 arnold.AiRenderAbort()
-                for (_x , _y), (w, h) in _tiles.items():
-                    result = engine.begin_result(_x, _y, w, h)
-                    result.layers[0].passes[0].rect = numpy.zeros([w * h, 4])
-                    engine.end_result(result)
                 return
-
-            x -= xoff
-            y = engine.resolution_y - y - height - yoff
-            result = engine.begin_result(x, y, width, height)
+            
             if buffer:
-                _tiles.pop((x, y))
+                result = _htiles.pop((x, y))
+                if not result is None:
+                    result = engine.begin_result(x, y, width, height)
                 t = ctypes.c_byte * (width * height * 4)
                 a = t.from_address(ctypes.addressof(buffer.contents))
                 rect = numpy.frombuffer(a, numpy.uint8) * _M
-                rect = numpy.reshape(rect, [height, width * 4])
-                rect = numpy.reshape(numpy.flipud(rect), [-1, 4])
+                rect = numpy.reshape(rect, [-1, 4])
                 rect **= 2.2  # gamma correction
+                result.layers[0].passes[0].rect = rect
+                engine.end_result(result)
             else:
-                _tiles[(x, y)] = (width, height)
-                color = next(_colors)
-                rect = numpy.ndarray([width * height, 4])
-                rect[:] = color + (0.05, )
-                color = color + (1.0, )
-                rect[0: 4] = color
-                rect[width - 4: width + 1] = color
-                _x = width * 2 - 1
-                rect[_x: _x + 2] = color
-                _x += width
-                rect[_x: _x + 2] = color
-                rect[_x + width] = color
-                _x = width * height
-                rect[_x - 4: _x] = color
-                _x -= width + 1
-                rect[_x: _x + 5] = color
-                _x -= width
-                rect[_x: _x + 2] = color
-                _x -= width
-                rect[_x: _x + 2] = color
-                rect[_x - width + 1] = color
-            result.layers[0].passes[0].rect = rect
-            engine.end_result(result)
+                result = engine.begin_result(x, y, width, height)
+                engine.update_result(result)
+                _htiles[(x, y)] = result
 
             mem = arnold.AiMsgUtilGetUsedMemory() / 1048576  # 1024*1024
             peak = session["peak"] = max(session["peak"], mem)
@@ -552,7 +539,15 @@ def render(engine, scene):
         # display callback must be a variable
         cb = arnold.AtDisplayCallBack(display_callback)
         arnold.AiNodeSetPtr(session['display'], "callback", cb)
+
         arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
+        ipr = session.get("ipr")
+        if ipr:
+            options = arnold.AiUniverseGetOptions()
+            for sl in range(*ipr):
+                arnold.AiNodeSetInt(options, "AA_samples", sl)
+                arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
+                engine.update_stats("", "SL: %d" % sl)
     except:
         # cancel render on error
         engine.end_result(None, True)

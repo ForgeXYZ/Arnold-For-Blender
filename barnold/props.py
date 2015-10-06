@@ -62,6 +62,10 @@ class ArnoldOptions(PropertyGroup):
         name="Render Settings",
         default=True
     )
+    ui_ipr = BoolProperty(
+        name="IPR",
+        default=True
+    )
     ui_paths = BoolProperty(
         name="Search paths"
     )
@@ -165,6 +169,15 @@ class ArnoldOptions(PropertyGroup):
     sample_filter_scalar_mode = BoolProperty(
         name="Scalar Mode"
     )
+    progressive_refinement = BoolProperty(
+        name="Progressive Refinement",
+        default=True
+    )
+    initial_sampling_level = IntProperty(
+        name="Inital Sampling Level",
+        min=-10, max=-1,
+        default = -3
+    )
     display_gamma = FloatProperty(
         name="Display Driver",
         default=1
@@ -173,6 +186,8 @@ class ArnoldOptions(PropertyGroup):
     # options node
     AA_samples = IntProperty(
         name="Camera (AA)",
+        min=0, max=100,
+        soft_min=1, soft_max=10,
         default=1
     )
     #AA_seed = scene.frame_current
@@ -454,7 +469,9 @@ class ArnoldOptions(PropertyGroup):
     #enable_displacement_derivs
     #enable_threaded_procedurals
     #enable_procedural_cache
-    #procedural_force_expand
+    procedural_force_expand = BoolProperty(
+        name="Expand procedurals"
+    )
     #parallel_node_init
 
     @classmethod

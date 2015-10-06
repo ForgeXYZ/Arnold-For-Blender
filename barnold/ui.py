@@ -178,6 +178,14 @@ class ArnoldRenderSystemPanel(RenderButtonsPanel, Panel):
             subcol.enabled = not opts.auto_threads
             col.prop(opts, "thread_priority")
             col.prop(opts, "pin_threads")
+            col.separator()
+            col.prop(opts, "procedural_force_expand")
+
+        sublayout = _subpanel(layout, "IPR", opts.ui_ipr, opts_path, "ui_ipr", "scene")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(opts, "progressive_refinement")
+            col.prop(opts, "initial_sampling_level")
 
         sublayout = _subpanel(layout, "Search paths", opts.ui_paths, opts_path, "ui_paths", "scene")
         if sublayout:
