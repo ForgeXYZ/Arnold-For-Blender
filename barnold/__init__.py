@@ -22,8 +22,6 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
 
     bl_use_shading_nodes = True  # use cycles ui in node editor
     bl_use_shading_nodes_custom = False
-    
-    use_highlight_tiles = True  # TODO: how use it??
 
     _CLASSES = []  # classes for (un)register
 
@@ -120,6 +118,11 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
         return context.scene.render.engine == cls.bl_idname
 
     def update(self, data, scene):
+        #self.use_highlight_tiles = True
+        # highlight tiles doesn't work
+        # Y-axis in image editor different with arnold
+        # blender from botttom, arnold from top.
+        # perhaps can be used if bucket_scanning = list
         engine.update(self, data, scene)
 
     def render(self, scene):

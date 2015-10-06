@@ -159,16 +159,12 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
 class ArnoldRenderSystemPanel(RenderButtonsPanel, Panel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
     bl_label = "Arnold Render: System"
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout
         opts = context.scene.arnold
         opts_path = opts.path_from_id()
-
-        layout.prop(opts, "logfile")
-        row = layout.row()
-        row.prop_menu_enum(opts, "logfile_flags")
-        row.prop_menu_enum(opts, "console_log_flags")
 
         sublayout = _subpanel(layout, "Render Settings", opts.ui_render, opts_path, "ui_render", "scene")
         if sublayout:
@@ -177,11 +173,12 @@ class ArnoldRenderSystemPanel(RenderButtonsPanel, Panel):
             col.prop(opts, "bucket_size")
             # overscan
             col.separator()
-            col.prop(opts, "threads")
+            col.prop(opts, "auto_threads")
+            subcol = col.column()
+            subcol.prop(opts, "threads")
+            subcol.enabled = not opts.auto_threads
             col.prop(opts, "thread_priority")
             col.prop(opts, "pin_threads")
-            col.separator()
-            col.prop(opts, "abort_on_error")
 
         sublayout = _subpanel(layout, "Search paths", opts.ui_paths, opts_path, "ui_paths", "scene")
         if sublayout:
@@ -196,6 +193,70 @@ class ArnoldRenderSystemPanel(RenderButtonsPanel, Panel):
             col.prop(opts, "abort_on_license_fail")
             col.prop(opts, "skip_license_check")
 
+
+@ArnoldRenderEngine.register_class
+class ArnoldRenderDiagnosticsPanel(RenderButtonsPanel, Panel):
+    COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
+    bl_label = "Arnold Render: Diagnostics"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        opts = context.scene.arnold
+        opts_path = opts.path_from_id()
+
+        sublayout = _subpanel(layout, "Log", opts.ui_log, opts_path, "ui_log", "scene")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(opts, "logfile")
+            row = col.row()
+            row.prop_menu_enum(opts, "logfile_flags", text="File Flags (%X)" % opts.get("logfile_flags", 0))
+            row.prop_menu_enum(opts, "console_log_flags", text="Console Flags (%X)" % opts.get("console_log_flags", 0))
+            col.prop(opts, "max_warnings")
+
+        sublayout = _subpanel(layout, "Error Handling", opts.ui_error, opts_path, "ui_error", "scene")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(opts, "abort_on_error")
+            col.separator()
+            col.row().prop(opts, "error_color_bad_texture")
+            col.row().prop(opts, "error_color_bad_shader")
+            col.row().prop(opts, "error_color_bad_pixel")
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldRenderOverridePanel(RenderButtonsPanel, Panel):
+    COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
+    bl_label = "Arnold Render: Override"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        opts = context.scene.arnold
+        opts_path = opts.path_from_id()
+
+        sublayout = _subpanel(layout, "Feature overrides", opts.ui_overrides, opts_path, "ui_overrides", "scene")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(opts, "ignore_textures")
+            col.prop(opts, "ignore_shaders")
+            col.prop(opts, "ignore_atmosphere")
+            col.prop(opts, "ignore_lights")
+            col.prop(opts, "ignore_shadows")
+            col.prop(opts, "ignore_shadows")
+            col.prop(opts, "ignore_direct_lighting")
+            col.prop(opts, "ignore_subdivision")
+            col.prop(opts, "ignore_displacement")
+            col.prop(opts, "ignore_bump")
+            col.prop(opts, "ignore_smoothing")
+            col.prop(opts, "ignore_motion_blur")
+            col.prop(opts, "ignore_dof")
+            col.prop(opts, "ignore_sss")
+
+        sublayout = _subpanel(layout, "Subdivision", opts.ui_subdivisions, opts_path, "ui_subdivisions", "scene")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(opts, "max_subdivisions")
 
 ##
 ## Lights

@@ -57,7 +57,8 @@ class ArnoldOptions(PropertyGroup):
         name="Textures"
     )
     ui_render = BoolProperty(
-        name="Render Settings"
+        name="Render Settings",
+        default=True
     )
     ui_paths = BoolProperty(
         name="Search paths"
@@ -65,21 +66,43 @@ class ArnoldOptions(PropertyGroup):
     ui_licensing = BoolProperty(
         name="Licensing"
     )
+    ui_log = BoolProperty(
+        name="Log",
+        default=True
+    )
+    ui_error = BoolProperty(
+        name="Error Handling"
+    )
+    ui_overrides = BoolProperty(
+        name="Feature overrides",
+        default=True
+    )
+    ui_subdivisions = BoolProperty(
+        name="Subdivision"
+    )
     logfile = StringProperty(
-        name="Logging Filename",
+        name="Filename",
         subtype='FILE_PATH',
         options=set()
     )
     logfile_flags = EnumProperty(
 
-        name="File Logging Flags",
+        name="File flags",
         items=_LOG_FLAGS,
         options={'ENUM_FLAG'}
     )
     console_log_flags = EnumProperty(
-        name="Console Logging Flags",
+        name="Console flags",
         items=_LOG_FLAGS,
         options={'ENUM_FLAG'}
+    )
+    max_warnings = IntProperty(
+        name="Max. Warnings",
+        default=5
+    )
+    auto_threads = BoolProperty(
+        name="Autodetect Threads",
+        default=True
     )
     lock_sampling_pattern = BoolProperty(
         name="Lock Sampling Pattern"
@@ -163,7 +186,9 @@ class ArnoldOptions(PropertyGroup):
     )
     threads = IntProperty(
         name="Threads",
-        options=set()
+        min=1,
+        options=set(),
+        subtype='UNSIGNED'
     )
     thread_priority = EnumProperty(
         name="Thread Priority",
@@ -199,9 +224,24 @@ class ArnoldOptions(PropertyGroup):
         name="Skip License Check",
         options=set()
     )
-    #error_color_bad_texture
-    #error_color_bad_pixel
-    #error_color_bad_shader
+    error_color_bad_texture = FloatVectorProperty(
+        name="Texture Error Color",
+        default=(1, 0, 0),
+        min=0, max=1,
+        subtype='COLOR'
+    )
+    error_color_bad_pixel = FloatVectorProperty(
+        name="Pixel Error Color",
+        default=(0, 0, 1),
+        min=0, max=1,
+        subtype='COLOR'
+    )
+    error_color_bad_shader = FloatVectorProperty(
+        name="Shader Error Color",
+        default=(1, 0, 1),
+        min=0, max=1,
+        subtype='COLOR'
+    )
     bucket_size = IntProperty(
         name="Bucket Size",
         min=16,
@@ -259,7 +299,7 @@ class ArnoldOptions(PropertyGroup):
         name="Ignore DOF"
     )
     ignore_smoothing = BoolProperty(
-        name="Ignore Smoothing"
+        name="Ignore Normal Smoothing"
     )
     ignore_sss = BoolProperty(
         name="Ignore SSS"
@@ -347,7 +387,10 @@ class ArnoldOptions(PropertyGroup):
     )
     #reference_time
     #CCW_points
-    #max_subdivisions
+    max_subdivisions = IntProperty(
+        name="Max. Subdivisions",
+        default=999
+    )
     procedural_searchpath = StringProperty(
         name="Procedural",
         subtype='DIR_PATH'
