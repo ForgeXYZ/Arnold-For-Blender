@@ -282,7 +282,7 @@ class ArnoldNodeFlat(ArnoldNode):
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeBump2D(ArnoldNode):
-    bl_label = "Bump2D"
+    bl_label = "Bump 2D"
     bl_icon = 'MATERIAL'
 
     ai_name = "bump2d"
@@ -296,7 +296,7 @@ class ArnoldNodeBump2D(ArnoldNode):
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeBump3D(ArnoldNode):
-    bl_label = "Bump3D"
+    bl_label = "Bump 3D"
     bl_icon = 'MATERIAL'
 
     ai_name = "bump3d"

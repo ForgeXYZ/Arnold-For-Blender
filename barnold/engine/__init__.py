@@ -221,6 +221,7 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
     plugins_path = os.path.normpath(os.path.join(os.path.dirname(__file__), os.path.pardir, "bin"))
     arnold.AiLoadPlugins(plugins_path)
 
+    inodes = {}
     for ob in scene.objects:
         if ob.hide_render:
             continue
@@ -230,6 +231,16 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
         else:
             continue
         if ob.type in ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT'):
+            modified = ob.is_modified(scene, 'RENDER')
+            if not modified:
+                inode = inodes.get(ob.data)
+                if not inode is None:
+                    node = arnold.AiNode("ginstance")
+                    arnold.AiNodeSetStr(node, "name", ob.name)
+                    arnold.AiNodeSetBool(node, "inherit_xform", False)
+                    arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
+                    arnold.AiNodeSetPtr(node, "node", inode)
+                    continue
             mesh = ob.to_mesh(scene, True, 'RENDER', False)
             try:
                 mesh.calc_normals_split()
@@ -287,6 +298,9 @@ def export(data, scene, camera, xres, yres, session=None, ass_filepath=None):
                         arnold.AiNodeSetArray(node, "shader", shader)
                     elif _shaders[0]:
                         arnold.AiNodeSetPtr(node, "shader", _shaders[0])
+                # cache unmodified shapes for instancing
+                if not node is None and not modified:
+                    inodes[ob.data] = node
             finally:
                 data.meshes.remove(mesh)
         elif ob.type == 'LAMP':
