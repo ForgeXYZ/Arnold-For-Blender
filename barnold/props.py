@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import bpy
+__author__ = "Ildar Nikolaev"
+__email__ = "nildar@users.sourceforge.net"
 
+import bpy
 from bpy.types import (
     PropertyGroup,
     Scene,

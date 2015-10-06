@@ -12,8 +12,11 @@ import math
 
 import bpy
 from mathutils import Matrix, Vector
-from ..nodes import ArnoldNode, ArnoldNodeOutput, ArnoldNodeWorldOutput
-
+from ..nodes import (
+    ArnoldNode,
+    ArnoldNodeOutput,
+    ArnoldNodeWorldOutput
+)
 from . import arnold
 
 

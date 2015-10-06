@@ -12,7 +12,6 @@ from bpy.types import (
 from bpy.props import (
     StringProperty
 )
-
 from . import ArnoldRenderEngine
 
 
@@ -23,9 +22,9 @@ class ArnoldUiToggle(Operator):
     bl_label = "Open / Close"
     bl_description = "Open / close options"
 
-    path = StringProperty(options={'HIDDEN'})
-    attr = StringProperty(options={'HIDDEN'})
-    ctx = StringProperty(options={'HIDDEN'})
+    path = StringProperty()
+    attr = StringProperty()
+    ctx = StringProperty()
 
     def execute(self, context):
         data = getattr(context, self.ctx)

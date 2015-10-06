@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
-import traceback
-import bpy
+__author__ = "Ildar Nikolaev"
+__email__ = "nildar@users.sourceforge.net"
 
+import traceback
+
+import bpy
 from bpy.types import Operator
 from bpy.props import StringProperty
 from bpy_extras.io_utils import ExportHelper
-
 from . import ArnoldRenderEngine
 
 

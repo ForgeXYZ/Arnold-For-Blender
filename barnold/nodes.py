@@ -5,9 +5,16 @@ __email__ = "nildar@users.sourceforge.net"
 
 import bpy
 import nodeitems_utils
-from bpy.props import BoolProperty
-
+from bpy.types import NodeSocket, Node
+from bpy.props import (
+    IntProperty,
+    BoolProperty,
+    EnumProperty,
+    StringProperty,
+    FloatVectorProperty
+)
 from . import ArnoldRenderEngine
+
 
 _WRAP_ITEMS = [
     ('periodic', "Periodic", "Periodic"),
@@ -19,10 +26,10 @@ _WRAP_ITEMS = [
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeSocketColor(bpy.types.NodeSocket):
+class ArnoldNodeSocketColor(NodeSocket):
     bl_label = "Color"
 
-    default_value = bpy.props.FloatVectorProperty(
+    default_value = FloatVectorProperty(
         name="Color",
         subtype='COLOR',
         default=(1, 1, 1),
@@ -44,10 +51,10 @@ class ArnoldNodeSocketColor(bpy.types.NodeSocket):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeSocketByte(bpy.types.NodeSocket):
+class ArnoldNodeSocketByte(NodeSocket):
     bl_label = "Value"
 
-    default_value = bpy.props.IntProperty(
+    default_value = IntProperty(
         name="Value",
         subtype='UNSIGNED',
         min=0, max=255
@@ -64,7 +71,7 @@ class ArnoldNodeSocketByte(bpy.types.NodeSocket):
         return (0.6, 0.52, 0.15, 1.0)
 
 
-class ArnoldNode(bpy.types.Node):
+class ArnoldNode(Node):
     @property
     def ai_properties(self):
         return {}
@@ -99,7 +106,7 @@ class _NodeOutput:
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeOutput(_NodeOutput, bpy.types.Node):
+class ArnoldNodeOutput(_NodeOutput, Node):
     bl_icon = 'MATERIAL'
 
     def init(self, context):
@@ -108,7 +115,7 @@ class ArnoldNodeOutput(_NodeOutput, bpy.types.Node):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeWorldOutput(_NodeOutput, bpy.types.Node):
+class ArnoldNodeWorldOutput(_NodeOutput, Node):
     bl_icon = 'WORLD'
 
     def init(self, context):
@@ -199,7 +206,7 @@ class ArnoldNodeUtility(ArnoldNode):
 
     ai_name = "utility"
 
-    color_mode = bpy.props.EnumProperty(
+    color_mode = EnumProperty(
         name="Color Mode",
         items=[
             ('color', "Color", "Single color output"),
@@ -229,7 +236,7 @@ class ArnoldNodeUtility(ArnoldNode):
         ],
         default='color'
     )
-    shade_mode = bpy.props.EnumProperty(
+    shade_mode = EnumProperty(
         name="Shade Mode",
         items=[
             ('ndoteye', "Ndoteye", "Uses a dot product between the Normal and the Eye vector."),
@@ -240,7 +247,7 @@ class ArnoldNodeUtility(ArnoldNode):
         ],
         default='ndoteye'
     )
-    overlay_mode = bpy.props.EnumProperty(
+    overlay_mode = EnumProperty(
         name="Overlay Mode",
         items=[
             ('none', "None", "None"),
@@ -319,7 +326,7 @@ class ArnoldNodeWireframe(ArnoldNode):
 
     ai_name = "wireframe"
 
-    edge_type = bpy.props.EnumProperty(
+    edge_type = EnumProperty(
         name="Edge Type",
         items=[
             ('polygons', "Polygons", "Polygons"),
@@ -439,7 +446,7 @@ class ArnoldNodeNoise(ArnoldNode):
 
     ai_name = "noise"
 
-    coord_space = bpy.props.EnumProperty(
+    coord_space = EnumProperty(
         name="Space Coordinates",
         items=[
             ('world', "World", "World space"),
@@ -476,11 +483,11 @@ class ArnoldNodeImage(ArnoldNode):
 
     ai_name = "image"
 
-    filename = bpy.props.StringProperty(
+    filename = StringProperty(
         name="Filename",
         subtype='FILE_PATH'
     )
-    filter = bpy.props.EnumProperty(
+    filter = EnumProperty(
         name="Filter",
         items=[
             ('closest', "Closest", "Closest"),
@@ -490,17 +497,17 @@ class ArnoldNodeImage(ArnoldNode):
         ],
         default='smart_bicubic'
     )
-    swrap = bpy.props.EnumProperty(
+    swrap = EnumProperty(
         name="U wrap",
         items=_WRAP_ITEMS,
         default='periodic'
     )
-    twrap = bpy.props.EnumProperty(
+    twrap = EnumProperty(
         name="V wrap",
         items=_WRAP_ITEMS,
         default='periodic'
     )
-    uvset = bpy.props.StringProperty(
+    uvset = StringProperty(
         name="UV set"
     )
 
@@ -552,7 +559,7 @@ class ArnoldNodeSky(ArnoldNode):
 
     ai_name = "sky"
 
-    format = bpy.props.EnumProperty(
+    format = EnumProperty(
         name="Format",
         items=[
             ('mirrored_ball', "Mirrored Ball", "Mirrored Ball"),
@@ -592,7 +599,7 @@ class ArnoldNodePhysicalSky(ArnoldNode):
 
     ai_name = "physical_sky"
 
-    enable_sun = bpy.props.BoolProperty(
+    enable_sun = BoolProperty(
         name="Enable Sun",
         default=True
     )
@@ -664,7 +671,7 @@ class ArnoldNodeDensity(ArnoldNode):
 
     ai_name = "density"
 
-    interpolation = bpy.props.EnumProperty(
+    interpolation = EnumProperty(
         name="Interpolation",
         items=[
             ('closest', "closest", "closest"),
@@ -702,7 +709,7 @@ class ArnoldNodeMixRGB(ArnoldNode):
 
     ai_name = "BArnoldMixRGB"
 
-    blend_type = bpy.props.EnumProperty(
+    blend_type = EnumProperty(
         name="Blend Type",
         items=[
             ('mix', "Mix", "Mix"),
