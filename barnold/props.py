@@ -604,14 +604,12 @@ class ArnoldShaderWireframe(PropertyGroup):
     )
     fill_color = FloatVectorProperty(
         name="Fill Color",
-        size=3,
-        min=0, max=1,
         default=(1, 1, 1),
+        min=0, max=1,
         subtype='COLOR'
     )
     line_width = FloatProperty(
-        name="Width",
-        description="Line Width",
+        name="Line Width",
         default=1.0
     )
     raster_space = BoolProperty(

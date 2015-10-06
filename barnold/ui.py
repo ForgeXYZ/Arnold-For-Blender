@@ -323,6 +323,10 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
     bl_label = "Shader"
 
+    @classmethod
+    def poll(cls, context):
+        return super().poll(context) and not context.material.use_nodes
+
     def draw(self, context):
         layout = self.layout
         mat = context.material
@@ -355,9 +359,9 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
             layout.prop(wire, "edge_type")
             layout.prop(mat, "diffuse_color", text="Line Color")
             layout.prop(wire, "fill_color")
-            row = layout.row()
-            row.prop(wire, "line_width")
+            row = layout.row(align=True)
             row.prop(wire, "raster_space")
+            row.prop(wire, "line_width")
 
 ##
 ## Textures

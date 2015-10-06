@@ -91,6 +91,9 @@ class _NodeOutput:
     def init(self, context):
         self._set_active()
 
+    def copy(self, node):
+        self._set_active()
+
     def draw_buttons(self, context, layout):
         layout.prop(self, "is_active", icon='RADIOBUT_ON' if self.is_active else 'RADIOBUT_OFF')
 
@@ -549,6 +552,16 @@ class ArnoldNodeSky(ArnoldNode):
 
     ai_name = "sky"
 
+    format = bpy.props.EnumProperty(
+        name="Format",
+        items=[
+            ('mirrored_ball', "Mirrored Ball", "Mirrored Ball"),
+            ('angular', "Angular", "Angular"),
+            ('latlong', "LatLong", "LatLong")
+        ],
+        default='angular'
+    )
+
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
         self.inputs.new("ArnoldNodeSocketColor", "Color", "color")
@@ -562,6 +575,15 @@ class ArnoldNodeSky(ArnoldNode):
         self.inputs.new("NodeSocketVector", "Y").default_value = (0, 1, 0)
         self.inputs.new("NodeSocketVector", "Z").default_value = (0, 0, 1)
 
+    def draw_buttons(self, context, layout):
+        layout.prop(self, "format", text="")
+
+    @property
+    def ai_properties(self):
+        return {
+            "format": ('STRING', self.format)
+        }
+
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodePhysicalSky(ArnoldNode):
@@ -570,16 +592,39 @@ class ArnoldNodePhysicalSky(ArnoldNode):
 
     ai_name = "physical_sky"
 
+    enable_sun = bpy.props.BoolProperty(
+        name="Enable Sun",
+        default=True
+    )
+
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
-        #self.inputs.new("ArnoldNodeSocketColor", "Color", "color")
+        self.inputs.new("NodeSocketFloat", "Sun size", "sun_size").default_value = 0.51
+        self.inputs.new("ArnoldNodeSocketColor", "Sky Tint", "sky_tint")
+        self.inputs.new("ArnoldNodeSocketColor", "Sun Tint", "sun_tint")
+        self.inputs.new("NodeSocketFloat", "Turbidity", "turbidity").default_value = 3
+        self.inputs.new("ArnoldNodeSocketColor", "Ground Albedo", "ground_albedo").default_value = (0.1, 0.1, 0.1)
+        self.inputs.new("NodeSocketFloat", "Elevation", "elevation").default_value = 45
+        self.inputs.new("NodeSocketFloat", "Azimuth", "azimuth").default_value = 90
         self.inputs.new("NodeSocketFloat", "Intensity", "intensity").default_value = 1
+        self.inputs.new("NodeSocketVector", "X").default_value = (1, 0, 0)
+        self.inputs.new("NodeSocketVector", "Y").default_value = (0, 1, 0)
+        self.inputs.new("NodeSocketVector", "Z").default_value = (0, 0, 1)
+
+    def draw_buttons(self, context, layout):
+        layout.prop(self, "enable_sun")
+
+    @property
+    def ai_properties(self):
+        return {
+            "enable_sun": ('BOOL', self.enable_sun)
+        }
 
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeVolumeScattering(ArnoldNode):
     bl_label = "Volume Scattering"
-    bl_icon = 'TEXTURE'
+    bl_icon = 'WORLD'
 
     ai_name = "volume_scattering"
 
@@ -594,6 +639,22 @@ class ArnoldNodeVolumeScattering(ArnoldNode):
         self.inputs.new("NodeSocketFloat", "affect_reflection").default_value = 1
         self.inputs.new("ArnoldNodeSocketColor", "rgb_density")
         self.inputs.new("ArnoldNodeSocketColor", "rgb_attenuation")
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeFog(ArnoldNode):
+    bl_label = "Fog"
+    bl_icon = 'WORLD'
+
+    ai_name = "fog"
+
+    def init(self, context):
+        self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.inputs.new("NodeSocketFloat", "distance").default_value = 0.02
+        self.inputs.new("NodeSocketFloat", "height").default_value = 5
+        self.inputs.new("ArnoldNodeSocketColor", "color")
+        #self.inputs.new("POINT", "ground_point")  # TODO: need socket type
+        self.inputs.new("NodeSocketVector", "ground_normal").default_value = (0, 0, 1)
 
 
 @ArnoldRenderEngine.register_class
@@ -749,6 +810,9 @@ def register():
         ArnoldWorldNodeCategory("ARNOLD_NODES_WORLD_SHADERS", "Shaders", items=[
             nodeitems_utils.NodeItem("ArnoldNodeSky"),
             nodeitems_utils.NodeItem("ArnoldNodePhysicalSky"),
+            nodeitems_utils.NodeItem("ArnoldNodeVolumeScattering"),
+            nodeitems_utils.NodeItem("ArnoldNodeFog"),
+            nodeitems_utils.NodeItem("ArnoldNodeImage"),
         ]),
         # common
         ArnoldNodeCategory("ARNOLD_NODES_COLOR", "Color", items=[
