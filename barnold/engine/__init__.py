@@ -480,9 +480,6 @@ def export_ass(data, scene, camera, xres, yres, filepath):
 
 
 def update(engine, data, scene):
-    #scene.render.tile_x = 32
-    #scene.render.tile_y = 32
-    print("update:", scene.render.tile_x)
     engine.use_highlight_tiles = True
     engine._session = {}
     arnold.AiBegin()
@@ -501,19 +498,14 @@ def render(engine, scene):
         session = engine._session
         xoff, yoff = session["offset"]
 
-        print(
-            "render:",
-            (engine.tile_x, engine.tile_y),
-            (engine.render.tile_x, engine.render.tile_y),
-            (scene.render.tile_x, scene.render.tile_y)
-        )
-
         _htiles = {}  # highlighted tiles
         session["peak"] = 0  # memory peak usage
 
         def display_callback(x, y, width, height, buffer, data):
             if engine.test_break():
                 arnold.AiRenderAbort()
+                for result in _htiles.values():
+                    engine.end_result(result, True)
                 return
             
             if buffer:
@@ -546,7 +538,9 @@ def render(engine, scene):
             options = arnold.AiUniverseGetOptions()
             for sl in range(*ipr):
                 arnold.AiNodeSetInt(options, "AA_samples", sl)
-                arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
+                res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
+                if res != arnold.AI_SUCCESS:
+                    break
                 engine.update_stats("", "SL: %d" % sl)
     except:
         # cancel render on error

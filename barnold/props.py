@@ -182,6 +182,20 @@ class ArnoldOptions(PropertyGroup):
         name="Display Driver",
         default=1
     )
+
+    def _get_bucket_size(self):
+        r = self.id_data.render
+        tile_x = r.tile_x
+        # HACK: arnold supports only rectangle tiles
+        if tile_x != r.tile_y:
+            r.tile_y = tile_x
+        return tile_x
+
+    def _set_bucket_size(self, value):
+        r = self.id_data.render
+        r.tile_x = value
+        r.tile_y = value
+
     ####
     # options node
     AA_samples = IntProperty(
@@ -261,10 +275,12 @@ class ArnoldOptions(PropertyGroup):
     )
     bucket_size = IntProperty(
         name="Bucket Size",
-        min=16,
-        soft_max = 256,
-        default=64,
-        options=set()
+        #min=16,
+        #soft_max = 256,
+        #default=64,
+        #options=set()
+        get=_get_bucket_size,
+        set=_set_bucket_size
     )
     bucket_scanning = EnumProperty(
         name="Bucket Scanning",
