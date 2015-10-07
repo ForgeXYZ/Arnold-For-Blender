@@ -243,6 +243,7 @@ def _export(data, scene, camera, xres, yres, session=None):
             mesh = ob.to_mesh(scene, True, 'RENDER', False)
             try:
                 print(" %14.6f: ob.to_mesh()" % (time.perf_counter() - pc))
+
                 mesh.calc_normals_split()
                 # No need to call mesh.free_normals_split later, as this mesh is deleted anyway!
 
@@ -302,18 +303,22 @@ def _export(data, scene, camera, xres, yres, session=None):
                 print(" %14.6f: (%10.6f) polygons %d" % (pc4 - pc, pc4 - pc3, npolygons))
 
                 # uv
-                #for i, uvt in enumerate(mesh.uv_textures):
-                #    if uvt.active_render:
-                #        uvd = mesh.uv_layers[i].data
-                #        uvidxs = arnold.AiArrayAllocate(len(uvd), 1, arnold.AI_TYPE_UINT)
-                #        uvlist = arnold.AiArrayAllocate(len(uvd), 1, arnold.AI_TYPE_POINT2)
-                #        for i, d in enumerate(uvd):
-                #            arnold.AiArraySetUInt(uvidxs, i, i)
-                #            arnold.AiArraySetPnt2(uvlist, i, arnold.AtPoint2(*d.uv))
-                #        arnold.AiNodeSetArray(node, "uvidxs", uvidxs)
-                #        arnold.AiNodeSetArray(node, "uvlist", uvlist)
+                for i, uvt in enumerate(mesh.uv_textures):
+                    if uvt.active_render:
+                        uvd = mesh.uv_layers[i].data
+                        nuvs = len(uvd)
 
-                #        print("    uv: %s (%f)" % (len(uvd), time.perf_counter() - pc))
+                        a = numpy.arange(nuvs, dtype=numpy.uint32)
+                        uvidxs = arnold.AiArrayConvert(nuvs, 1, arnold.AI_TYPE_UINT, ctypes.c_void_p(a.ctypes.data))
+                        arnold.AiNodeSetArray(node, "uvidxs", uvidxs)
+
+                        a = numpy.ndarray([nuvs * 2], dtype=numpy.float32)
+                        uvd.foreach_get("uv", a)
+                        uvlist = arnold.AiArrayConvert(nuvs, 1, arnold.AI_TYPE_POINT2, ctypes.c_void_p(a.ctypes.data))
+                        arnold.AiNodeSetArray(node, "uvlist", uvlist)
+
+                        pc5 = time.perf_counter()
+                        print(" %14.6f: (%10.6f) uvs %d" % (pc5 - pc, pc5 - pc4, nuvs))
 
                 # materials
                 idxs, _shaders = shaders.get(mesh)
@@ -322,15 +327,17 @@ def _export(data, scene, camera, xres, yres, session=None):
                         shidxs = arnold.AiArrayAllocate(len(idxs), 1, arnold.AI_TYPE_BYTE)
                         for i, idx in enumerate(idxs):
                             arnold.AiArraySetByte(shidxs, i, idx)
+                        arnold.AiNodeSetArray(node, "shidxs", shidxs)
+
                         shader = arnold.AiArrayAllocate(len(_shaders), 1, arnold.AI_TYPE_POINTER)
                         for i, sh in enumerate(_shaders):
                             arnold.AiArraySetPtr(shader, i, sh)
-                        arnold.AiNodeSetArray(node, "shidxs", shidxs)
                         arnold.AiNodeSetArray(node, "shader", shader)
                     elif _shaders[0]:
                         arnold.AiNodeSetPtr(node, "shader", _shaders[0])
 
-                    print(" %14.6f: shaders %d %d" % (time.perf_counter() - pc, len(_shaders), len(idxs)))
+                    pc6 = time.perf_counter()
+                    print(" %14.6f: (%10.6f) shaders %d %d" % (pc6 - pc, pc6 - pc5, len(_shaders), len(idxs)))
 
                 # cache unmodified shapes for instancing
                 if not node is None and not modified:
