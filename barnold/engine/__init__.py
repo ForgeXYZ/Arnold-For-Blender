@@ -9,6 +9,7 @@ import ctypes
 import itertools
 import numpy
 import math
+import time
 
 import bpy
 from mathutils import Matrix, Vector
@@ -224,6 +225,8 @@ def _export(data, scene, camera, xres, yres, session=None):
         else:
             continue
         if ob.type in ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT'):
+            pc = time.perf_counter()
+            print("%s: %s" % (ob.type, ob.name))
             modified = ob.is_modified(scene, 'RENDER')
             if not modified:
                 inode = inodes.get(ob.data)
@@ -236,36 +239,64 @@ def _export(data, scene, camera, xres, yres, session=None):
                     continue
             mesh = ob.to_mesh(scene, True, 'RENDER', False)
             try:
+                print("    to_mesh: (%f)" % (time.perf_counter() - pc))
                 mesh.calc_normals_split()
+                print("    calc_normals_split: (%f)" % (time.perf_counter() - pc))
                 # No need to call mesh.free_normals_split later, as this mesh is deleted anyway!
                 node = arnold.AiNode('polymesh')
                 arnold.AiNodeSetStr(node, "name", ob.name)
                 arnold.AiNodeSetBool(node, "smoothing", True)
                 arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
                 # vertices
-                vlist = arnold.AiArrayAllocate(len(mesh.vertices), 1, arnold.AI_TYPE_POINT)
-                for i, v in enumerate(mesh.vertices):
-                    arnold.AiArraySetPnt(vlist, i, arnold.AtPoint(*v.co))
+                if 0:
+                    vlist = arnold.AiArrayAllocate(len(mesh.vertices), 1, arnold.AI_TYPE_POINT)
+                    for i, v in enumerate(mesh.vertices):
+                        arnold.AiArraySetPnt(vlist, i, arnold.AtPoint(*v.co))
+                else:
+                    a = numpy.ndarray([len(mesh.vertices) * 3], dtype=numpy.float32)
+                    mesh.vertices.foreach_get("co", a)
+                    vlist = arnold.AiArrayConvert(len(mesh.vertices), 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(a.ctypes.data))
                 arnold.AiNodeSetArray(node, "vlist", vlist)
+                print("    verts: %s (%f)" % (len(mesh.vertices), time.perf_counter() - pc))
                 # normals
-                nlist = arnold.AiArrayAllocate(len(mesh.loops), 1, arnold.AI_TYPE_VECTOR)
-                for i, n in enumerate(mesh.loops):
-                    arnold.AiArraySetVec(nlist, i, arnold.AtVector(*n.normal))
+                if 0:
+                    nlist = arnold.AiArrayAllocate(len(mesh.loops), 1, arnold.AI_TYPE_VECTOR)
+                    for i, n in enumerate(mesh.loops):
+                        arnold.AiArraySetVec(nlist, i, arnold.AtVector(*n.normal))
+                else:
+                    a = numpy.ndarray([len(mesh.loops) * 3], dtype=numpy.float32)
+                    mesh.loops.foreach_get("normal", a)
+                    nlist = arnold.AiArrayConvert(len(mesh.loops), 1, arnold.AI_TYPE_VECTOR, ctypes.c_void_p(a.ctypes.data))
                 arnold.AiNodeSetArray(node, "nlist", nlist)
+                print("    norms: %s (%f)" % (len(mesh.loops), time.perf_counter() - pc))
                 # polygons
-                count = 0
-                nsides = arnold.AiArrayAllocate(len(mesh.polygons), 1, arnold.AI_TYPE_UINT)
-                vidxs = arnold.AiArrayAllocate(len(mesh.loops), 1, arnold.AI_TYPE_UINT)
-                nidxs = arnold.AiArrayAllocate(len(mesh.loops), 1, arnold.AI_TYPE_UINT)
-                for i, p in enumerate(mesh.polygons):
-                    arnold.AiArraySetUInt(nsides, i, len(p.loop_indices))
-                    for j in p.loop_indices:
-                        arnold.AiArraySetUInt(vidxs, count, mesh.loops[j].vertex_index)
-                        arnold.AiArraySetUInt(nidxs, count, j)
-                        count += 1
+                if 0:
+                    count = 0
+                    nsides = arnold.AiArrayAllocate(len(mesh.polygons), 1, arnold.AI_TYPE_UINT)
+                    vidxs = arnold.AiArrayAllocate(len(mesh.loops), 1, arnold.AI_TYPE_UINT)
+                    nidxs = arnold.AiArrayAllocate(len(mesh.loops), 1, arnold.AI_TYPE_UINT)
+                    for i, p in enumerate(mesh.polygons):
+                        arnold.AiArraySetUInt(nsides, i, p.loop_total)
+                        for j in p.loop_indices:
+                            arnold.AiArraySetUInt(vidxs, count, mesh.loops[j].vertex_index)
+                            arnold.AiArraySetUInt(nidxs, count, j)
+                            count += 1
+                else:
+                    polygons = mesh.polygons
+                    npolygons = len(polygons)
+                    a = numpy.ndarray([npolygons], dtype=numpy.uint32)
+                    polygons.foreach_get("loop_total", a)
+                    nsides = arnold.AiArrayConvert(npolygons, 1, arnold.AI_TYPE_UINT, ctypes.c_void_p(a.ctypes.data))
+                    nvertices = numpy.sum(a)
+                    a = numpy.ndarray([nvertices], dtype=numpy.uint32)
+                    polygons.foreach_get("vertices", a)
+                    vidxs = arnold.AiArrayConvert(nvertices, 1, arnold.AI_TYPE_UINT, ctypes.c_void_p(a.ctypes.data))
+                    a = numpy.array([i for p in polygons for i in p.loop_indices], dtype=numpy.uint32)
+                    nidxs = arnold.AiArrayConvert(len(a), 1, arnold.AI_TYPE_UINT, ctypes.c_void_p(a.ctypes.data))
                 arnold.AiNodeSetArray(node, "nsides", nsides)
                 arnold.AiNodeSetArray(node, "vidxs", vidxs)
                 arnold.AiNodeSetArray(node, "nidxs", nidxs)
+                print("    polys: %s (%f)" % (len(mesh.polygons), time.perf_counter() - pc))
                 # uv
                 for i, uvt in enumerate(mesh.uv_textures):
                     if uvt.active_render:
@@ -277,6 +308,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                             arnold.AiArraySetPnt2(uvlist, i, arnold.AtPoint2(*d.uv))
                         arnold.AiNodeSetArray(node, "uvidxs", uvidxs)
                         arnold.AiNodeSetArray(node, "uvlist", uvlist)
+                        print("    uv: %s (%f)" % (len(uvd), time.perf_counter() - pc))
                 # materials
                 idxs, _shaders = shaders.get(mesh)
                 if idxs:
@@ -291,6 +323,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                         arnold.AiNodeSetArray(node, "shader", shader)
                     elif _shaders[0]:
                         arnold.AiNodeSetPtr(node, "shader", _shaders[0])
+                    print("    shaders: %s (%f)" % (len(_shaders), time.perf_counter() - pc))
                 # cache unmodified shapes for instancing
                 if not node is None and not modified:
                     inodes[ob.data] = node
@@ -403,8 +436,9 @@ def _export(data, scene, camera, xres, yres, session=None):
         arnold.AiNodeSetStr(node, "name", camera.name)
         arnold.AiNodeSetFlt(node, "fov", math.degrees(camera.data.angle))
         arnold.AiNodeSetArray(node, "matrix", _AiMatrix(camera.matrix_world))
-        arnold.AiNodeSetPnt2(node, "screen_window_min", -1, 1)
-        arnold.AiNodeSetPnt2(node, "screen_window_max", 1, -1)
+        if not session is None:
+            arnold.AiNodeSetPnt2(node, "screen_window_min", -1, 1)
+            arnold.AiNodeSetPnt2(node, "screen_window_max", 1, -1)
         arnold.AiNodeSetPtr(options, "camera", node)
     
     world = scene.world
