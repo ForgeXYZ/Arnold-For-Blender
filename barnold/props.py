@@ -92,7 +92,6 @@ class ArnoldOptions(PropertyGroup):
         options=set()
     )
     logfile_flags = EnumProperty(
-
         name="File flags",
         items=_LOG_FLAGS,
         options={'ENUM_FLAG'}

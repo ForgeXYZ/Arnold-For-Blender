@@ -463,18 +463,11 @@ def _export(data, scene, camera, xres, yres, session=None):
     arnold.AiNodeSetInt(options, "AA_samples", AA_samples)
 
 
-def export_ass(data, scene, camera, xres, yres, filepath):
+def export_ass(data, scene, camera, xres, yres, filepath, open_procs, binary):
     arnold.AiBegin()
     try:
-        _export(
-            data,
-            scene,
-            engine.camera_override,
-            engine.resolution_x,
-            engine.resolution_y
-        )
-        # TODO: options
-        arnold.AiASSWrite(filepath, arnold.AI_NODE_ALL, False, False)
+        _export(data, scene, camera, xres, yres)
+        arnold.AiASSWrite(filepath, arnold.AI_NODE_ALL, open_procs, binary)
     finally:
         arnold.AiEnd()
 
@@ -483,14 +476,11 @@ def update(engine, data, scene):
     engine.use_highlight_tiles = True
     engine._session = {}
     arnold.AiBegin()
-    _export(
-        data,
-        scene,
-        engine.camera_override,
-        engine.resolution_x,
-        engine.resolution_y,
-        session=engine._session
-    )
+    _export(data, scene,
+            engine.camera_override,
+            engine.resolution_x,
+            engine.resolution_y,
+            session=engine._session)
 
 
 def render(engine, scene):
@@ -504,7 +494,8 @@ def render(engine, scene):
         def display_callback(x, y, width, height, buffer, data):
             if engine.test_break():
                 arnold.AiRenderAbort()
-                for result in _htiles.values():
+                while _htiles:
+                    (x, y), result = _htiles.popitem()
                     engine.end_result(result, True)
                 return
             
@@ -532,16 +523,19 @@ def render(engine, scene):
         cb = arnold.AtDisplayCallBack(display_callback)
         arnold.AiNodeSetPtr(session['display'], "callback", cb)
 
-        arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
-        ipr = session.get("ipr")
-        if ipr:
-            options = arnold.AiUniverseGetOptions()
-            for sl in range(*ipr):
-                arnold.AiNodeSetInt(options, "AA_samples", sl)
-                res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
-                if res != arnold.AI_SUCCESS:
-                    break
-                engine.update_stats("", "SL: %d" % sl)
+        res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
+        if res == arnold.AI_SUCCESS:
+            ipr = session.get("ipr")
+            if ipr:
+                options = arnold.AiUniverseGetOptions()
+                for sl in range(*ipr):
+                    arnold.AiNodeSetInt(options, "AA_samples", sl)
+                    res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
+                    if res != arnold.AI_SUCCESS:
+                        break
+                    engine.update_stats("", "SL: %d" % sl)
+        if res != arnold.AI_SUCCESS:
+            engine.error_set("Render status: %d" % res)
     except:
         # cancel render on error
         engine.end_result(None, True)

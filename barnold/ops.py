@@ -7,7 +7,10 @@ import traceback
 
 import bpy
 from bpy.types import Operator
-from bpy.props import StringProperty
+from bpy.props import (
+    BoolProperty,
+    StringProperty
+)
 from bpy_extras.io_utils import ExportHelper
 from . import ArnoldRenderEngine
 
@@ -19,6 +22,8 @@ class ExportASS(Operator, ExportHelper):
 
     filename_ext = ".ass"
     filter_glob = StringProperty(default="*.ass", options={'HIDDEN'})
+    binary = BoolProperty(name="Binary-encode ASS File", default=True)
+    open_procs = BoolProperty(name="Expand Procedurals")
 
     @classmethod
     def poll(cls, context):
@@ -38,7 +43,9 @@ class ExportASS(Operator, ExportHelper):
                     scene.camera,
                     int(render.resolution_x * resolution),
                     int(render.resolution_y * resolution),
-                    ass_filepath=self.filepath
+                    self.filepath,
+                    self.open_procs,
+                    self.binary
                 )
                 return {'FINISHED'}
             except Exception as e:
