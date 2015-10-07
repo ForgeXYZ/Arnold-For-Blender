@@ -327,11 +327,11 @@ def _export(data, scene, camera, xres, yres, session=None):
     arnold.AiNodeSetFlt(options, "aspect_ratio", render.pixel_aspect_y / render.pixel_aspect_x)  # TODO: different with blender render if ratio > 1.0
     if render.use_border:
         xoff = int(xres * render.border_min_x)
-        yoff = int(yres * render.border_min_y) + 1
+        yoff = int(yres * render.border_min_y)
         arnold.AiNodeSetInt(options, "region_min_x", xoff)
+        arnold.AiNodeSetInt(options, "region_min_y", yoff)
         arnold.AiNodeSetInt(options, "region_max_x", int(xres * render.border_max_x) - 1)
-        arnold.AiNodeSetInt(options, "region_min_y", int(yres * (1.0 - render.border_max_y)))
-        arnold.AiNodeSetInt(options, "region_max_y", int(yres * (1.0 - render.border_min_y)) - 1)
+        arnold.AiNodeSetInt(options, "region_max_y", int(yres * render.border_max_y) - 1)
     if opts.progressive_refinement and not session is None:
         arnold.AiNodeSetInt(options, "AA_samples", opts.AA_samples)
     else:
@@ -497,24 +497,24 @@ def render(engine, scene):
                 while _htiles:
                     (x, y), result = _htiles.popitem()
                     engine.end_result(result, True)
-                return
-            
-            if buffer:
-                result = _htiles.pop((x, y))
-                if not result is None:
-                    result = engine.begin_result(x, y, width, height)
-                t = ctypes.c_byte * (width * height * 4)
-                a = t.from_address(ctypes.addressof(buffer.contents))
-                rect = numpy.frombuffer(a, numpy.uint8) * _M
-                rect = numpy.reshape(rect, [-1, 4])
-                rect **= 2.2  # gamma correction
-                result.layers[0].passes[0].rect = rect
-                engine.end_result(result)
             else:
-                result = engine.begin_result(x, y, width, height)
-                engine.update_result(result)
-                _htiles[(x, y)] = result
-
+                x -= xoff
+                y -= yoff
+                if buffer:
+                    result = _htiles.pop((x, y))
+                    if not result is None:
+                        result = engine.begin_result(x, y, width, height)
+                    t = ctypes.c_byte * (width * height * 4)
+                    a = t.from_address(ctypes.addressof(buffer.contents))
+                    rect = numpy.frombuffer(a, numpy.uint8) * _M
+                    rect = numpy.reshape(rect, [-1, 4])
+                    rect **= 2.2  # gamma correction
+                    result.layers[0].passes[0].rect = rect
+                    engine.end_result(result)
+                else:
+                    result = engine.begin_result(x, y, width, height)
+                    engine.update_result(result)
+                    _htiles[(x, y)] = result
             mem = arnold.AiMsgUtilGetUsedMemory() / 1048576  # 1024*1024
             peak = session["peak"] = max(session["peak"], mem)
             engine.update_memory_stats(mem, peak)
