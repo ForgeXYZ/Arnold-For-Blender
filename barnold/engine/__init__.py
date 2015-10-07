@@ -108,39 +108,54 @@ class Shaders:
         shaders = []  # used shaders
         default = -1  # default shader index, if used
 
-        midxs = {}
-        for p in mesh.polygons:
-            mi = p.material_index
-            idx = midxs.get(mi)
-            if idx is None:
-                mat = mesh.materials[mi]
-                if mat:
-                    node = self._shaders.get(mat)
-                    if node is None:
-                        node = self._export(mat)
-                        if node is None:
-                            node = self.default
-                            if default < 0:
-                                idx = default = len(shaders)
-                            else:
-                                idx = default
-                        else:
-                            idx = len(shaders)
-                        self._shaders[mat] = node
-                        shaders.append(node)
-                    else:
-                        try:
-                            idx = shaders.index(node)
-                        except ValueError:
-                            idx = len(shaders)
-                            shaders.append(node)
-                elif default < 0:
-                    idx = default = len(shaders)
-                    shaders.append(self.default)
-                else:
-                    idx = default
-                midxs[mi] = idx
-            idxs.append(idx)
+        a = numpy.ndarray(len(mesh.polygons), dtype=numpy.uint8)
+        mesh.polygons.foreach_get("material_index", a)
+        uidxs = numpy.unique(a)
+        for i in uidxs:
+            node = None
+            mat = mesh.materials[i]
+            if mat:
+                node = self._shaders.get(mat, False)
+                if node is False:
+                    node = self._export(mat)
+                    self._shaders[mat] = node
+            shaders.append(node)
+        if shaders:
+            idxs = a
+
+        #midxs = {}
+        #for p in mesh.polygons:
+        #    mi = p.material_index
+        #    idx = midxs.get(mi)
+        #    if idx is None:
+        #        mat = mesh.materials[mi]
+        #        if mat:
+        #            node = self._shaders.get(mat)
+        #            if node is None:
+        #                node = self._export(mat)
+        #                if node is None:
+        #                    node = self.default
+        #                    if default < 0:
+        #                        idx = default = len(shaders)
+        #                    else:
+        #                        idx = default
+        #                else:
+        #                    idx = len(shaders)
+        #                self._shaders[mat] = node
+        #                shaders.append(node)
+        #            else:
+        #                try:
+        #                    idx = shaders.index(node)
+        #                except ValueError:
+        #                    idx = len(shaders)
+        #                    shaders.append(node)
+        #        elif default < 0:
+        #            idx = default = len(shaders)
+        #            shaders.append(self.default)
+        #        else:
+        #            idx = default
+        #        midxs[mi] = idx
+        #    idxs.append(idx)
 
         return idxs, shaders
 
@@ -319,14 +334,18 @@ def _export(data, scene, camera, xres, yres, session=None):
 
                         pc5 = time.perf_counter()
                         print(" %14.6f: (%10.6f) uvs %d" % (pc5 - pc, pc5 - pc4, nuvs))
+                        break
+                else:
+                    pc5 = time.perf_counter()
 
                 # materials
                 idxs, _shaders = shaders.get(mesh)
-                if idxs:
+                if len(idxs) > 0:
                     if len(_shaders) > 1:
-                        shidxs = arnold.AiArrayAllocate(len(idxs), 1, arnold.AI_TYPE_BYTE)
-                        for i, idx in enumerate(idxs):
-                            arnold.AiArraySetByte(shidxs, i, idx)
+                        #shidxs = arnold.AiArrayAllocate(len(idxs), 1, arnold.AI_TYPE_BYTE)
+                        #for i, idx in enumerate(idxs):
+                        #    arnold.AiArraySetByte(shidxs, i, idx)
+                        shidxs = arnold.AiArrayConvert(len(idxs), 1, arnold.AI_TYPE_BYTE, ctypes.c_void_p(a.ctypes.data))
                         arnold.AiNodeSetArray(node, "shidxs", shidxs)
 
                         shader = arnold.AiArrayAllocate(len(_shaders), 1, arnold.AI_TYPE_POINTER)
@@ -337,7 +356,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                         arnold.AiNodeSetPtr(node, "shader", _shaders[0])
 
                     pc6 = time.perf_counter()
-                    print(" %14.6f: (%10.6f) shaders %d %d" % (pc6 - pc, pc6 - pc5, len(_shaders), len(idxs)))
+                    print(" %14.6f: (%10.6f) shaders %d" % (pc6 - pc, pc6 - pc5, len(_shaders)))
 
                 # cache unmodified shapes for instancing
                 if not node is None and not modified:
