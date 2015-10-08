@@ -11,6 +11,7 @@ import collections
 import numpy
 import math
 import time
+import re
 
 import bpy
 from mathutils import Matrix, Vector
@@ -23,6 +24,13 @@ from . import arnold
 
 
 _M = 1 / 255
+
+
+def _AiName(prefix, count):
+    r = re.compile("[^-0-9A-Za-z_]")
+    def fn(name):
+        return "%s%d::%s" % (prefix, next(count), r.sub("_", name))
+    return fn
 
 
 def _AiMatrix(m):
@@ -166,19 +174,19 @@ class Shaders:
 
 
 def _AiPolymesh(data, scene, shaders, ob):
-    pc = time.perf_counter()
+    #pc = time.perf_counter()
     print("%s: %s" % (ob.type, ob.name))
 
     node = None
     mesh = ob.to_mesh(scene, True, 'RENDER', False)
     try:
-        print(" %14.6f: ob.to_mesh()" % (time.perf_counter() - pc))
+        #print(" %14.6f: ob.to_mesh()" % (time.perf_counter() - pc))
 
         mesh.calc_normals_split()
         # No need to call mesh.free_normals_split later, as this mesh is deleted anyway!
 
-        pc1 = time.perf_counter()
-        print(" %14.6f: mesh.calc_normals_split()" % (pc1 - pc))
+        #pc1 = time.perf_counter()
+        #print(" %14.6f: mesh.calc_normals_split()" % (pc1 - pc))
 
         node = arnold.AiNode('polymesh')
         arnold.AiNodeSetBool(node, "smoothing", True)
@@ -196,8 +204,8 @@ def _AiPolymesh(data, scene, shaders, ob):
         vlist = arnold.AiArrayConvert(nverts, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(a.ctypes.data))
         arnold.AiNodeSetArray(node, "vlist", vlist)
 
-        pc2 = time.perf_counter()
-        print(" %14.6f: (%10.6f) vertices %s" % (pc2 - pc, pc2 - pc1, nverts))
+        #pc2 = time.perf_counter()
+        #print(" %14.6f: (%10.6f) vertices %s" % (pc2 - pc, pc2 - pc1, nverts))
 
         # normals
         a = numpy.ndarray([nloops * 3], dtype=numpy.float32)
@@ -205,8 +213,8 @@ def _AiPolymesh(data, scene, shaders, ob):
         nlist = arnold.AiArrayConvert(nloops, 1, arnold.AI_TYPE_VECTOR, ctypes.c_void_p(a.ctypes.data))
         arnold.AiNodeSetArray(node, "nlist", nlist)
 
-        pc3 = time.perf_counter()
-        print(" %14.6f: (%10.6f) normals %d" % (pc3 - pc, pc3 - pc2, nloops))
+        #pc3 = time.perf_counter()
+        #print(" %14.6f: (%10.6f) normals %d" % (pc3 - pc, pc3 - pc2, nloops))
 
         # polygons
         a = numpy.ndarray([npolygons], dtype=numpy.uint32)
@@ -219,7 +227,8 @@ def _AiPolymesh(data, scene, shaders, ob):
         vidxs = arnold.AiArrayConvert(nloops, 1, arnold.AI_TYPE_UINT, ctypes.c_void_p(a.ctypes.data))
         arnold.AiNodeSetArray(node, "vidxs", vidxs)
 
-        print(" %14.6f: ..." % (time.perf_counter() - pc))
+        #print(" %14.6f: ..." % (time.perf_counter() - pc))
+
         # TODO: very slow, seems it always a range(0, nloops)
         #a = numpy.array([i for p in polygons for i in p.loop_indices], dtype=numpy.uint32)
         #nidxs = arnold.AiArrayConvert(len(a), 1, arnold.AI_TYPE_UINT, ctypes.c_void_p(a.ctypes.data))
@@ -227,8 +236,8 @@ def _AiPolymesh(data, scene, shaders, ob):
         nidxs = arnold.AiArrayConvert(nloops, 1, arnold.AI_TYPE_UINT, ctypes.c_void_p(a.ctypes.data))
         arnold.AiNodeSetArray(node, "nidxs", nidxs)
 
-        pc4 = time.perf_counter()
-        print(" %14.6f: (%10.6f) polygons %d" % (pc4 - pc, pc4 - pc3, npolygons))
+        #pc4 = time.perf_counter()
+        #print(" %14.6f: (%10.6f) polygons %d" % (pc4 - pc, pc4 - pc3, npolygons))
 
         # uv
         for i, uvt in enumerate(mesh.uv_textures):
@@ -245,11 +254,11 @@ def _AiPolymesh(data, scene, shaders, ob):
                 uvlist = arnold.AiArrayConvert(nuvs, 1, arnold.AI_TYPE_POINT2, ctypes.c_void_p(a.ctypes.data))
                 arnold.AiNodeSetArray(node, "uvlist", uvlist)
 
-                pc5 = time.perf_counter()
-                print(" %14.6f: (%10.6f) uvs %d" % (pc5 - pc, pc5 - pc4, nuvs))
+                #pc5 = time.perf_counter()
+                #print(" %14.6f: (%10.6f) uvs %d" % (pc5 - pc, pc5 - pc4, nuvs))
                 break
-        else:
-            pc5 = time.perf_counter()
+        #else:
+        #    pc5 = time.perf_counter()
 
         # materials
         if mesh.materials:
@@ -279,8 +288,8 @@ def _AiPolymesh(data, scene, shaders, ob):
                 else:
                     arnold.AiNodeSetPtr(node, "shader", t[1][0])
 
-                pc6 = time.perf_counter()
-                print(" %14.6f: (%10.6f) shaders %d" % (pc6 - pc, pc6 - pc5, nmm))
+                #pc6 = time.perf_counter()
+                #print(" %14.6f: (%10.6f) shaders %d" % (pc6 - pc, pc6 - pc5, nmm))
     finally:
         data.meshes.remove(mesh)
     return node
@@ -291,15 +300,17 @@ def _export(data, scene, camera, xres, yres, session=None):
     opts = scene.arnold
 
     # enabled scene layers
-    layers = [i for i, x in enumerate(scene.layers) if x]
+    layers = [i for i, j in enumerate(scene.layers) if j]
+    in_layers = lambda o: any(o.layers[i] for i in layers)
     # offsets for border render
     xoff = 0
     yoff = 0
     # nodes cache
-    nodes = {}
-    inodes = {}
-
+    nodes = {}  # {ob: AiNode}
+    inodes = {}  # {ob.data: AiNode}
     duplicators = []
+
+    _Name = _AiName("O", itertools.count())
 
     shaders = Shaders(data)
 
@@ -310,12 +321,7 @@ def _export(data, scene, camera, xres, yres, session=None):
     arnold.AiLoadPlugins(plugins_path)
 
     for ob in scene.objects:
-        if ob.hide_render:
-            continue
-        for i in layers:
-            if ob.layers[i]:
-                break
-        else:
+        if ob.hide_render or not in_layers(ob):
             continue
 
         if ob.is_duplicator:
@@ -328,19 +334,20 @@ def _export(data, scene, camera, xres, yres, session=None):
                 inode = inodes.get(ob.data)
                 if not inode is None:
                     node = arnold.AiNode("ginstance")
-                    arnold.AiNodeSetStr(node, "name", ob.name)
+                    arnold.AiNodeSetStr(node, "name", _Name(ob.name))
                     arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
                     arnold.AiNodeSetBool(node, "inherit_xform", False)
                     arnold.AiNodeSetPtr(node, "node", inode)
                     continue
 
             node = _AiPolymesh(data, scene, shaders, ob)
-            arnold.AiNodeSetStr(node, "name", ob.name)
+            arnold.AiNodeSetStr(node, "name", _Name(ob.name))
             arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
 
             if not modified:
                 # cache unmodified shapes for instancing
                 inodes[ob.data] = node
+            # cache for duplicators
             nodes[ob] = node
         elif ob.type == 'LAMP':
             lamp = ob.data
@@ -355,7 +362,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                 node = arnold.AiNode("distant_light")
             else:
                 continue
-            arnold.AiNodeSetStr(node, "name", ob.name)
+            arnold.AiNodeSetStr(node, "name", _Name(ob.name))
             arnold.AiNodeSetRGB(node, "color", *lamp.color)
             arnold.AiNodeSetFlt(node, "intensity", light.intensity)
             arnold.AiNodeSetFlt(node, "exposure", light.exposure)
@@ -375,13 +382,14 @@ def _export(data, scene, camera, xres, yres, session=None):
                     ob = dlo.object
                     onode = nodes.get(ob)
                     if onode is None:
+                        # TODO: check object type, must be convertable to mesh
                         onode = _AiPolymesh(data, scene, shaders, ob)
-                        arnold.AiNodeSetStr(onode, "name", ob.name)
+                        arnold.AiNodeSetStr(onode, "name", _Name(ob.name))
                         arnold.AiNodeSetArray(onode, "matrix", _AiMatrix(dlo.matrix))
                         nodes[ob] = onode
                         continue
                     node = arnold.AiNode("ginstance")
-                    arnold.AiNodeSetStr(node, "name", "%s::%s::%d" % (d.name, ob.name, dlo.index))
+                    arnold.AiNodeSetStr(node, "name", _Name(ob.name))
                     arnold.AiNodeSetArray(node, "matrix", _AiMatrix(dlo.matrix))
                     arnold.AiNodeSetBool(node, "inherit_xform", False)
                     arnold.AiNodeSetPtr(node, "node", onode)
