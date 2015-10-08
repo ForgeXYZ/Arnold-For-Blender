@@ -396,12 +396,15 @@ def _export(data, scene, camera, xres, yres, session=None):
             finally:
                 d.dupli_list_clear()
 
+    aspect_x = render.pixel_aspect_x
+    aspect_y = render.pixel_aspect_y
+
     ########
     ## options
     options = arnold.AiUniverseGetOptions()
     arnold.AiNodeSetInt(options, "xres", xres)
     arnold.AiNodeSetInt(options, "yres", yres)
-    arnold.AiNodeSetFlt(options, "aspect_ratio", render.pixel_aspect_y / render.pixel_aspect_x)  # TODO: different with blender render if ratio > 1.0
+    arnold.AiNodeSetFlt(options, "aspect_ratio", aspect_y / aspect_x)
     if render.use_border:
         xoff = int(xres * render.border_min_x)
         yoff = int(yres * render.border_min_y)
@@ -478,8 +481,19 @@ def _export(data, scene, camera, xres, yres, session=None):
     if camera:
         node = arnold.AiNode("persp_camera")
         arnold.AiNodeSetStr(node, "name", camera.name)
-        arnold.AiNodeSetFlt(node, "fov", math.degrees(camera.data.angle))
         arnold.AiNodeSetArray(node, "matrix", _AiMatrix(camera.matrix_world))
+        cd = camera.data
+        if cd.sensor_fit == 'VERTICAL':
+            sw = cd.sensor_height * xres / yres * aspect_x / aspect_y
+        else:
+            sw = cd.sensor_width
+            if cd.sensor_fit == 'AUTO':
+                x = xres * aspect_x
+                y = xres * aspect_y
+                if x < y:
+                    sw *= x / y
+        fov = math.degrees(2 * math.atan(sw / (2 * cd.lens)))
+        arnold.AiNodeSetFlt(node, "fov", fov)
         if not session is None:
             arnold.AiNodeSetPnt2(node, "screen_window_min", -1, 1)
             arnold.AiNodeSetPnt2(node, "screen_window_max", 1, -1)
@@ -525,7 +539,7 @@ def _export(data, scene, camera, xres, yres, session=None):
     display = arnold.AiNode("driver_display")
     arnold.AiNodeSetStr(display, "name", "__outdriver")
     arnold.AiNodeSetFlt(display, "gamma", opts.display_gamma)
-    arnold.AiNodeSetBool(display, "dither", True)
+    #arnold.AiNodeSetBool(display, "dither", True)
 
     outputs = arnold.AiArray(1, 1, arnold.AI_TYPE_STRING, b"RGBA RGBA __outfilter __outdriver")
     arnold.AiNodeSetArray(options, "outputs", outputs)
