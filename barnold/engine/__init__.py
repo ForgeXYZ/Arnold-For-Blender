@@ -181,9 +181,7 @@ def _AiPolymesh(data, scene, shaders, ob):
         print(" %14.6f: mesh.calc_normals_split()" % (pc1 - pc))
 
         node = arnold.AiNode('polymesh')
-        arnold.AiNodeSetStr(node, "name", ob.name)
         arnold.AiNodeSetBool(node, "smoothing", True)
-        arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
 
         verts = mesh.vertices
         nverts = len(verts)
@@ -298,7 +296,10 @@ def _export(data, scene, camera, xres, yres, session=None):
     xoff = 0
     yoff = 0
     # nodes cache
+    nodes = {}
     inodes = {}
+
+    duplicators = []
 
     shaders = Shaders(data)
 
@@ -317,6 +318,10 @@ def _export(data, scene, camera, xres, yres, session=None):
         else:
             continue
 
+        if ob.is_duplicator:
+            duplicators.append(ob)
+            continue
+
         if ob.type in ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT'):
             modified = ob.is_modified(scene, 'RENDER')
             if not modified:
@@ -324,15 +329,19 @@ def _export(data, scene, camera, xres, yres, session=None):
                 if not inode is None:
                     node = arnold.AiNode("ginstance")
                     arnold.AiNodeSetStr(node, "name", ob.name)
-                    arnold.AiNodeSetBool(node, "inherit_xform", False)
                     arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
+                    arnold.AiNodeSetBool(node, "inherit_xform", False)
                     arnold.AiNodeSetPtr(node, "node", inode)
                     continue
 
             node = _AiPolymesh(data, scene, shaders, ob)
-            if not node is None and not modified:
+            arnold.AiNodeSetStr(node, "name", ob.name)
+            arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
+
+            if not modified:
                 # cache unmodified shapes for instancing
                 inodes[ob.data] = node
+            nodes[ob] = node
         elif ob.type == 'LAMP':
             lamp = ob.data
             light = lamp.arnold
@@ -358,6 +367,29 @@ def _export(data, scene, camera, xres, yres, session=None):
             arnold.AiNodeSetBool(node, "normalize", light.normalize)
             arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
 
+    for d in duplicators:
+        if d.dupli_type == 'GROUP':
+            d.dupli_list_create(scene, 'RENDER')
+            try:
+                for dlo in d.dupli_list:
+                    ob = dlo.object
+                    onode = nodes.get(ob)
+                    if onode is None:
+                        onode = _AiPolymesh(data, scene, shaders, ob)
+                        arnold.AiNodeSetStr(onode, "name", ob.name)
+                        arnold.AiNodeSetArray(onode, "matrix", _AiMatrix(dlo.matrix))
+                        nodes[ob] = onode
+                        continue
+                    node = arnold.AiNode("ginstance")
+                    arnold.AiNodeSetStr(node, "name", "%s::%s::%d" % (d.name, ob.name, dlo.index))
+                    arnold.AiNodeSetArray(node, "matrix", _AiMatrix(dlo.matrix))
+                    arnold.AiNodeSetBool(node, "inherit_xform", False)
+                    arnold.AiNodeSetPtr(node, "node", onode)
+            finally:
+                d.dupli_list_clear()
+
+    ########
+    ## options
     options = arnold.AiUniverseGetOptions()
     arnold.AiNodeSetInt(options, "xres", xres)
     arnold.AiNodeSetInt(options, "yres", yres)
@@ -552,7 +584,7 @@ def render(engine, scene):
                 else:
                     result = engine.begin_result(x, y, width, height)
                     # TODO: sometimes highlighted tiles become empty
-                    engine.update_result(result)
+                    #engine.update_result(result)
                     _htiles[(x, y)] = result
             mem = arnold.AiMsgUtilGetUsedMemory() / 1048576  # 1024*1024
             peak = session["peak"] = max(session["peak"], mem)
