@@ -412,10 +412,6 @@ def _export(data, scene, camera, xres, yres, session=None):
         arnold.AiNodeSetInt(options, "region_min_y", yoff)
         arnold.AiNodeSetInt(options, "region_max_x", int(xres * render.border_max_x) - 1)
         arnold.AiNodeSetInt(options, "region_max_y", int(yres * render.border_max_y) - 1)
-    if opts.progressive_refinement and not session is None:
-        arnold.AiNodeSetInt(options, "AA_samples", opts.AA_samples)
-    else:
-        arnold.AiNodeSetInt(options, "AA_samples", opts.AA_samples)
     if not opts.lock_sampling_pattern:
         arnold.AiNodeSetInt(options, "AA_seed", scene.frame_current)
     if opts.clamp_sample_values:
