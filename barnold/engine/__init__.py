@@ -23,8 +23,8 @@ from ..nodes import (
 from . import arnold
 
 
-_M = 1 / 255
-_RN = re.compile("[^-0-9A-Za-z_]")
+_RN = re.compile("[^-0-9A-Za-z_]")  # regex to cleanup names
+_CT = ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT')  # convertible types
 
 
 def _CleanNames(prefix, count):
@@ -294,6 +294,7 @@ def _AiPolymesh(data, scene, shaders, ob):
 
 
 def _export(data, scene, camera, xres, yres, session=None):
+    print("\n<<< BARNOLD: %s >>>" % time.ctime())
     render = scene.render
     opts = scene.arnold
 
@@ -304,6 +305,8 @@ def _export(data, scene, camera, xres, yres, session=None):
     nodes = {}  # {Object: AiNode}
     inodes = {}  # {Object.data: AiNode}
     duplicators = []
+    
+    duplicator_parent = False
 
     _Name = _CleanNames("O", itertools.count())
 
@@ -321,11 +324,19 @@ def _export(data, scene, camera, xres, yres, session=None):
         if ob.hide_render or not in_layers(ob):
             continue
 
+        if duplicator_parent != False:
+            if duplicator_parent == ob.parent:
+                duplicator_parent = False
+            else:
+                continue
+
         if ob.is_duplicator:
             duplicators.append(ob)
+            if ob.dupli_type in ('VERTS', 'FACES'):
+                duplicator_parent = ob.parent
             continue
 
-        if ob.type in ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT'):
+        if ob.type in _CT:
             modified = ob.is_modified(scene, 'RENDER')
             if not modified:
                 inode = inodes.get(ob.data)
@@ -373,27 +384,26 @@ def _export(data, scene, camera, xres, yres, session=None):
 
     ##############################
     ## duplicators
-    for d in duplicators:
-        if d.dupli_type == 'GROUP':
-            d.dupli_list_create(scene, 'RENDER')
-            try:
-                for dlo in d.dupli_list:
-                    ob = dlo.object
+    for duplicator in duplicators:
+        duplicator.dupli_list_create(scene, 'RENDER')
+        try:
+            for d in duplicator.dupli_list:
+                ob = d.object
+                if not ob.hide_render and not ob.dupli_type in ('VERTS', 'FACES') and ob.type in _CT:
                     onode = nodes.get(ob)
                     if onode is None:
-                        # TODO: check object type, must be convertable to mesh
                         onode = _AiPolymesh(data, scene, shaders, ob)
                         arnold.AiNodeSetStr(onode, "name", _Name(ob.name))
-                        arnold.AiNodeSetArray(onode, "matrix", _AiMatrix(dlo.matrix))
+                        arnold.AiNodeSetArray(onode, "matrix", _AiMatrix(d.matrix))
                         nodes[ob] = onode
                         continue
                     node = arnold.AiNode("ginstance")
                     arnold.AiNodeSetStr(node, "name", _Name(ob.name))
-                    arnold.AiNodeSetArray(node, "matrix", _AiMatrix(dlo.matrix))
+                    arnold.AiNodeSetArray(node, "matrix", _AiMatrix(d.matrix))
                     arnold.AiNodeSetBool(node, "inherit_xform", False)
                     arnold.AiNodeSetPtr(node, "node", onode)
-            finally:
-                d.dupli_list_clear()
+        finally:
+            duplicator.dupli_list_clear()
 
     aspect_x = render.pixel_aspect_x
     aspect_y = render.pixel_aspect_y
