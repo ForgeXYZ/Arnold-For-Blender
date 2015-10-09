@@ -534,9 +534,18 @@ def _export(data, scene, camera, xres, yres, session=None):
     display = arnold.AiNode("driver_display")
     arnold.AiNodeSetStr(display, "name", "__outdriver")
     arnold.AiNodeSetFlt(display, "gamma", opts.display_gamma)
+    arnold.AiNodeSetBool(display, "rgba_packing", False)
     #arnold.AiNodeSetBool(display, "dither", True)
 
-    outputs = arnold.AiArray(1, 1, arnold.AI_TYPE_STRING, b"RGBA RGBA __outfilter __outdriver")
+    #png = arnold.AiNode("driver_png")
+    #arnold.AiNodeSetStr(png, "name", "__png")
+    #arnold.AiNodeSetStr(png, "filename", render.frame_path())
+
+    outputs_aovs = (
+        b"RGBA RGBA __outfilter __outdriver",
+        #b"RGBA RGBA __outfilter __png"
+    )
+    outputs = arnold.AiArray(len(outputs_aovs), 1, arnold.AI_TYPE_STRING, *outputs_aovs)
     arnold.AiNodeSetArray(options, "outputs", outputs)
 
     AA_samples = opts.AA_samples
@@ -591,10 +600,8 @@ def render(engine, scene):
                     result = _htiles.pop((x, y))
                     if not result is None:
                         result = engine.begin_result(x, y, width, height)
-                    t = ctypes.c_byte * (width * height * 4)
-                    a = t.from_address(ctypes.addressof(buffer.contents))
-                    rect = numpy.frombuffer(a, numpy.uint8) * _M
-                    rect = numpy.reshape(rect, [-1, 4])
+                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float * (width * height * 4)))
+                    rect = numpy.frombuffer(_buffer.contents, dtype=numpy.dtype("4f"))
                     rect **= 2.2  # gamma correction
                     result.layers[0].passes[0].rect = rect
                     engine.end_result(result)
