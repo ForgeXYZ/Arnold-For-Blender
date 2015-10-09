@@ -7,8 +7,9 @@ import bpy
 from bpy.types import (
     PropertyGroup,
     Scene,
-    Lamp,
-    Material
+    Camera,
+    Material,
+    Lamp
 )
 from bpy.props import (
     PointerProperty,
@@ -496,6 +497,82 @@ class ArnoldOptions(PropertyGroup):
     @classmethod
     def unregister(cls):
         del Scene.arnold
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldCamera(PropertyGroup):
+    enable_dof = BoolProperty(
+        name="Enable DOF"
+    )
+    # far_clip with plane if True or with sphere
+    #plane_distance = BoolProperty(
+    #    name="Plane Distance",
+    #    default=True
+    #)
+    aperture_size = FloatProperty(
+        name="Aperture: Size"
+    )
+    aperture_blades = IntProperty(
+        name="Aperture: Blades"
+    )
+    aperture_rotation = FloatProperty(
+        name="Aperture: Rotation"
+    )
+    aperture_blade_curvature = FloatProperty(
+        name="Aperture: Blade Curvature"
+    )
+    aperture_aspect_ratio = FloatProperty(
+        name="Aperture: Aspect Ratio",
+        default=1
+    )
+    # dof flat of sphere
+    #flat_field_focus = BoolProperty(
+    #    name="Flat Field Focus",
+    #    default=True
+    #)
+    shutter_start = FloatProperty(
+        name="Shutter: Start"
+    )
+    shutter_end = FloatProperty(
+        name="Shutter: Stop"
+    )
+    shutter_type = EnumProperty(
+        name="Shutter Type",
+        items=[
+            ('box', "Box", "Box"),
+            ('triangle', "Triangle", "Triangle"),
+            #('curve', "Curve", "Curve")
+        ],
+        default='box'
+    )
+    #shutter_curve
+    rolling_shutter = EnumProperty(
+        name="Rolling Shutter",
+        items=[
+            ('off', "Off", "Off"),
+            ('top', "Top", "Top"),
+            ('bottom', "Bottom", "Bottom"),
+            ('left', "Left", "Left"),
+            ('right', "Right", "Right")
+        ],
+        default='off'
+    )
+    rolling_shutter_duration = FloatProperty(
+        name="Rolling Shutter: Duration"
+    )
+    #handedness (right, left)
+    #time_samples
+    exposure = FloatProperty(
+        name="Exposure"
+    )
+
+    @classmethod
+    def register(cls):
+        Camera.arnold = PointerProperty(type=cls)
+
+    @classmethod
+    def unregister(cls):
+        del Camera.arnold
 
 
 @ArnoldRenderEngine.register_class

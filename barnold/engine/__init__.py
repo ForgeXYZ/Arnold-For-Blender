@@ -14,7 +14,7 @@ import time
 import re
 
 import bpy
-from mathutils import Matrix, Vector
+from mathutils import Matrix, Vector, geometry
 from ..nodes import (
     ArnoldNode,
     ArnoldNodeOutput,
@@ -29,7 +29,7 @@ _RN = re.compile("[^-0-9A-Za-z_]")
 
 def _CleanNames(prefix, count):
     def fn(name):
-        return "%s%d::%s" % (prefix, next(count), _RN.sub("_", name))
+        return "%s%d#%s" % (prefix, next(count), _RN.sub("_", name))
     return fn
 
 
@@ -315,6 +315,8 @@ def _export(data, scene, camera, xres, yres, session=None):
     plugins_path = os.path.normpath(os.path.join(os.path.dirname(__file__), os.path.pardir, "bin"))
     arnold.AiLoadPlugins(plugins_path)
 
+    ##############################
+    ## objects
     for ob in scene.objects:
         if ob.hide_render or not in_layers(ob):
             continue
@@ -369,6 +371,8 @@ def _export(data, scene, camera, xres, yres, session=None):
             arnold.AiNodeSetBool(node, "normalize", light.normalize)
             arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
 
+    ##############################
+    ## duplicators
     for d in duplicators:
         if d.dupli_type == 'GROUP':
             d.dupli_list_create(scene, 'RENDER')
@@ -397,7 +401,7 @@ def _export(data, scene, camera, xres, yres, session=None):
     xoff = 0
     yoff = 0
 
-    ########
+    ##############################
     ## options
     options = arnold.AiUniverseGetOptions()
     arnold.AiNodeSetInt(options, "xres", xres)
@@ -472,11 +476,15 @@ def _export(data, scene, camera, xres, yres, session=None):
     arnold.AiNodeSetInt(options, "GI_glossy_samples", opts.GI_glossy_samples)
     arnold.AiNodeSetInt(options, "GI_refraction_samples", opts.GI_refraction_samples)
 
+    ##############################
+    ## camera
     if camera:
+        mw = camera.matrix_world
         node = arnold.AiNode("persp_camera")
         arnold.AiNodeSetStr(node, "name", camera.name)
-        arnold.AiNodeSetArray(node, "matrix", _AiMatrix(camera.matrix_world))
+        arnold.AiNodeSetArray(node, "matrix", _AiMatrix(mw))
         cd = camera.data
+        cp = cd.arnold
         if cd.sensor_fit == 'VERTICAL':
             sw = cd.sensor_height * xres / yres * aspect_x / aspect_y
         else:
@@ -488,17 +496,43 @@ def _export(data, scene, camera, xres, yres, session=None):
                     sw *= x / y
         fov = math.degrees(2 * math.atan(sw / (2 * cd.lens)))
         arnold.AiNodeSetFlt(node, "fov", fov)
+        if cd.dof_object:
+            dof = geometry.distance_point_to_plane(
+                mw.to_translation(),
+                cd.dof_object.matrix_world.to_translation(),
+                mw.col[2][:3]
+            )
+        else:
+           dof = cd.dof_distance
+        arnold.AiNodeSetFlt(node, "focus_distance", dof)
+        if cp.enable_dof:
+            arnold.AiNodeSetFlt(node, "aperture_size", cp.aperture_size)
+            arnold.AiNodeSetInt(node, "aperture_blades", cp.aperture_blades)
+            arnold.AiNodeSetFlt(node, "aperture_rotation", cp.aperture_rotation)
+            arnold.AiNodeSetFlt(node, "aperture_blade_curvature", cp.aperture_blade_curvature)
+            arnold.AiNodeSetFlt(node, "aperture_aspect_ratio", cp.aperture_aspect_ratio)
+        arnold.AiNodeSetFlt(node, "near_clip", cd.clip_start)
+        arnold.AiNodeSetFlt(node, "far_clip", cd.clip_end)
+        arnold.AiNodeSetFlt(node, "shutter_start", cp.shutter_start)
+        arnold.AiNodeSetFlt(node, "shutter_end", cp.shutter_end)
+        arnold.AiNodeSetStr(node, "shutter_type", cp.shutter_type)
+        arnold.AiNodeSetStr(node, "rolling_shutter", cp.rolling_shutter)
+        arnold.AiNodeSetFlt(node, "rolling_shutter_duration", cp.rolling_shutter_duration)
+        # TODO: camera shift
         if not session is None:
             arnold.AiNodeSetPnt2(node, "screen_window_min", -1, 1)
             arnold.AiNodeSetPnt2(node, "screen_window_max", 1, -1)
+        arnold.AiNodeSetFlt(node, "exposure", cp.exposure)
         arnold.AiNodeSetPtr(options, "camera", node)
     
+    ##############################
+    ## world
     world = scene.world
     if world:
         if world.use_nodes:
             for _node in world.node_tree.nodes:
                 if isinstance(_node, ArnoldNodeWorldOutput) and _node.is_active:
-                    _n = "W::" + _RN.sub("_", world.name)
+                    _n = "W#" + _RN.sub("_", world.name)
                     for input in _node.inputs:
                         if input.is_linked:
                             node = _AiNode(input.links[0].from_node, _n, {})
@@ -506,9 +540,11 @@ def _export(data, scene, camera, xres, yres, session=None):
                                 arnold.AiNodeSetPtr(options, input.identifier, node)
                     break
         else:
-            # TODO: export worl settings
+            # TODO: export world settings
             pass
 
+    ##############################
+    ## outputs
     sft = opts.sample_filter_type
     filter = arnold.AiNode(opts.sample_filter_type)
     arnold.AiNodeSetStr(filter, "name", "__outfilter")
@@ -600,8 +636,8 @@ def render(engine, scene):
                     result = _htiles.pop((x, y))
                     if not result is None:
                         result = engine.begin_result(x, y, width, height)
-                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float * (width * height * 4)))
-                    rect = numpy.frombuffer(_buffer.contents, dtype=numpy.dtype("4f"))
+                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
+                    rect = numpy.ctypeslib.as_array(_buffer, shape=(width * height, 4))
                     rect **= 2.2  # gamma correction
                     result.layers[0].passes[0].rect = rect
                     engine.end_result(result)

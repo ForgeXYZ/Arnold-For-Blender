@@ -266,6 +266,45 @@ class ArnoldRenderOverridePanel(RenderButtonsPanel, Panel):
             col.prop(opts, "max_subdivisions")
 
 ##
+## Camera
+##
+
+from bl_ui.properties_data_camera import CameraButtonsPanel
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldCameraPanel(CameraButtonsPanel, Panel):
+    COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
+    bl_label = "Arnold Camera"
+
+    def draw(self, context):
+        layout = self.layout
+
+        camera = context.camera
+        props = camera.arnold
+
+        layout.prop(props, "exposure")
+
+        col = layout.column()
+        col.prop(props, "rolling_shutter")
+        col.prop(props, "rolling_shutter_duration")
+
+        col = layout.column()
+        col.prop(props, "enable_dof")
+        subcol = col.column()
+        subcol.enabled = props.enable_dof
+        subcol.prop(props, "aperture_size")
+        subcol.prop(props, "aperture_blades")
+        subcol.prop(props, "aperture_blade_curvature")
+        subcol.prop(props, "aperture_rotation")
+        subcol.prop(props, "aperture_aspect_ratio")
+
+        col = layout.column()
+        col.prop(props, "shutter_start")
+        col.prop(props, "shutter_end")
+        col.prop(props, "shutter_type")
+
+##
 ## Lights
 ##
 
