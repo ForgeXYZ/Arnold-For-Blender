@@ -24,12 +24,12 @@ from . import arnold
 
 
 _M = 1 / 255
+_RN = re.compile("[^-0-9A-Za-z_]")
 
 
-def _AiName(prefix, count):
-    r = re.compile("[^-0-9A-Za-z_]")
+def _CleanNames(prefix, count):
     def fn(name):
-        return "%s%d::%s" % (prefix, next(count), r.sub("_", name))
+        return "%s%d::%s" % (prefix, next(count), _RN.sub("_", name))
     return fn
 
 
@@ -62,17 +62,17 @@ def _AiNode(node, prefix, nodes):
     Args:
         node (ArnoldNode): node.
         prefix (str): node name prefix.
-        nodes (dict): created nodes (str => AiNode).
+        nodes (dict): created nodes (Node => AiNode).
     Returns:
         arnold.AiNode or None
     """
     if not isinstance(node, ArnoldNode):
         return None
 
-    name = "%s:%s" % (prefix, node.name)
-    name = name.replace(" ", "_")
-    anode = nodes.get(name)
+    anode = nodes.get(node)
     if anode is None:
+        # TODO: make node names unique
+        name = "%s:%s" % (prefix, _RN.sub("_", node.name))
         anode = arnold.AiNode(node.ai_name)
         arnold.AiNodeSetStr(anode, "name", name)
         for input in node.inputs:
@@ -88,18 +88,8 @@ def _AiNode(node, prefix, nodes):
                 arnold.AiNodeSetStr(anode, p_name, bpy.path.abspath(p_value))
             elif p_type == 'STRING':
                 arnold.AiNodeSetStr(anode, p_name, p_value)
-        nodes[name] = anode
+        nodes[node] = anode
     return anode
-
-
-def _AiNodeTree(prefix, ntree):
-    for node in ntree.nodes:
-        if isinstance(node, ArnoldNodeOutput) and node.is_active:
-            input = node.inputs[0]
-            if input.is_linked:
-                return _AiNode(input.links[0].from_node, prefix, {})
-            break
-    return None
 
 
 class Shaders:
@@ -108,6 +98,8 @@ class Shaders:
 
         self._shaders = {}
         self._default = None  # default shader, if used
+
+        self._Name = _CleanNames("M", itertools.count())
 
     def get(self, mat):
         if mat:
@@ -132,7 +124,13 @@ class Shaders:
 
     def _export(self, mat):
         if mat.use_nodes:
-            return _AiNodeTree(mat.name, mat.node_tree)
+            for n in mat.node_tree.nodes:
+                if isinstance(n, ArnoldNodeOutput) and n.is_active:
+                    input = n.inputs[0]
+                    if input.is_linked:
+                        return _AiNode(input.links[0].from_node, self._Name(mat.name), {})
+                    break
+            return None
 
         shader = mat.arnold
         if mat.type == 'SURFACE':
@@ -169,7 +167,7 @@ class Shaders:
             arnold.AiNodeSetBool(node, "raster_space", wire.raster_space)
         else:
             return None
-        arnold.AiNodeSetStr(node, "name", mat.name)
+        arnold.AiNodeSetStr(node, "name", self._Name(mat.name))
         return node
 
 
@@ -302,15 +300,12 @@ def _export(data, scene, camera, xres, yres, session=None):
     # enabled scene layers
     layers = [i for i, j in enumerate(scene.layers) if j]
     in_layers = lambda o: any(o.layers[i] for i in layers)
-    # offsets for border render
-    xoff = 0
-    yoff = 0
     # nodes cache
-    nodes = {}  # {ob: AiNode}
-    inodes = {}  # {ob.data: AiNode}
+    nodes = {}  # {Object: AiNode}
+    inodes = {}  # {Object.data: AiNode}
     duplicators = []
 
-    _Name = _AiName("O", itertools.count())
+    _Name = _CleanNames("O", itertools.count())
 
     shaders = Shaders(data)
 
@@ -398,6 +393,9 @@ def _export(data, scene, camera, xres, yres, session=None):
 
     aspect_x = render.pixel_aspect_x
     aspect_y = render.pixel_aspect_y
+    # offsets for border render
+    xoff = 0
+    yoff = 0
 
     ########
     ## options
@@ -500,9 +498,10 @@ def _export(data, scene, camera, xres, yres, session=None):
         if world.use_nodes:
             for _node in world.node_tree.nodes:
                 if isinstance(_node, ArnoldNodeWorldOutput) and _node.is_active:
+                    _n = "W::" + _RN.sub("_", world.name)
                     for input in _node.inputs:
                         if input.is_linked:
-                            node = _AiNode(input.links[0].from_node, world.name, {})
+                            node = _AiNode(input.links[0].from_node, _n, {})
                             if node:
                                 arnold.AiNodeSetPtr(options, input.identifier, node)
                     break
