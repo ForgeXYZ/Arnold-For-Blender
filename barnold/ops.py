@@ -16,8 +16,27 @@ from . import ArnoldRenderEngine
 
 
 @ArnoldRenderEngine.register_class
+class ArnoldUiToggle(Operator):
+    bl_idname = "barnold.ui_toggle"
+    bl_options = {'INTERNAL'}
+    bl_label = "Open / Close"
+    bl_description = "Open / close options"
+
+    path = StringProperty()
+    attr = StringProperty()
+    ctx = StringProperty()
+
+    def execute(self, context):
+        data = getattr(context, self.ctx)
+        if self.path:
+            data = data.path_resolve(self.path)
+        setattr(data, self.attr, not getattr(data, self.attr))
+        return {'FINISHED'}
+
+
+@ArnoldRenderEngine.register_class
 class ExportASS(Operator, ExportHelper):
-    bl_idname = "arnold.export_ass"
+    bl_idname = "barnold.export_ass"
     bl_label = "Export ASS"
 
     filename_ext = ".ass"

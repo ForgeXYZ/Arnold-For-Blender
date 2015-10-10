@@ -173,6 +173,8 @@ class Shaders:
 
 
 def _AiPolymesh(mesh, shaders):
+    pc = time.perf_counter()
+
     verts = mesh.vertices
     nverts = len(verts)
     loops = mesh.loops
@@ -249,18 +251,33 @@ def _AiPolymesh(mesh, shaders):
             else:
                 shader = t[1][0]
             arnold.AiNodeSetPtr(node, "shader", shader)
+
+    arnold.AiMsgInfo(b"    node (%f)", ctypes.c_double(time.perf_counter() - pc))
     return node
 
 
+def _export_object_properties(ob, node):
+    props = ob.arnold
+    arnold.AiNodeSetByte(node, "visibility", props.visibility)
+    arnold.AiNodeSetByte(node, "sidedness", props.sidedness)
+    arnold.AiNodeSetBool(node, "receive_shadows", props.receive_shadows)
+    arnold.AiNodeSetBool(node, "self_shadows", props.self_shadows)
+    arnold.AiNodeSetBool(node, "invert_normals", props.invert_normals)
+    arnold.AiNodeSetBool(node, "opaque", props.opaque)
+    arnold.AiNodeSetBool(node, "matte", props.matte)
+
+
 def _export(data, scene, camera, xres, yres, session=None):
-    print("\n<<< BARNOLD: %s >>>" % time.ctime())
+    """
+    """
 
     @contextmanager
     def _Mesh(ob):
-        print("%s: %s" % (ob.type, ob.name))
+        pc = time.perf_counter()
         mesh = ob.to_mesh(scene, True, 'RENDER', False)
         try:
             mesh.calc_normals_split()
+            arnold.AiMsgInfo(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
             yield mesh
         finally:
             data.meshes.remove(mesh)
@@ -285,22 +302,30 @@ def _export(data, scene, camera, xres, yres, session=None):
     plugins_path = os.path.normpath(os.path.join(os.path.dirname(__file__), os.path.pardir, "bin"))
     arnold.AiLoadPlugins(plugins_path)
 
+    arnold.AiMsgInfo(b"")
+    arnold.AiMsgInfo(b"BARNOLD: >>>")
+
     ##############################
     ## objects
     for ob in scene.objects:
+        arnold.AiMsgInfo(b"[%S] '%S'", ob.type, ob.name)
+
         if ob.hide_render or not in_layers(ob):
+            arnold.AiMsgInfo(b"    skip")
             continue
 
         if duplicator_parent != False:
             if duplicator_parent == ob.parent:
                 duplicator_parent = False
             else:
+                arnold.AiMsgInfo(b"    skip")
                 continue
 
         if ob.is_duplicator:
             duplicators.append(ob)
             if ob.dupli_type in ('VERTS', 'FACES'):
                 duplicator_parent = ob.parent
+            arnold.AiMsgInfo(b"    skip")
             continue
 
         if ob.type in _CT:
@@ -313,12 +338,15 @@ def _export(data, scene, camera, xres, yres, session=None):
                     arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
                     arnold.AiNodeSetBool(node, "inherit_xform", False)
                     arnold.AiNodeSetPtr(node, "node", inode)
+                    _export_object_properties(ob, node)
+                    arnold.AiMsgInfo(b"    instance")
                     continue
 
             with _Mesh(ob) as mesh:
                 node = _AiPolymesh(mesh, shaders)
                 arnold.AiNodeSetStr(node, "name", _Name(ob.name))
                 arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
+                _export_object_properties(ob, node)
                 if not modified:
                     # cache unmodified shapes for instancing
                     inodes[ob.data] = node
@@ -328,16 +356,33 @@ def _export(data, scene, camera, xres, yres, session=None):
             lamp = ob.data
             light = lamp.arnold
             if lamp.type == 'POINT':
+                arnold.AiMsgInfo(b"    point_light")
                 node = arnold.AiNode("point_light")
-                arnold.AiNodeSetFlt(node, "radius", light.point.radius)
+                arnold.AiNodeSetFlt(node, "radius", light.radius)
                 arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
-            #elif lamp.type == 'HEMI':
-            #    node = arnold.AiNode("ambient_light")  # there is no such node in current sdk
             elif lamp.type == 'SUN':
+                arnold.AiMsgInfo(b"    distant_light")
                 node = arnold.AiNode("distant_light")
+                arnold.AiNodeSetFlt(node, "angle", light.angle)
+            elif lamp.type == 'SPOT':
+                arnold.AiMsgInfo(b"    spot_light")
+                node = arnold.AiNode("spot_light")
+                arnold.AiNodeSetFlt(node, "radius", light.radius)
+                arnold.AiNodeSetFlt(node, "lens_radius", light.lens_radius)
+                arnold.AiNodeSetFlt(node, "cone_angle", math.degrees(lamp.spot_size))
+                arnold.AiNodeSetFlt(node, "penumbra_angle", light.penumbra_angle)
+                arnold.AiNodeSetFlt(node, "aspect_ratio", light.aspect_ratio)
+                arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
+            elif lamp.type == 'HEMI':
+                arnold.AiMsgInfo(b"    skydome_light")
+                node = arnold.AiNode("skydome_light")
+            #elif lamp.type == 'AREA':
+            #    pass
             else:
+                arnold.AiMsgInfo(b"    skip")
                 continue
             arnold.AiNodeSetStr(node, "name", _Name(ob.name))
+            arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
             arnold.AiNodeSetRGB(node, "color", *lamp.color)
             arnold.AiNodeSetFlt(node, "intensity", light.intensity)
             arnold.AiNodeSetFlt(node, "exposure", light.exposure)
@@ -347,7 +392,18 @@ def _export(data, scene, camera, xres, yres, session=None):
             arnold.AiNodeSetRGB(node, "shadow_color", *light.shadow_color)
             arnold.AiNodeSetInt(node, "samples", light.samples)
             arnold.AiNodeSetBool(node, "normalize", light.normalize)
-            arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
+            arnold.AiNodeSetBool(node, "affect_diffuse", light.affect_diffuse)
+            arnold.AiNodeSetBool(node, "affect_specular", light.affect_specular)
+            arnold.AiNodeSetBool(node, "affect_volumetrics", light.affect_volumetrics)
+            arnold.AiNodeSetFlt(node, "diffuse", light.diffuse)
+            arnold.AiNodeSetFlt(node, "specular", light.specular)
+            arnold.AiNodeSetFlt(node, "sss", light.sss)
+            arnold.AiNodeSetFlt(node, "indirect", light.indirect)
+            arnold.AiNodeSetInt(node, "max_bounces", light.max_bounces)
+            arnold.AiNodeSetInt(node, "volume_samples", light.volume_samples)
+            arnold.AiNodeSetFlt(node, "volume", light.volume)
+        else:
+            arnold.AiMsgInfo(b"    skip")
 
     ##############################
     ## duplicators
@@ -359,17 +415,19 @@ def _export(data, scene, camera, xres, yres, session=None):
                 if not ob.hide_render and not ob.dupli_type in ('VERTS', 'FACES') and ob.type in _CT:
                     onode = nodes.get(ob)
                     if onode is None:
+                        arnold.AiMsgInfo(b"(%S) %S", ob.type, ob.name)
                         with _Mesh(ob) as mesh:
-                            onode = _AiPolymesh(mesh, shaders)
-                            arnold.AiNodeSetStr(onode, "name", _Name(ob.name))
-                            arnold.AiNodeSetArray(onode, "matrix", _AiMatrix(d.matrix))
-                            nodes[ob] = onode
-                        continue
-                    node = arnold.AiNode("ginstance")
-                    arnold.AiNodeSetStr(node, "name", _Name(ob.name))
-                    arnold.AiNodeSetArray(node, "matrix", _AiMatrix(d.matrix))
-                    arnold.AiNodeSetBool(node, "inherit_xform", False)
-                    arnold.AiNodeSetPtr(node, "node", onode)
+                            node = _AiPolymesh(mesh, shaders)
+                            arnold.AiNodeSetStr(node, "name", _Name(ob.name))
+                            arnold.AiNodeSetArray(node, "matrix", _AiMatrix(d.matrix))
+                            nodes[ob] = node
+                    else:
+                        node = arnold.AiNode("ginstance")
+                        arnold.AiNodeSetStr(node, "name", _Name(ob.name))
+                        arnold.AiNodeSetArray(node, "matrix", _AiMatrix(d.matrix))
+                        arnold.AiNodeSetBool(node, "inherit_xform", False)
+                        arnold.AiNodeSetPtr(node, "node", onode)
+                    _export_object_properties(ob, node)
         finally:
             duplicator.dupli_list_clear()
 
@@ -572,6 +630,8 @@ def _export(data, scene, camera, xres, yres, session=None):
             session["ipr"] = (isl, AA_samples + 1)
             AA_samples = isl
     arnold.AiNodeSetInt(options, "AA_samples", AA_samples)
+
+    arnold.AiMsgInfo(b"BARNOLD: <<<")
 
 
 def export_ass(data, scene, camera, xres, yres, filepath, open_procs, binary):

@@ -8,6 +8,7 @@ from bpy.types import (
     PropertyGroup,
     Scene,
     Camera,
+    Object,
     Material,
     Lamp
 )
@@ -576,14 +577,174 @@ class ArnoldCamera(PropertyGroup):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldPointLight(PropertyGroup):
-    radius = FloatProperty(
-        name="Radius"
+class ArnoldShape(PropertyGroup):
+    visibility = IntProperty(
+        name="Visibility",
+        default=255
     )
+    sidedness = IntProperty(
+        name="Sidedness",
+        default=255
+    )
+    receive_shadows = BoolProperty(
+        name="Receive shadows",
+        default=True
+    )
+    self_shadows = BoolProperty(
+        name="Self shadows",
+        default=True
+    )
+    invert_normals = BoolProperty(
+        name="Invert normals"
+    )
+    opaque = BoolProperty(
+        name="Opaque",
+        default=True
+    )
+    matte = BoolProperty(
+        name="Matte"
+    )
+
+    def _visibility(mask):
+        def get(self):
+            return self.visibility & mask
+
+        def set(self, value):
+            if value:
+                self.visibility |= mask
+            else:
+                self.visibility &= ~mask
+
+        return {
+            "get": get,
+            "set": set
+        }
+
+    visibility_camera = BoolProperty(
+        name="Camera",
+        **_visibility(1)
+    )
+    visibility_shadow = BoolProperty(
+        name="Shadow",
+        **_visibility(1 << 1)
+    )
+    visibility_reflection = BoolProperty(
+        name="Reflection",
+        **_visibility(1 << 2)
+    )
+    visibility_refraction = BoolProperty(
+        name="Refraction",
+        **_visibility(1 << 3)
+    )
+    visibility_diffuse = BoolProperty(
+        name="Diffuse",
+        **_visibility(1 << 4)
+    )
+    visibility_glossy = BoolProperty(
+        name="Glossy",
+        **_visibility(1 << 5)
+    )
+
+    def _sidedness(mask):
+        def get(self):
+            return self.sidedness & mask
+
+        def set(self, value):
+            if value:
+                self.sidedness |= mask
+            else:
+                self.sidedness &= ~mask
+
+        return {
+            "get": get,
+            "set": set
+        }
+
+    sidedness_camera = BoolProperty(
+        name="Camera",
+        **_sidedness(1)
+    )
+    sidedness_shadow = BoolProperty(
+        name="Shadow",
+        **_sidedness(1 << 1)
+    )
+    sidedness_reflection = BoolProperty(
+        name="Reflection",
+        **_sidedness(1 << 2)
+    )
+    sidedness_refraction = BoolProperty(
+        name="Refraction",
+        **_sidedness(1 << 3)
+    )
+    sidedness_diffuse = BoolProperty(
+        name="Diffuse",
+        **_sidedness(1 << 4)
+    )
+    sidedness_glossy = BoolProperty(
+        name="Glossy",
+        **_sidedness(1 << 5)
+    )
+ 
+    @classmethod
+    def register(cls):
+        Object.arnold = PointerProperty(type=cls)
+
+    @classmethod
+    def unregister(cls):
+        del Object.arnold
 
 
 @ArnoldRenderEngine.register_class
 class ArnoldLight(PropertyGroup):
+    ui_shadow = BoolProperty(
+        name="Shadow"
+    )
+    ui_volume = BoolProperty(
+        name="Volume"
+    )
+    ui_contribution = BoolProperty(
+        name="Contribution"
+    )
+    ui_viewport = BoolProperty(
+        name="Viewport",
+    )
+    angle = FloatProperty(
+        name="Angle"
+    )
+    radius = FloatProperty(
+        name="Radius"
+    )
+    lens_radius = FloatProperty(
+        name="Lens Radius"
+    )
+    penumbra_angle = FloatProperty(
+        name="Penumbra Angle"
+    )
+    aspect_ratio = FloatProperty(
+        name="Aspect Ratio",
+        default=1
+    )
+    resolution = IntProperty(
+        name="Resolution",
+        default=1000
+    )
+    format = EnumProperty(
+        name="Format",
+        items=[
+            ('angular', "Angular", "Angular")
+        ],
+        default='angular'
+    )
+    # Is not available for Directional, Distant or Skydome lights.
+    decay_type = EnumProperty(
+        name="Decay Type",
+        items=[
+            ('constant', "Constant", "Constant"),
+            ('quadratic', "Quadratic", "Quadratic")
+        ],
+        default='quadratic'
+    )
+    # common parameters
     intensity = FloatProperty(
         name="Intensity",
         default=1.0
@@ -591,24 +752,16 @@ class ArnoldLight(PropertyGroup):
     exposure = FloatProperty(
         name="Exposure"
     )
-    # Is not available for Directional, Distant or Skydome lights.
-    decay_type = EnumProperty(
-        name="Decay",
-        description="Decay Type",
-        items=[
-            ('constant', "Constant", "Constant"),
-            ('quadratic', "Quadratic", "Quadratic")
-        ],
-        default='quadratic'
-    )
-    # Shadows
     cast_shadows = BoolProperty(
         name="Cast Shadows",
         default=True
     )
+    cast_volumetric_shadows = BoolProperty(
+        name="Cast Volumetric Shadows",
+        default=True
+    )
     shadow_density = FloatProperty(
-        name="Density",
-        description="Shadow Density",
+        name="Shadow Density",
         default=1.0
     )
     shadow_color = FloatVectorProperty(
@@ -616,10 +769,6 @@ class ArnoldLight(PropertyGroup):
         size=3,
         min=0, max=1,
         subtype='COLOR'
-    )
-    cast_volumetric_shadows = BoolProperty(
-        name="Cast Volumetric Shadows",
-        default=True
     )
     samples = IntProperty(
         name="Samples",
@@ -629,7 +778,53 @@ class ArnoldLight(PropertyGroup):
         name="Normalize",
         default=True
     )
-    point = PointerProperty(type=ArnoldPointLight)
+    affect_diffuse = BoolProperty(
+        name="Emit Diffuse",
+        default=True
+    )
+    affect_specular = BoolProperty(
+        name="Emit Specular",
+        default=True
+    )
+    affect_volumetrics = BoolProperty(
+        name="Affect Volumetrics",
+        default=True
+    )
+    diffuse = FloatProperty(
+        name="Diffuse",
+        soft_min=0, soft_max=1,
+        default=1
+    )
+    specular = FloatProperty(
+        name="Specular",
+        soft_min=0, soft_max=1,
+        default=1
+    )
+    sss = FloatProperty(
+        name="SSS",
+        soft_min=0, soft_max=1,
+        default=1
+    )
+    indirect = FloatProperty(
+        name="Indirect",
+        soft_min=0, soft_max=1,
+        default=1
+    )
+    max_bounces = IntProperty(
+        name="Max Bounces",
+        default=999
+    )
+    volume_samples = IntProperty(
+        name="Volume Samples",
+        subtype='UNSIGNED',
+        default=2
+    )
+    volume = FloatProperty(
+        name="Volume",
+        soft_min=0, soft_max=1,
+        default=1
+    )
+
     type = EnumProperty(
         name="Type",
         description="Light Type",

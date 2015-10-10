@@ -5,33 +5,10 @@ __email__ = "nildar@users.sourceforge.net"
 
 import bpy
 from bpy.types import (
-    Operator,
     Panel,
     Menu
 )
-from bpy.props import (
-    StringProperty
-)
 from . import ArnoldRenderEngine
-
-
-@ArnoldRenderEngine.register_class
-class ArnoldUiToggle(Operator):
-    bl_idname = "barnold.ui_toggle"
-    bl_options = {'INTERNAL'}
-    bl_label = "Open / Close"
-    bl_description = "Open / close options"
-
-    path = StringProperty()
-    attr = StringProperty()
-    ctx = StringProperty()
-
-    def execute(self, context):
-        data = getattr(context, self.ctx)
-        if self.path:
-            data = data.path_resolve(self.path)
-        setattr(data, self.attr, not getattr(data, self.attr))
-        return {'FINISHED'}
 
 
 def _subpanel(layout, title, opened, path, attr, ctx):
@@ -305,6 +282,49 @@ class ArnoldCameraPanel(CameraButtonsPanel, Panel):
         col.prop(props, "shutter_type")
 
 ##
+## Object
+##
+
+from bl_ui.properties_object import ObjectButtonsPanel
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldObjectPanel(ObjectButtonsPanel, Panel):
+    COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
+    bl_label = "Arnold Parameters"
+
+    def draw(self, context):
+        layout = self.layout
+        props = context.object.arnold
+
+        flow = layout.column_flow()
+        flow.prop(props, "receive_shadows")
+        flow.prop(props, "self_shadows")
+        flow.prop(props, "invert_normals")
+        flow.prop(props, "opaque")
+        flow.prop(props, "matte")
+
+        col = layout.column()
+        col.label("Visibility:")
+        flow = col.column_flow()
+        flow.prop(props, "visibility_camera")
+        flow.prop(props, "visibility_shadow")
+        flow.prop(props, "visibility_reflection")
+        flow.prop(props, "visibility_refraction")
+        flow.prop(props, "visibility_diffuse")
+        flow.prop(props, "visibility_glossy")
+
+        col = layout.column()
+        col.label("Double-sided:")
+        flow = col.column_flow()
+        flow.prop(props, "sidedness_camera")
+        flow.prop(props, "sidedness_shadow")
+        flow.prop(props, "sidedness_reflection")
+        flow.prop(props, "sidedness_refraction")
+        flow.prop(props, "sidedness_diffuse")
+        flow.prop(props, "sidedness_glossy")
+
+##
 ## Lights
 ##
 
@@ -314,48 +334,89 @@ from bl_ui.properties_data_lamp import DataButtonsPanel as LightButtonsPanel
 @ArnoldRenderEngine.register_class
 class ArnoldLightPanel(LightButtonsPanel, Panel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
-    bl_label = "Light"
+    bl_label = "Arnold Light"
 
     def draw(self, context):
         layout = self.layout
+
         lamp = context.lamp
+        lamp_type = lamp.type
+
+        light = lamp.arnold
+        path_from_id = light.path_from_id()
 
         layout.prop(lamp, "type", expand=True)
 
-        light = lamp.arnold
-        row = layout.row()
-        row.prop(lamp, "color", text="")
-        row.prop(light, "decay_type")
-        row = layout.row()
-        row.prop(light, "intensity")
-        row.prop(light, "exposure")
+        col = layout.column()
+        col.row().prop(lamp, "color")
+        col.prop(light, "intensity")
+        col.prop(light, "exposure")
 
-        light_type = light.type
-        if light_type == 'POINT':
-            point_light = light.point
-            row = layout.row()
-            row.prop(point_light, "radius")
-            # Shadows params
+        col = layout.column()
+        if not lamp_type in ('SUN', 'HEMI'):
+            col.prop(light, "decay_type")
+        col.prop(light, "affect_diffuse")
+        col.prop(light, "affect_specular")
 
+        # Area
+        col = layout.column()
+        if lamp_type in ('POINT', 'SPOT'):
+            col.prop(light, "radius")
+            col.prop(light, "samples")
+            col.prop(light, "normalize")
+        elif lamp_type == 'SUN':
+            col.prop(light, "angle")
+            col.prop(light, "samples")
+            col.prop(light, "normalize")
+        elif lamp_type == 'HEMI':
+            col.prop(light, "samples")
+            col.prop(light, "resolution")
+            col.prop(light, "format")
 
-@ArnoldRenderEngine.register_class
-class ArnoldLightShadowsPanel(LightButtonsPanel, Panel):
-    COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
-    bl_label = "Shadow"
+        # Geometry
+        if lamp_type == 'SPOT':
+            col = layout.column()
+            col.prop(light, "aspect_ratio")
+            col.prop(light, "lens_radius")
+            col.prop(lamp, "spot_size")  # cone_angle
+            col.prop(light, "penumbra_angle")
 
-    def draw(self, context):
-        layout = self.layout
-        lamp = context.lamp
-        light = lamp.arnold
+        sublayout = _subpanel(layout, "Shadow", light.ui_shadow,
+                              path_from_id, "ui_shadow", "lamp")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(light, "cast_shadows")
+            col.row().prop(light, "shadow_color")
+            col.prop(light, "shadow_density")
 
-        layout.prop(light, "cast_shadows")
-        layout.prop(light, "cast_volumetric_shadows")
-        row = layout.row()
-        row.prop(light, "shadow_color", text="")
-        row.prop(light, "samples")
-        row = layout.row()
-        row.prop(light, "shadow_density")
-        row.prop(light, "normalize")
+        sublayout = _subpanel(layout, "Volume", light.ui_volume,
+                              path_from_id, "ui_volume", "lamp")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(light, "affect_volumetrics")
+            col.prop(light, "cast_volumetric_shadows")
+            col.prop(light, "volume_samples")
+
+        sublayout = _subpanel(layout, "Contribution", light.ui_contribution,
+                              path_from_id, "ui_contribution", "lamp")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(light, "diffuse")
+            col.prop(light, "specular")
+            col.prop(light, "sss")
+            col.prop(light, "indirect")
+            col.prop(light, "volume")
+            col.prop(light, "max_bounces")
+
+        if lamp_type == 'SPOT':
+            sublayout = _subpanel(layout, "Viewport", light.ui_viewport,
+                                  path_from_id, "ui_viewport", "lamp")
+            if sublayout:
+                col = sublayout.column()
+                col.prop(lamp, "distance")
+                col.prop(lamp, "spot_blend")
+                col.prop(lamp, "use_square")
+                col.prop(lamp, "show_cone")
 
 ##
 ## Shaders
