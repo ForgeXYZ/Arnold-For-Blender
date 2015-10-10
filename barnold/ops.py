@@ -35,7 +35,48 @@ class ArnoldUiToggle(Operator):
 
 
 @ArnoldRenderEngine.register_class
-class ExportASS(Operator, ExportHelper):
+class ArnoldLightFilterInputAdd(Operator):
+    bl_idname = "barnold.light_filter_add"
+    bl_options = {'INTERNAL'}
+    bl_label = "Add Filter"
+    bl_description = "Add Filter input"
+
+    def execute(self, context):
+        node = context.active_node
+        inputs = node.inputs
+        inputs.new("ArnoldNodeSocketFilter", "Filter", "filter")
+        node.active_filter_index = len(inputs) - 1
+        return {'FINISHED'}
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldLightFilterInputRemove(Operator):
+    bl_idname = "barnold.light_filter_remove"
+    bl_options = {'INTERNAL'}
+    bl_label = "Remove Filter"
+    bl_description = "Remove Filter input"
+
+    @classmethod
+    def poll(cls, context):
+        node = context.active_node
+        index = node.active_filter_index
+        if 0 < index < len(node.inputs):
+            return True
+        return False
+
+    def execute(self, context):
+        node = context.active_node
+        inputs = node.inputs
+        index = node.active_filter_index
+        input = inputs[index]
+        inputs.remove(input)
+        if index == len(node.inputs):
+            node.active_filter_index -= 1
+        return {'FINISHED'}
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldExportASS(Operator, ExportHelper):
     bl_idname = "barnold.export_ass"
     bl_label = "Export ASS"
 

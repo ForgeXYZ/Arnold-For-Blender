@@ -71,6 +71,22 @@ class ArnoldNodeSocketByte(NodeSocket):
         return (0.6, 0.52, 0.15, 1.0)
 
 
+@ArnoldRenderEngine.register_class
+class ArnoldNodeSocketFilter(NodeSocket):
+    bl_label = "Filter"
+
+    default_value = StringProperty(
+        name="Filter"
+    )
+
+    def draw(self, context, layout, node, text):
+        layout.label(text)
+
+    def draw_color(self, context, node):
+        # <blender_sources>/source/blender/editors/space_node/drawnode.c:3010 (SOCK_INT)
+        return (0.6, 0.52, 0.15, 1.0)
+
+
 class ArnoldNode(Node):
     @property
     def ai_properties(self):
@@ -122,6 +138,28 @@ class ArnoldNodeWorldOutput(_NodeOutput, Node):
         super().init(context)
         self.inputs.new("NodeSocketShader", "Background", "background")
         self.inputs.new("NodeSocketShader", "Atmosphere", "atmosphere")
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeLightOutput(_NodeOutput, Node):
+    bl_icon = 'LAMP'
+
+    active_filter_index = IntProperty(
+        default=1
+    )
+
+    def init(self, context):
+        super().init(context)
+        self.inputs.new("NodeSocketShader", "Color", "color")
+        self.inputs.new("ArnoldNodeSocketFilter", "Filter", "filter")
+
+    def draw_buttons_ext(self, context, layout):
+        row = layout.row()
+        col = row.column()
+        col.template_list("ARNOLD_UL_light_filters", "", self, "inputs", self, "active_filter_index", rows=2)
+        col = row.column(align=True)
+        col.operator("barnold.light_filter_add", text="", icon="ZOOMIN")
+        col.operator("barnold.light_filter_remove", text="", icon="ZOOMOUT")
 
 
 @ArnoldRenderEngine.register_class
@@ -762,12 +800,30 @@ class ArnoldNodeCategory(nodeitems_utils.NodeCategory):
         )
 
 
+class ArnoldWorldNodeCategory(ArnoldNodeCategory):
+    _shader_type = {'WORLD'}
+
+
 class ArnoldObjectNodeCategory(ArnoldNodeCategory):
     _shader_type = {'OBJECT'}
 
+    @classmethod
+    def poll(cls, context):
+        return (
+            super().poll(context) and
+            context.object.type != 'LAMP'
+        )
 
-class ArnoldWorldNodeCategory(ArnoldNodeCategory):
-    _shader_type = {'WORLD'}
+
+class ArnoldLightNodeCategory(ArnoldNodeCategory):
+    _shader_type = {'OBJECT'}
+
+    @classmethod
+    def poll(cls, context):
+        return (
+            super().poll(context) and
+            context.object.type == 'LAMP'
+        )
 
 
 def register():
@@ -791,6 +847,17 @@ def register():
     ShaderOldNodeCategory.poll = _poll(ShaderOldNodeCategory.poll)
 
     node_categories = [
+        # world
+        ArnoldWorldNodeCategory("ARNOLD_NODES_WORLD_OUTPUT", "Output", items=[
+            nodeitems_utils.NodeItem("ArnoldNodeWorldOutput")
+        ]),
+        ArnoldWorldNodeCategory("ARNOLD_NODES_WORLD_SHADERS", "Shaders", items=[
+            nodeitems_utils.NodeItem("ArnoldNodeSky"),
+            nodeitems_utils.NodeItem("ArnoldNodePhysicalSky"),
+            nodeitems_utils.NodeItem("ArnoldNodeVolumeScattering"),
+            nodeitems_utils.NodeItem("ArnoldNodeFog"),
+            nodeitems_utils.NodeItem("ArnoldNodeImage"),
+        ]),
         # surface
         ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_OUTPUT", "Output", items=[
             nodeitems_utils.NodeItem("ArnoldNodeOutput")
@@ -810,15 +877,13 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeImage"),
             nodeitems_utils.NodeItem("ArnoldNodeNoise"),
         ]),
-        # world
-        ArnoldWorldNodeCategory("ARNOLD_NODES_WORLD_OUTPUT", "Output", items=[
-            nodeitems_utils.NodeItem("ArnoldNodeWorldOutput")
+        # light
+        ArnoldLightNodeCategory("ARNOLD_NODES_LIGHT_OUTPUT", "Output", items=[
+            nodeitems_utils.NodeItem("ArnoldNodeLightOutput")
         ]),
-        ArnoldWorldNodeCategory("ARNOLD_NODES_WORLD_SHADERS", "Shaders", items=[
+        ArnoldLightNodeCategory("ARNOLD_NODES_LIGHT_SHADERS", "Shaders", items=[
             nodeitems_utils.NodeItem("ArnoldNodeSky"),
             nodeitems_utils.NodeItem("ArnoldNodePhysicalSky"),
-            nodeitems_utils.NodeItem("ArnoldNodeVolumeScattering"),
-            nodeitems_utils.NodeItem("ArnoldNodeFog"),
             nodeitems_utils.NodeItem("ArnoldNodeImage"),
         ]),
         # common

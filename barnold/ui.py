@@ -5,10 +5,39 @@ __email__ = "nildar@users.sourceforge.net"
 
 import bpy
 from bpy.types import (
+    UIList,
+    UI_UL_list,
     Panel,
     Menu
 )
 from . import ArnoldRenderEngine
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldLightFiltersUIList(UIList):
+    bl_idname = "ARNOLD_UL_light_filters"
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+        layout.prop(item, "name", text="", icon_value=icon, emboss=False)
+
+    def filter_items(self, context, data, propname):
+        inputs = getattr(data, propname)
+        if self.filter_name:
+            flags = UI_UL_list.filter_items_by_name(self.filter_name, self.bitflag_filter_item, inputs, "name")
+        else:
+            flags = [self.bitflag_filter_item] * len(inputs)
+        for i, input in enumerate(inputs):
+            if input.bl_idname != "ArnoldNodeSocketFilter":
+                if self.use_filter_invert:
+                    flags[i] |= self.bitflag_filter_item
+                else:
+                    flags[i] &= ~self.bitflag_filter_item
+        if self.use_filter_sort_alpha:
+            order = UI_UL_list.sort_items_by_name(inputs, "name")
+        else:
+            order = []
+        return flags, order
+
 
 
 def _subpanel(layout, title, opened, path, attr, ctx):

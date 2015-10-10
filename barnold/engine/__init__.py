@@ -19,7 +19,8 @@ from mathutils import Matrix, Vector, geometry
 from ..nodes import (
     ArnoldNode,
     ArnoldNodeOutput,
-    ArnoldNodeWorldOutput
+    ArnoldNodeWorldOutput,
+    ArnoldNodeLightOutput
 )
 from . import arnold
 
@@ -381,9 +382,29 @@ def _export(data, scene, camera, xres, yres, session=None):
             else:
                 arnold.AiMsgInfo(b"    skip")
                 continue
-            arnold.AiNodeSetStr(node, "name", _Name(ob.name))
+            name = _Name(ob.name)
+            arnold.AiNodeSetStr(node, "name", name)
             arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
-            arnold.AiNodeSetRGB(node, "color", *lamp.color)
+            color_node = None
+            if lamp.use_nodes:
+                filter_nodes = []
+                for _node in lamp.node_tree.nodes:
+                    if isinstance(_node, ArnoldNodeLightOutput) and _node.is_active:
+                        for input in _node.inputs:
+                            if input.is_linked:
+                                _node = _AiNode(input.links[0].from_node, name, {})
+                                if input.identifier == "color":
+                                    color_node = _node
+                                else:
+                                    filter_nodes.append(_node)
+                        break
+                if filter_nodes:
+                    filters = arnold.AiArray(len(filter_nodes), 1, arnold.AI_TYPE_NODE, *filter_nodes)
+                    arnold.AiNodeSetArray(node, "filters", filters)
+            if color_node is None:
+                arnold.AiNodeSetRGB(node, "color", *lamp.color)
+            else:
+                arnold.AiNodeLink(color_node, "color", node)
             arnold.AiNodeSetFlt(node, "intensity", light.intensity)
             arnold.AiNodeSetFlt(node, "exposure", light.exposure)
             arnold.AiNodeSetBool(node, "cast_shadows", light.cast_shadows)
