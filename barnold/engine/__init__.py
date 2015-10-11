@@ -59,8 +59,13 @@ _AiNodeSet = {
     "ArnoldNodeSocketByte": lambda n, i, v: arnold.AiNodeSetByte(n, i, v),
     "STRING": lambda n, i, v: arnold.AiNodeSetStr(n, i, v),
     "BOOL": lambda n, i, v: arnold.AiNodeSetBool(n, i, v),
+    "BYTE": lambda n, i, v: arnold.AiNodeSetByte(n, i, v),
+    "INT": lambda n, i, v: arnold.AiNodeSetInt(n, i, v),
     "FLOAT": lambda n, i, v: arnold.AiNodeSetFlt(n, i, v),
     "POINT2": lambda n, i, v: arnold.AiNodeSetPnt2(n, i, *v),
+    "RGB": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v),
+    "RGBA": lambda n, i, v: arnold.AiNodeSetRGBA(n, i, *v),
+    "VECTOR": lambda n, i, v: arnold.AiNodeSetVec(n, i, *v),
 }
 
 

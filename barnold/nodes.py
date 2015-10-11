@@ -41,7 +41,7 @@ class ArnoldNodeSocketColor(NodeSocket):
         if self.is_output or self.is_linked:
             layout.label(text)
         else:
-            row = layout.row(align=True)
+            row = layout.row()
             row.alignment = 'LEFT'
             row.prop(self, "default_value", text="")
             row.label(text)
@@ -536,6 +536,17 @@ class ArnoldNodeImage(ArnoldNode):
         ],
         default='smart_bicubic'
     )
+    mipmap_bias = IntProperty(
+        name="Mipmap Bias"
+    )
+    single_channel = BoolProperty(
+        name="Single Channel"
+    )
+    start_channel = IntProperty(
+        name="Start Channel",
+        subtype='UNSIGNED',
+        min=0, max=255
+    )
     swrap = EnumProperty(
         name="U wrap",
         items=_WRAP_ITEMS,
@@ -546,43 +557,98 @@ class ArnoldNodeImage(ArnoldNode):
         items=_WRAP_ITEMS,
         default='periodic'
     )
+    sscale = FloatProperty(
+        name="Scale U",
+        default=1,
+    )
+    tscale = FloatProperty(
+        name="Scale V",
+        default=1,
+    )
+    sflip = BoolProperty(
+        name="Flip U"
+    )
+    tflip = BoolProperty(
+        name="Flip V"
+    )
+    soffset = FloatProperty(
+        name="Offset U"
+    )
+    toffset = FloatProperty(
+        name="Offset V"
+    )
+    swap_st = BoolProperty(
+        name="Swap UV"
+    )
     uvset = StringProperty(
         name="UV set"
+    )
+    ignore_missing_tiles = BoolProperty(
+        name="Ignore Missing Tiles"
     )
 
     def init(self, context):
         self.outputs.new("NodeSocketColor", "RGBA", "output")
-        # Image attributes
-        self.inputs.new("NodeSocketInt", "Mipmap Bias", "mipmap_bias")
         self.inputs.new("ArnoldNodeSocketColor", "Multiply", "multiply")
         self.inputs.new("ArnoldNodeSocketColor", "Offset", "offset").default_value = (0, 0, 0)
-        self.inputs.new("NodeSocketBool", "Single channel", "single_channel")
-        self.inputs.new("ArnoldNodeSocketByte", "Start channel", "start_channel")
-        self.inputs.new("NodeSocketBool", "Ignore missing tiles", "ignore_missing_tiles")
         self.inputs.new("NodeSocketColor", "Missing tile color", "missing_tile_color")
-        # UV coordinates
-        self.inputs.new("NodeSocketFloat", "U scale", "sscale").default_value = 1
-        self.inputs.new("NodeSocketFloat", "V scale", "tscale").default_value = 1
-        self.inputs.new("NodeSocketFloat", "U offset", "soffset")
-        self.inputs.new("NodeSocketFloat", "V offset", "toffset")
-        self.inputs.new("NodeSocketBool", "U flip", "sflip")
-        self.inputs.new("NodeSocketBool", "V flip", "tflip")
-        self.inputs.new("NodeSocketBool", "UV swap", "swap_st")
         self.inputs.new("NodeSocketVector", "UV coords", "uvcoords").hide_value = True
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "filename", text="", icon='IMAGEFILE')
-        layout.prop(self, "filter", text="")
-        layout.prop(self, "uvset")
-        layout.prop(self, "swrap")
-        layout.prop(self, "twrap")
+
+        col = layout.column()
+        col.prop(self, "filter")
+        col.prop(self, "mipmap_bias")
+        col.prop(self, "single_channel")
+        col.prop(self, "start_channel")
+
+        col = layout.column()
+        col.prop(self, "uvset")
+
+        col.label("Offset:")
+        scol = col.column(align=True)
+        scol.prop(self, "soffset", text="U")
+        scol.prop(self, "toffset", text="V")
+
+        col.label("Scale:")
+        scol = col.column(align=True)
+        scol.prop(self, "sscale", text="U")
+        scol.prop(self, "tscale", text="V")
+
+        scol = col.column(align=True)
+        scol.label("Wrap:")
+        row = scol.row(align=True)
+        sscol = row.column(align=True)
+        sscol.alignment = 'LEFT'
+        sscol.label("U:")
+        sscol.label("V:")
+        sscol = row.column(align=True)
+        sscol.prop(self, "swrap", text="")
+        sscol.prop(self, "twrap", text="")
+
+        scol = col.column(align=True)
+        scol.prop(self, "sflip")
+        scol.prop(self, "tflip")
+        scol.prop(self, "swap_st")
 
     @property
     def ai_properties(self):
         props = {
             "filter": ('STRING', self.filter),
+            "mipmap_bias": ('INT', self.mipmap_bias),
+            "single_channel": ('BOOL', self.single_channel),
+            "start_channel": ('BYTE', self.start_channel),
             "swrap": ('STRING', self.swrap),
             "twrap": ('STRING', self.twrap),
+            "sscale": ('FLOAT', self.sscale),
+            "tscale": ('FLOAT', self.tscale),
+            "sflip": ('BOOL', self.sflip),
+            "tflip": ('BOOL', self.tflip),
+            "soffset": ('FLOAT', self.soffset),
+            "toffset": ('FLOAT', self.toffset),
+            "swap_st": ('BOOL', self.swap_st),
+            "ignore_missing_tiles": ('BOOL', self.swap_st),
         }
         if self.filename:
             props["filename"] = ('STRING', bpy.path.abspath(self.filename))
@@ -638,32 +704,119 @@ class ArnoldNodePhysicalSky(ArnoldNode):
 
     ai_name = "physical_sky"
 
+    turbidity = FloatProperty(
+        name="Turbidity",
+        default=3
+    )
+    ground_albedo = FloatVectorProperty(
+        name="Ground Albedo",
+        subtype='COLOR',
+        min=0, max=1,
+        default=(0.1, 0.1, 0.1)
+    )
+    #use_degrees (true)
+    elevation = FloatProperty(
+        name="Elevation",
+        default=45
+    )
+    azimuth = FloatProperty(
+        name="Azimuth",
+        default=90
+    )
+    #sun_direction (0, 1, 0)
     enable_sun = BoolProperty(
         name="Enable Sun",
         default=True
     )
+    sun_size = FloatProperty(
+        name="Sun Size",
+        default=0.51
+    )
+    sun_tint = FloatVectorProperty(
+        name="Sun Tint",
+        subtype='COLOR',
+        min=0, max=1,
+        default=(1, 1, 1)
+    )
+    sky_tint = FloatVectorProperty(
+        name="Sky Tint",
+        subtype='COLOR',
+        min=0, max=1,
+        default=(1, 1, 1)
+    )
+    intensity = FloatProperty(
+        name="Intensity",
+        default=1
+    )
+    X = FloatVectorProperty(
+        name="X",
+        soft_min=0, soft_max=1,
+        default=(1, 0, 0)
+    )
+    Y = FloatVectorProperty(
+        name="Y",
+        soft_min=0, soft_max=1,
+        default=(0, 1, 0)
+    )
+    Z = FloatVectorProperty(
+        name="Z",
+        soft_min=0, soft_max=1,
+        default=(0, 0, 1)
+    )
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("NodeSocketFloat", "Sun size", "sun_size").default_value = 0.51
-        self.inputs.new("ArnoldNodeSocketColor", "Sky Tint", "sky_tint")
-        self.inputs.new("ArnoldNodeSocketColor", "Sun Tint", "sun_tint")
-        self.inputs.new("NodeSocketFloat", "Turbidity", "turbidity").default_value = 3
-        self.inputs.new("ArnoldNodeSocketColor", "Ground Albedo", "ground_albedo").default_value = (0.1, 0.1, 0.1)
-        self.inputs.new("NodeSocketFloat", "Elevation", "elevation").default_value = 45
-        self.inputs.new("NodeSocketFloat", "Azimuth", "azimuth").default_value = 90
-        self.inputs.new("NodeSocketFloat", "Intensity", "intensity").default_value = 1
-        self.inputs.new("NodeSocketVector", "X").default_value = (1, 0, 0)
-        self.inputs.new("NodeSocketVector", "Y").default_value = (0, 1, 0)
-        self.inputs.new("NodeSocketVector", "Z").default_value = (0, 0, 1)
 
     def draw_buttons(self, context, layout):
-        layout.prop(self, "enable_sun")
+        col = layout.column()
+        col.prop(self, "turbidity")
+        row = col.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(self, "ground_albedo", text="")
+        row.label("Ground Albedo")
+        col.prop(self, "elevation")
+        col.prop(self, "azimuth")
+        col.prop(self, "intensity")
+
+        col = layout.column()
+        row = col.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(self, "sky_tint", text="")
+        row.label("Sky Tint")
+        row = col.row(align=True)
+        row.alignment = 'LEFT'
+        row.prop(self, "sun_tint", text="")
+        row.label("Sun Tint")
+        col.prop(self, "sun_size")
+        col.prop(self, "enable_sun")
+
+        col.label("Orientation XYZ:")
+        row = col.row(align=True)
+        col = row.column(align=True)
+        col.alignment = 'LEFT'
+        col.label("X:")
+        col.label("Y:")
+        col.label("Z:")
+        col = row.column(align=True)
+        col.row(align=True).prop(self, "X", text="", slider=True)
+        col.row(align=True).prop(self, "Y", text="", slider=True)
+        col.row(align=True).prop(self, "Z", text="", slider=True)
 
     @property
     def ai_properties(self):
         return {
-            "enable_sun": ('BOOL', self.enable_sun)
+            "turbidity": ('FLOAT', self.turbidity),
+            "ground_albedo": ('RGB', self.ground_albedo),
+            "elevation": ('FLOAT', self.elevation),
+            "azimuth": ('FLOAT', self.azimuth),
+            "enable_sun": ('BOOL', self.enable_sun),
+            "sun_size": ('FLOAT', self.sun_size),
+            "sun_tint": ('RGB', self.sun_tint),
+            "sky_tint": ('RGB', self.sky_tint),
+            "intensity": ('FLOAT', self.sun_size),
+            "X": ('VECTOR', self.X),
+            "Y": ('VECTOR', self.Y),
+            "Z": ('VECTOR', self.Z),
         }
 
 
@@ -821,11 +974,16 @@ class ArnoldNodeGobo(ArnoldNode):
     density = FloatProperty(
         name="Density"
     )
+    # TODO: add filter modes
     filter_mode = EnumProperty(
         name="Mode",
         description="Filter Mode",
         items=[
             ('blend', "Blend", "Blend"),
+            ('replace', "Replace", "Replace"),
+            ('add', "Add", "Add"),
+            ('sub', "Sub", "Sub"),
+            ('mix', "Mix", "Mix")
         ],
         default='blend'
     )
