@@ -254,10 +254,10 @@ def _AiPolymesh(mesh, shaders):
                     arnold.AiArraySetPtr(shader, i, mm.popitem(False)[1][0])
                     i += 1
                 shidxs = arnold.AiArrayConvert(len(a), 1, arnold.AI_TYPE_BYTE, ctypes.c_void_p(a.ctypes.data))
+                arnold.AiNodeSetArray(node, "shader", shader)
                 arnold.AiNodeSetArray(node, "shidxs", shidxs)
             else:
-                shader = t[1][0]
-            arnold.AiNodeSetPtr(node, "shader", shader)
+                arnold.AiNodeSetPtr(node, "shader", t[1][0])
 
     arnold.AiMsgInfo(b"    node (%f)", ctypes.c_double(time.perf_counter() - pc))
     return node

@@ -419,12 +419,38 @@ class ArnoldNodeMotionVector(ArnoldNode):
 
     ai_name = "motion_vector"
 
+    raw = BoolProperty(
+        name="Encode Raw Vector"
+    )
+    time0 = FloatProperty(
+        name="Start Time"
+    )
+    time1 = FloatProperty(
+        name="End time",
+        default=1
+    )
+    max_displace = FloatProperty(
+        name="Max Displace"
+    )
+
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("NodeSocketFloat", "Start Time", "time0")
-        self.inputs.new("NodeSocketFloat", "End Time", "time1").default_value = 1
-        self.inputs.new("NodeSocketBool", "Encode Raw Vector", "raw")
-        self.inputs.new("NodeSocketFloat", "Max Displace", "max_displace")
+
+    def draw_buttons(self, context, layout):
+        col = layout.column()
+        col.prop(self, "raw")
+        col.prop(self, "max_displace")
+        col.prop(self, "time0")
+        col.prop(self, "time1")
+
+    @property
+    def ai_properties(self):
+        return {
+            "raw": ('BOOL', self.raw),
+            "time0": ('FLOAT', self.time0),
+            "time1": ('FLOAT', self.time1),
+            "max_displace": ('FLOAT', self.max_displace),
+        }
 
 
 @ArnoldRenderEngine.register_class
@@ -452,6 +478,13 @@ class ArnoldNodeHair(ArnoldNode):
 
     ai_name = "hair"
 
+    uparam = StringProperty(
+        name="U"
+    )
+    vparam = StringProperty(
+        name="V"
+    )
+
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
         self.inputs.new("ArnoldNodeSocketColor", "Root Color", "rootcolor").default_value = (0.1, 0.1, 0.1)
@@ -474,8 +507,27 @@ class ArnoldNodeHair(ArnoldNode):
         self.inputs.new("NodeSocketFloat", "Transmission", "transmission")
         self.inputs.new("NodeSocketFloat", "Transmission: Spread", "transmission_spread").default_value = 1
         self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
-        self.inputs.new("NodeSocketString", "Uparam", "uparam")
-        self.inputs.new("NodeSocketString", "Vparam", "vparam")
+
+    def draw_buttons(self, context, layout):
+        col = layout.column()
+        col.label("Remap UV:")
+        row = col.row()
+        col = row.column()
+        col.alignment = 'LEFT'
+        col.label("U:")
+        col.label("V:")
+        col = row.column()
+        col.prop(self, "uparam", text="")
+        col.prop(self, "vparam", text="")
+
+    @property
+    def ai_properties(self):
+        props = {}
+        if self.uparam:
+            props["uparam"] = self.uparam
+        if self.vparam:
+            props["vparam"] = self.vparam
+        return props
 
 
 @ArnoldRenderEngine.register_class
@@ -485,8 +537,13 @@ class ArnoldNodeNoise(ArnoldNode):
 
     ai_name = "noise"
 
+    octaves = IntProperty(
+        name="Octaves",
+        default=1
+    )
     coord_space = EnumProperty(
-        name="Space Coordinates",
+        name="Space",
+        description="Space Coordinates",
         items=[
             ('world', "World", "World space"),
             ('object', "Object", "Object space"),
@@ -497,7 +554,6 @@ class ArnoldNodeNoise(ArnoldNode):
 
     def init(self, context):
         self.outputs.new("NodeSocketFloat", "Value", "output")
-        self.inputs.new("NodeSocketInt", "Octaves", "octaves").default_value = 1
         self.inputs.new("NodeSocketFloat", "Distortion", "distortion")
         self.inputs.new("NodeSocketFloat", "Lacunarity", "lacunarity").default_value = 1.92
         self.inputs.new("NodeSocketFloat", "Amplitude", "amplitude").default_value = 1
@@ -505,11 +561,14 @@ class ArnoldNodeNoise(ArnoldNode):
         self.inputs.new("NodeSocketVector", "Offset", "offset")
 
     def draw_buttons(self, context, layout):
-        layout.prop(self, "coord_space", text="")
+        col = layout.column()
+        col.prop(self, "octaves")
+        col.prop(self, "coord_space")
 
     @property
     def ai_properties(self):
         return {
+            "octaves": ('INT', self.octaves),
             "coord_space": ('STRING', self.coord_space)
         }
 
@@ -664,6 +723,14 @@ class ArnoldNodeSky(ArnoldNode):
 
     ai_name = "sky"
 
+    visibility = IntProperty(
+        name="Visibility",
+        default=255
+    )
+    opaque_alpha = BoolProperty(
+        name="Opaque Alpha",
+        default=True
+    )
     format = EnumProperty(
         name="Format",
         items=[
@@ -673,27 +740,127 @@ class ArnoldNodeSky(ArnoldNode):
         ],
         default='angular'
     )
+    X_angle = FloatProperty(
+        name = "X angle"
+    )
+    Y_angle = FloatProperty(
+        name = "X angle"
+    )
+    Z_angle = FloatProperty(
+        name = "X angle"
+    )
+    X = FloatVectorProperty(
+        name="X",
+        soft_min=0, soft_max=1,
+        default=(1, 0, 0)
+    )
+    Y = FloatVectorProperty(
+        name="Y",
+        soft_min=0, soft_max=1,
+        default=(0, 1, 0)
+    )
+    Z = FloatVectorProperty(
+        name="Z",
+        soft_min=0, soft_max=1,
+        default=(0, 0, 1)
+    )
+    
+    def _visibility(mask):
+        def get(self):
+            return self.visibility & mask
+
+        def set(self, value):
+            if value:
+                self.visibility |= mask
+            else:
+                self.visibility &= ~mask
+
+        return {
+            "get": get,
+            "set": set
+        }
+
+    visibility_camera = BoolProperty(
+        name="Camera",
+        **_visibility(1)
+    )
+    visibility_shadow = BoolProperty(
+        name="Shadow",
+        **_visibility(1 << 1)
+    )
+    visibility_reflection = BoolProperty(
+        name="Reflection",
+        **_visibility(1 << 2)
+    )
+    visibility_refraction = BoolProperty(
+        name="Refraction",
+        **_visibility(1 << 3)
+    )
+    visibility_diffuse = BoolProperty(
+        name="Diffuse",
+        **_visibility(1 << 4)
+    )
+    visibility_glossy = BoolProperty(
+        name="Glossy",
+        **_visibility(1 << 5)
+    )
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
         self.inputs.new("ArnoldNodeSocketColor", "Color", "color")
         self.inputs.new("NodeSocketFloat", "Intensity", "intensity").default_value = 1
-        self.inputs.new("NodeSocketInt", "Visibility", "visibility").default_value = 255
-        self.inputs.new("NodeSocketBool", "Opaque Alpha", "opaque_alpha").default_value = True
-        self.inputs.new("NodeSocketFloat", "X angle", "X_angle")
-        self.inputs.new("NodeSocketFloat", "Y angle", "Y_angle")
-        self.inputs.new("NodeSocketFloat", "Z angle", "Z_angle")
-        self.inputs.new("NodeSocketVector", "X").default_value = (1, 0, 0)
-        self.inputs.new("NodeSocketVector", "Y").default_value = (0, 1, 0)
-        self.inputs.new("NodeSocketVector", "Z").default_value = (0, 0, 1)
 
     def draw_buttons(self, context, layout):
-        layout.prop(self, "format", text="")
+        layout.prop(self, "format")
+        layout.prop(self, "opaque_alpha")
+
+        col = layout.column()
+        col.label("Visibility:")
+        flow = col.column_flow(align=True)
+        flow.prop(self, "visibility_camera")
+        flow.prop(self, "visibility_shadow")
+        flow.prop(self, "visibility_reflection")
+        flow.prop(self, "visibility_refraction")
+        flow.prop(self, "visibility_diffuse")
+        flow.prop(self, "visibility_glossy")
+
+        col = layout.column()
+        col.label("Angle:")
+        row = col.row(align=True)
+        scol = row.column(align=True)
+        scol.alignment = 'LEFT'
+        scol.label("X:")
+        scol.label("Y:")
+        scol.label("Z:")
+        scol = row.column(align=True)
+        scol.prop(self, "X_angle", text="")
+        scol.prop(self, "Y_angle", text="")
+        scol.prop(self, "Z_angle", text="")
+
+        col.label("Orientation:")
+        row = col.row(align=True)
+        col = row.column(align=True)
+        col.alignment = 'LEFT'
+        col.label("X:")
+        col.label("Y:")
+        col.label("Z:")
+        col = row.column(align=True)
+        col.row(align=True).prop(self, "X", text="", slider=True)
+        col.row(align=True).prop(self, "Y", text="", slider=True)
+        col.row(align=True).prop(self, "Z", text="", slider=True)
 
     @property
     def ai_properties(self):
         return {
-            "format": ('STRING', self.format)
+            "visibility": ('INT', self.visibility),
+            "opaque_alpha": ('BOOL', self.opaque_alpha),
+            "format": ('STRING', self.format),
+            "X_angle": ('FLOAT', self.X_angle),
+            "Y_angle": ('FLOAT', self.Y_angle),
+            "Z_angle": ('FLOAT', self.Z_angle),
+            "X": ('VECTOR', self.X),
+            "Y": ('VECTOR', self.Y),
+            "Z": ('VECTOR', self.Z),
         }
 
 
@@ -790,7 +957,7 @@ class ArnoldNodePhysicalSky(ArnoldNode):
         col.prop(self, "sun_size")
         col.prop(self, "enable_sun")
 
-        col.label("Orientation XYZ:")
+        col.label("Orientation:")
         row = col.row(align=True)
         col = row.column(align=True)
         col.alignment = 'LEFT'
@@ -827,17 +994,30 @@ class ArnoldNodeVolumeScattering(ArnoldNode):
 
     ai_name = "volume_scattering"
 
+    samples = IntProperty(
+        name="Samples",
+        default=5
+    )
+
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("NodeSocketFloat", "density")
-        self.inputs.new("NodeSocketInt", "Samples", "samples").default_value = 5
-        self.inputs.new("NodeSocketFloat", "eccentricity")
-        self.inputs.new("NodeSocketFloat", "attenuation")
-        self.inputs.new("NodeSocketFloat", "affect_camera").default_value = 1
-        self.inputs.new("NodeSocketFloat", "affect_diffuse")
-        self.inputs.new("NodeSocketFloat", "affect_reflection").default_value = 1
-        self.inputs.new("ArnoldNodeSocketColor", "rgb_density")
-        self.inputs.new("ArnoldNodeSocketColor", "rgb_attenuation")
+        self.inputs.new("ArnoldNodeSocketColor", "Color", "rgb_density")
+        self.inputs.new("NodeSocketFloat", "Density", "density")
+        self.inputs.new("ArnoldNodeSocketColor", "Attenuation Color", "rgb_attenuation")
+        self.inputs.new("NodeSocketFloat", "Attenuation", "attenuation")
+        self.inputs.new("NodeSocketFloat", "Anisotropy", "eccentricity")
+        self.inputs.new("NodeSocketFloat", "Camera", "affect_camera").default_value = 1
+        self.inputs.new("NodeSocketFloat", "Diffuse", "affect_diffuse")
+        self.inputs.new("NodeSocketFloat", "Reflection", "affect_reflection").default_value = 1
+
+    def draw_buttons(self, context, layout):
+        layout.prop(self, "samples")
+
+    @property
+    def ai_properties(self):
+        return {
+            "samples": ('INT', self.samples),
+        }
 
 
 @ArnoldRenderEngine.register_class
@@ -864,55 +1044,55 @@ class ArnoldNodeBarndoor(ArnoldNode):
     ai_name = "barndoor"
 
     top_left = FloatProperty(
-        name="Top: Left",
+        name="Left",
         soft_min=0, soft_max=1
     )
     top_right = FloatProperty(
-        name="Top: Right",
+        name="Right",
         soft_min=0, soft_max=1
     )
     top_edge = FloatProperty(
-        name="Top: Edge",
+        name="Edge",
         soft_min=0, soft_max=1
     )
     right_top = FloatProperty(
-        name="Right: Top",
+        name="Top",
         soft_min=0, soft_max=1,
         default=1
     )
     right_bottom = FloatProperty(
-        name="Right: Bottom",
+        name="Bottom",
         soft_min=0, soft_max=1,
         default=1
     )
     right_edge = FloatProperty(
-        name="Right: Edge",
+        name="Edge",
         soft_min=0, soft_max=1
     )
     bottom_left = FloatProperty(
-        name="Bottom: Left",
+        name="Left",
         soft_min=0, soft_max=1,
         default=1
     )
     bottom_right = FloatProperty(
-        name="Bottom: Right",
+        name="Right",
         soft_min=0, soft_max=1,
         default=1
     )
     bottom_edge = FloatProperty(
-        name="Bottom: Edge",
+        name="Edge",
         soft_min=0, soft_max=1
     )
     left_top = FloatProperty(
-        name="Left: Top",
+        name="Top",
         soft_min=0, soft_max=1
     )
     left_bottom = FloatProperty(
-        name="Left: Bottom",
+        name="Bottom",
         soft_min=0, soft_max=1
     )
     left_edge = FloatProperty(
-        name="Left: Edge",
+        name="Edge",
         soft_min=0, soft_max=1
     )
 
@@ -920,19 +1100,27 @@ class ArnoldNodeBarndoor(ArnoldNode):
         self.outputs.new("NodeSocketVirtual", "Filter", "filter")
 
     def draw_buttons(self, context, layout):
-        col = layout.column(align=True)
+        col = layout.column()
+        col.label("Top:")
+        col = col.column(align=True)
         col.prop(self, "top_left")
         col.prop(self, "top_right")
         col.prop(self, "top_edge")
-        col = layout.column(align=True)
+        col = layout.column()
+        col.label("Right:")
+        col = col.column(align=True)
         col.prop(self, "right_top")
         col.prop(self, "right_bottom")
         col.prop(self, "right_edge")
-        col = layout.column(align=True)
+        col = layout.column()
+        col.label("Bottom:")
+        col = col.column(align=True)
         col.prop(self, "bottom_left")
         col.prop(self, "bottom_right")
         col.prop(self, "bottom_edge")
-        col = layout.column(align=True)
+        col = layout.column()
+        col.label("Left:")
+        col = col.column(align=True)
         col.prop(self, "left_top")
         col.prop(self, "left_bottom")
         col.prop(self, "left_edge")
