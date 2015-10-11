@@ -4,13 +4,13 @@ __author__ = "Ildar Nikolaev"
 __email__ = "nildar@users.sourceforge.net"
 
 bl_info = {
-    "name"			: "B-Arnold",
-    "description"	: "Arnold Render integration",
-    "author"		: "N.Ildar <nildar@users.sourceforge.net>",
-    "version"		: (0, 0, 1),
-    "blender"		: (2, 75, 0),
-    "location"		: "Info header, render engine menu",
-    "category"		: "Render"
+    "name"          : "B-Arnold",
+    "description"   : "Arnold Render integration",
+    "author"        : "N.Ildar <nildar@users.sourceforge.net>",
+    "version"       : (0, 0, 1),
+    "blender"       : (2, 75, 0),
+    "location"      : "Info header, render engine menu",
+    "category"      : "Render"
 }
 
 import bpy

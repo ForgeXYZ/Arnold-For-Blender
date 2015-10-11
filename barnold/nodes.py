@@ -585,7 +585,7 @@ class ArnoldNodeImage(ArnoldNode):
             "twrap": ('STRING', self.twrap),
         }
         if self.filename:
-            props["filename"] = ('FILE_PATH', self.filename)
+            props["filename"] = ('STRING', bpy.path.abspath(self.filename))
         if self.uvset:
             props["uvset"] = ('STRING', self.uvset)
         return props
@@ -696,16 +696,16 @@ class ArnoldNodeFog(ArnoldNode):
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("NodeSocketFloat", "distance").default_value = 0.02
-        self.inputs.new("NodeSocketFloat", "height").default_value = 5
-        self.inputs.new("ArnoldNodeSocketColor", "color")
-        #self.inputs.new("POINT", "ground_point")  # TODO: need socket type
-        self.inputs.new("NodeSocketVector", "ground_normal").default_value = (0, 0, 1)
+        self.inputs.new("ArnoldNodeSocketColor", "Color", "color")
+        self.inputs.new("NodeSocketFloat", "Distance", "distance").default_value = 0.02
+        self.inputs.new("NodeSocketFloat", "Height", "height").default_value = 5
+        self.inputs.new("NodeSocketVector", "Ground Normal", "ground_normal").default_value = (0, 0, 1)
+        self.inputs.new("NodeSocketVectorXYZ", "Ground Point", "ground_point")
 
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeBarndoor(ArnoldNode):
-    bl_label = "Barn door"
+    bl_label = "Barn Door"
     bl_icon = 'LAMP'
 
     ai_name = "barndoor"
@@ -799,6 +799,93 @@ class ArnoldNodeBarndoor(ArnoldNode):
             "barndoor_left_top": ('FLOAT', self.left_top),
             "barndoor_left_bottom": ('FLOAT', self.left_bottom),
             "barndoor_left_edge": ('FLOAT', self.left_edge),
+        }
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeGobo(ArnoldNode):
+    bl_label = "Gobo"
+    bl_icon = 'LAMP'
+
+    ai_name = "gobo"
+
+    rotate = FloatProperty(
+        name="Rotate",
+        description="Rotate the texture image."
+    )
+    offset = FloatVectorProperty(
+        name="Offset",
+        description="UV coordinate values used to offset the direction of the slide map.",
+        size=2
+    )
+    density = FloatProperty(
+        name="Density"
+    )
+    filter_mode = EnumProperty(
+        name="Mode",
+        description="Filter Mode",
+        items=[
+            ('blend', "Blend", "Blend"),
+        ],
+        default='blend'
+    )
+    scale_s = FloatProperty(
+        name="Scale U",
+        default=1
+    )
+    scale_t = FloatProperty(
+        name="Scale V",
+        default=1
+    )
+    wrap_s = EnumProperty(
+        name="Wrap U",
+        items=_WRAP_ITEMS,
+        default='clamp'
+    )
+    wrap_t = EnumProperty(
+        name="Wrap V",
+        items=_WRAP_ITEMS,
+        default='clamp'
+    )
+
+    def init(self, context):
+        self.outputs.new("NodeSocketVirtual", "Filter", "filter")
+        self.inputs.new("ArnoldNodeSocketColor", "Slidemap", "slidemap")
+
+    def draw_buttons(self, context, layout):
+        col = layout.column()
+        col.prop(self, "filter_mode")
+        col.prop(self, "density")
+        col.prop(self, "rotate")
+        col.prop(self, "offset")
+
+        subcol = col.column(align=True)
+        subcol.label("Scale:")
+        subcol.prop(self, "scale_s", text="U")
+        subcol.prop(self, "scale_t", text="V")
+
+        subcol = col.column(align=True)
+        subcol.label("Wrap:")
+        row = subcol.row(align=True)
+        col = row.column(align=True)
+        col.alignment = 'LEFT'
+        col.label("U:")
+        col.label("V:")
+        col = row.column(align=True)
+        col.prop(self, "wrap_s", text="")
+        col.prop(self, "wrap_t", text="")
+
+    @property
+    def ai_properties(self):
+        return {
+            "rotate": ('FLOAT', self.rotate),
+            "offset": ('POINT2', self.offset),
+            "density": ('FLOAT', self.density),
+            "filter_mode": ('STRING', self.filter_mode),
+            "scale_s": ('FLOAT', self.scale_s),
+            "scale_t": ('FLOAT', self.scale_t),
+            "wrap_s": ('STRING', self.wrap_s),
+            "wrap_t": ('STRING', self.wrap_t),
         }
 
 
@@ -988,10 +1075,11 @@ def register():
         ]),
         ArnoldLightNodeCategory("ARNOLD_NODES_LIGHT_FILTERS", "Filters", items=[
             nodeitems_utils.NodeItem("ArnoldNodeBarndoor"),
+            nodeitems_utils.NodeItem("ArnoldNodeGobo"),
         ]),
         # common
-        ArnoldNodeCategory("ARNOLD_NODES_COLOR", "Color", items=[
-            nodeitems_utils.NodeItem("ArnoldNodeMixRGB")
+        ArnoldNodeCategory("ARNOLD_NODES_COLORS", "Color", items=[
+            nodeitems_utils.NodeItem("ArnoldNodeMixRGB"),
         ]),
         ArnoldNodeCategory("ARNOLD_NODES_GROUP", "Group", items=node_group_items),
         ArnoldNodeCategory("ARNOLD_NODES_LAYOUT", "Layout", items=[

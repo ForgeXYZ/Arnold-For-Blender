@@ -39,7 +39,6 @@ class ArnoldLightFiltersUIList(UIList):
         return flags, order
 
 
-
 def _subpanel(layout, title, opened, path, attr, ctx):
     col = layout.column(align=True)
     box = col.box()
@@ -407,7 +406,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
             col = layout.column()
             col.prop(light, "aspect_ratio")
             col.prop(light, "lens_radius")
-            col.prop(lamp, "spot_size")  # cone_angle
+            col.prop(lamp, "spot_size", text="Cone Ange")
             col.prop(light, "penumbra_angle")
 
         sublayout = _subpanel(layout, "Shadow", light.ui_shadow,

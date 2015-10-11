@@ -53,9 +53,14 @@ _AiNodeSet = {
     "NodeSocketFloat": lambda n, i, v: arnold.AiNodeSetFlt(n, i, v),
     "NodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGBA(n, i, *v),
     "NodeSocketVector": lambda n, i, v: arnold.AiNodeSetVec(n, i, *v),
+    "NodeSocketVectorXYZ": lambda n, i, v: arnold.AiNodeSetPnt(n, i, *v),
     "NodeSocketString": lambda n, i, v: arnold.AiNodeSetStr(n, i, v),
     "ArnoldNodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v),
-    "ArnoldNodeSocketByte": lambda n, i, v: arnold.AiNodeSetByte(n, i, v)
+    "ArnoldNodeSocketByte": lambda n, i, v: arnold.AiNodeSetByte(n, i, v),
+    "STRING": lambda n, i, v: arnold.AiNodeSetStr(n, i, v),
+    "BOOL": lambda n, i, v: arnold.AiNodeSetBool(n, i, v),
+    "FLOAT": lambda n, i, v: arnold.AiNodeSetFlt(n, i, v),
+    "POINT2": lambda n, i, v: arnold.AiNodeSetPnt2(n, i, *v),
 }
 
 
@@ -86,12 +91,7 @@ def _AiNode(node, prefix, nodes):
             if not input.hide_value:
                 _AiNodeSet[input.bl_idname](anode, input.identifier, input.default_value)
         for p_name, (p_type, p_value) in node.ai_properties.items():
-            if p_type == 'FILE_PATH':
-                arnold.AiNodeSetStr(anode, p_name, bpy.path.abspath(p_value))
-            elif p_type == 'STRING':
-                arnold.AiNodeSetStr(anode, p_name, p_value)
-            elif p_type == 'FLOAT':
-                arnold.AiNodeSetFlt(anode, p_name, p_value)
+            _AiNodeSet[p_type](anode, p_name, p_value)
     return anode
 
 
@@ -292,6 +292,7 @@ def _export(data, scene, camera, xres, yres, session=None):
     # nodes cache
     nodes = {}  # {Object: AiNode}
     inodes = {}  # {Object.data: AiNode}
+    lamp_nodes = {}
     duplicators = []
     duplicator_parent = False
 
@@ -316,7 +317,7 @@ def _export(data, scene, camera, xres, yres, session=None):
             arnold.AiMsgInfo(b"    skip (hidden)")
             continue
 
-        if duplicator_parent != False:
+        if duplicator_parent is not False:
             if duplicator_parent == ob.parent:
                 duplicator_parent = False
             else:
@@ -395,10 +396,10 @@ def _export(data, scene, camera, xres, yres, session=None):
                     if isinstance(_node, ArnoldNodeLightOutput) and _node.is_active:
                         for input in _node.inputs:
                             if input.is_linked:
-                                _node = _AiNode(input.links[0].from_node, name, {})
+                                _node = _AiNode(input.links[0].from_node, name, lamp_nodes)
                                 if input.identifier == "color":
                                     color_node = _node
-                                else:
+                                elif input.bl_idname == "ArnoldNodeSocketFilter":
                                     filter_nodes.append(_node)
                         break
                 if filter_nodes:
