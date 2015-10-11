@@ -11,6 +11,7 @@ from bpy.props import (
     BoolProperty,
     EnumProperty,
     StringProperty,
+    FloatProperty,
     FloatVectorProperty
 )
 from . import ArnoldRenderEngine
@@ -703,6 +704,105 @@ class ArnoldNodeFog(ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
+class ArnoldNodeBarndoor(ArnoldNode):
+    bl_label = "Barn door"
+    bl_icon = 'LAMP'
+
+    ai_name = "barndoor"
+
+    top_left = FloatProperty(
+        name="Top: Left",
+        soft_min=0, soft_max=1
+    )
+    top_right = FloatProperty(
+        name="Top: Right",
+        soft_min=0, soft_max=1
+    )
+    top_edge = FloatProperty(
+        name="Top: Edge",
+        soft_min=0, soft_max=1
+    )
+    right_top = FloatProperty(
+        name="Right: Top",
+        soft_min=0, soft_max=1,
+        default=1
+    )
+    right_bottom = FloatProperty(
+        name="Right: Bottom",
+        soft_min=0, soft_max=1,
+        default=1
+    )
+    right_edge = FloatProperty(
+        name="Right: Edge",
+        soft_min=0, soft_max=1
+    )
+    bottom_left = FloatProperty(
+        name="Bottom: Left",
+        soft_min=0, soft_max=1,
+        default=1
+    )
+    bottom_right = FloatProperty(
+        name="Bottom: Right",
+        soft_min=0, soft_max=1,
+        default=1
+    )
+    bottom_edge = FloatProperty(
+        name="Bottom: Edge",
+        soft_min=0, soft_max=1
+    )
+    left_top = FloatProperty(
+        name="Left: Top",
+        soft_min=0, soft_max=1
+    )
+    left_bottom = FloatProperty(
+        name="Left: Bottom",
+        soft_min=0, soft_max=1
+    )
+    left_edge = FloatProperty(
+        name="Left: Edge",
+        soft_min=0, soft_max=1
+    )
+
+    def init(self, context):
+        self.outputs.new("NodeSocketVirtual", "Filter", "filter")
+
+    def draw_buttons(self, context, layout):
+        col = layout.column(align=True)
+        col.prop(self, "top_left")
+        col.prop(self, "top_right")
+        col.prop(self, "top_edge")
+        col = layout.column(align=True)
+        col.prop(self, "right_top")
+        col.prop(self, "right_bottom")
+        col.prop(self, "right_edge")
+        col = layout.column(align=True)
+        col.prop(self, "bottom_left")
+        col.prop(self, "bottom_right")
+        col.prop(self, "bottom_edge")
+        col = layout.column(align=True)
+        col.prop(self, "left_top")
+        col.prop(self, "left_bottom")
+        col.prop(self, "left_edge")
+
+    @property
+    def ai_properties(self):
+        return {
+            "barndoor_top_left": ('FLOAT', self.top_left),
+            "barndoor_top_right": ('FLOAT', self.top_right),
+            "barndoor_top_edge": ('FLOAT', self.top_edge),
+            "barndoor_right_top": ('FLOAT', self.right_top),
+            "barndoor_right_bottom": ('FLOAT', self.right_bottom),
+            "barndoor_right_edge": ('FLOAT', self.right_edge),
+            "barndoor_bottom_left": ('FLOAT', self.bottom_left),
+            "barndoor_bottom_right": ('FLOAT', self.bottom_right),
+            "barndoor_bottom_edge": ('FLOAT', self.bottom_edge),
+            "barndoor_left_top": ('FLOAT', self.left_top),
+            "barndoor_left_bottom": ('FLOAT', self.left_bottom),
+            "barndoor_left_edge": ('FLOAT', self.left_edge),
+        }
+
+
+@ArnoldRenderEngine.register_class
 class ArnoldNodeDensity(ArnoldNode):
     bl_label = "Density"
     bl_icon = 'TEXTURE'
@@ -885,6 +985,9 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeSky"),
             nodeitems_utils.NodeItem("ArnoldNodePhysicalSky"),
             nodeitems_utils.NodeItem("ArnoldNodeImage"),
+        ]),
+        ArnoldLightNodeCategory("ARNOLD_NODES_LIGHT_FILTERS", "Filters", items=[
+            nodeitems_utils.NodeItem("ArnoldNodeBarndoor"),
         ]),
         # common
         ArnoldNodeCategory("ARNOLD_NODES_COLOR", "Color", items=[

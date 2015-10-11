@@ -31,7 +31,7 @@ _CT = ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT')  # convertible types
 
 def _CleanNames(prefix, count):
     def fn(name):
-        return "%s%d#%s" % (prefix, next(count), _RN.sub("_", name))
+        return "%s%d::%s" % (prefix, next(count), _RN.sub("_", name))
     return fn
 
 
@@ -64,7 +64,7 @@ def _AiNode(node, prefix, nodes):
     Args:
         node (ArnoldNode): node.
         prefix (str): node name prefix.
-        nodes (dict): created nodes (Node => AiNode).
+        nodes (dict): created nodes {Node: AiNode}.
     Returns:
         arnold.AiNode or None
     """
@@ -73,14 +73,14 @@ def _AiNode(node, prefix, nodes):
 
     anode = nodes.get(node)
     if anode is None:
-        # TODO: make node names unique
-        name = "%s:%s" % (prefix, _RN.sub("_", node.name))
         anode = arnold.AiNode(node.ai_name)
+        name = "%s&N%d::%s" % (prefix, len(nodes), _RN.sub("_", node.name))
         arnold.AiNodeSetStr(anode, "name", name)
+        nodes[node] = anode
         for input in node.inputs:
             if input.is_linked:
                 _anode = _AiNode(input.links[0].from_node, prefix, nodes)
-                if not _anode is None:
+                if _anode is not None:
                     arnold.AiNodeLink(_anode, input.identifier, anode)
                     continue
             if not input.hide_value:
@@ -90,7 +90,8 @@ def _AiNode(node, prefix, nodes):
                 arnold.AiNodeSetStr(anode, p_name, bpy.path.abspath(p_value))
             elif p_type == 'STRING':
                 arnold.AiNodeSetStr(anode, p_name, p_value)
-        nodes[node] = anode
+            elif p_type == 'FLOAT':
+                arnold.AiNodeSetFlt(anode, p_name, p_value)
     return anode
 
 
@@ -312,35 +313,35 @@ def _export(data, scene, camera, xres, yres, session=None):
         arnold.AiMsgInfo(b"[%S] '%S'", ob.type, ob.name)
 
         if ob.hide_render or not in_layers(ob):
-            arnold.AiMsgInfo(b"    skip")
+            arnold.AiMsgInfo(b"    skip (hidden)")
             continue
 
         if duplicator_parent != False:
             if duplicator_parent == ob.parent:
                 duplicator_parent = False
             else:
-                arnold.AiMsgInfo(b"    skip")
+                arnold.AiMsgInfo(b"    skip (duplicator child)")
                 continue
 
         if ob.is_duplicator:
             duplicators.append(ob)
             if ob.dupli_type in ('VERTS', 'FACES'):
                 duplicator_parent = ob.parent
-            arnold.AiMsgInfo(b"    skip")
+            arnold.AiMsgInfo(b"    skip (duplicator)")
             continue
 
         if ob.type in _CT:
             modified = ob.is_modified(scene, 'RENDER')
             if not modified:
                 inode = inodes.get(ob.data)
-                if not inode is None:
+                if inode is not None:
                     node = arnold.AiNode("ginstance")
                     arnold.AiNodeSetStr(node, "name", _Name(ob.name))
                     arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
                     arnold.AiNodeSetBool(node, "inherit_xform", False)
                     arnold.AiNodeSetPtr(node, "node", inode)
                     _export_object_properties(ob, node)
-                    arnold.AiMsgInfo(b"    instance")
+                    arnold.AiMsgInfo(b"    instance (%S)", ob.data.name)
                     continue
 
             with _Mesh(ob) as mesh:
@@ -357,16 +358,15 @@ def _export(data, scene, camera, xres, yres, session=None):
             lamp = ob.data
             light = lamp.arnold
             if lamp.type == 'POINT':
-                arnold.AiMsgInfo(b"    point_light")
                 node = arnold.AiNode("point_light")
                 arnold.AiNodeSetFlt(node, "radius", light.radius)
                 arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
+                arnold.AiMsgInfo(b"    point_light")
             elif lamp.type == 'SUN':
-                arnold.AiMsgInfo(b"    distant_light")
                 node = arnold.AiNode("distant_light")
                 arnold.AiNodeSetFlt(node, "angle", light.angle)
+                arnold.AiMsgInfo(b"    distant_light")
             elif lamp.type == 'SPOT':
-                arnold.AiMsgInfo(b"    spot_light")
                 node = arnold.AiNode("spot_light")
                 arnold.AiNodeSetFlt(node, "radius", light.radius)
                 arnold.AiNodeSetFlt(node, "lens_radius", light.lens_radius)
@@ -374,13 +374,16 @@ def _export(data, scene, camera, xres, yres, session=None):
                 arnold.AiNodeSetFlt(node, "penumbra_angle", light.penumbra_angle)
                 arnold.AiNodeSetFlt(node, "aspect_ratio", light.aspect_ratio)
                 arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
+                arnold.AiMsgInfo(b"    spot_light")
             elif lamp.type == 'HEMI':
-                arnold.AiMsgInfo(b"    skydome_light")
                 node = arnold.AiNode("skydome_light")
+                arnold.AiNodeSetInt(node, "resolution", light.resolution)
+                arnold.AiNodeSetStr(node, "format", light.format)
+                arnold.AiMsgInfo(b"    skydome_light")
             #elif lamp.type == 'AREA':
             #    pass
             else:
-                arnold.AiMsgInfo(b"    skip")
+                arnold.AiMsgInfo(b"    skip (unsupported)")
                 continue
             name = _Name(ob.name)
             arnold.AiNodeSetStr(node, "name", name)
@@ -424,19 +427,24 @@ def _export(data, scene, camera, xres, yres, session=None):
             arnold.AiNodeSetInt(node, "volume_samples", light.volume_samples)
             arnold.AiNodeSetFlt(node, "volume", light.volume)
         else:
-            arnold.AiMsgInfo(b"    skip")
+            arnold.AiMsgInfo(b"    skip (unsupported)")
 
     ##############################
     ## duplicators
     for duplicator in duplicators:
+        i = 0
+        pc = time.perf_counter()
+        arnold.AiMsgInfo(b"[DUPLI:%S:%S] '%S'", duplicator.type,
+                         duplicator.dupli_type, duplicator.name)
+        arnold.AiMsgTab(4)
         duplicator.dupli_list_create(scene, 'RENDER')
         try:
             for d in duplicator.dupli_list:
                 ob = d.object
-                if not ob.hide_render and not ob.dupli_type in ('VERTS', 'FACES') and ob.type in _CT:
+                if not ob.hide_render and ob.dupli_type not in ('VERTS', 'FACES') and ob.type in _CT:
                     onode = nodes.get(ob)
                     if onode is None:
-                        arnold.AiMsgInfo(b"(%S) %S", ob.type, ob.name)
+                        arnold.AiMsgInfo(b"[%S] '%S'", ob.type, ob.name)
                         with _Mesh(ob) as mesh:
                             node = _AiPolymesh(mesh, shaders)
                             arnold.AiNodeSetStr(node, "name", _Name(ob.name))
@@ -448,8 +456,12 @@ def _export(data, scene, camera, xres, yres, session=None):
                         arnold.AiNodeSetArray(node, "matrix", _AiMatrix(d.matrix))
                         arnold.AiNodeSetBool(node, "inherit_xform", False)
                         arnold.AiNodeSetPtr(node, "node", onode)
+                        i += 1
                     _export_object_properties(ob, node)
+            arnold.AiMsgInfo(b"instances %d (%f)", ctypes.c_int(i),
+                             ctypes.c_double(time.perf_counter() - pc))
         finally:
+            arnold.AiMsgTab(-4)
             duplicator.dupli_list_clear()
 
     render = scene.render
@@ -537,11 +549,12 @@ def _export(data, scene, camera, xres, yres, session=None):
     ##############################
     ## camera
     if camera:
+        name = "C::" + _RN.sub("_", camera.name)
         mw = camera.matrix_world
         cd = camera.data
         cp = cd.arnold
         node = arnold.AiNode("persp_camera")
-        arnold.AiNodeSetStr(node, "name", camera.name)
+        arnold.AiNodeSetStr(node, "name", name)
         arnold.AiNodeSetArray(node, "matrix", _AiMatrix(mw))
         if cd.sensor_fit == 'VERTICAL':
             sw = cd.sensor_height * xres / yres * aspect_x / aspect_y
@@ -577,7 +590,7 @@ def _export(data, scene, camera, xres, yres, session=None):
         arnold.AiNodeSetStr(node, "rolling_shutter", cp.rolling_shutter)
         arnold.AiNodeSetFlt(node, "rolling_shutter_duration", cp.rolling_shutter_duration)
         # TODO: camera shift
-        if not session is None:
+        if session is not None:
             arnold.AiNodeSetPnt2(node, "screen_window_min", -1, 1)
             arnold.AiNodeSetPnt2(node, "screen_window_max", 1, -1)
         arnold.AiNodeSetFlt(node, "exposure", cp.exposure)
@@ -590,10 +603,10 @@ def _export(data, scene, camera, xres, yres, session=None):
         if world.use_nodes:
             for _node in world.node_tree.nodes:
                 if isinstance(_node, ArnoldNodeWorldOutput) and _node.is_active:
-                    _n = "W#" + _RN.sub("_", world.name)
+                    name = "W::" + _RN.sub("_", world.name)
                     for input in _node.inputs:
                         if input.is_linked:
-                            node = _AiNode(input.links[0].from_node, _n, {})
+                            node = _AiNode(input.links[0].from_node, name, {})
                             if node:
                                 arnold.AiNodeSetPtr(options, input.identifier, node)
                     break
@@ -631,6 +644,7 @@ def _export(data, scene, camera, xres, yres, session=None):
     arnold.AiNodeSetBool(display, "rgba_packing", False)
     #arnold.AiNodeSetBool(display, "dither", True)
 
+    # TODO: unusable, camera fliped (top to buttom) for tiles hightlighting
     #png = arnold.AiNode("driver_png")
     #arnold.AiNodeSetStr(png, "name", "__png")
     #arnold.AiNodeSetStr(png, "filename", render.frame_path())
@@ -694,11 +708,11 @@ def render(engine, scene):
                 y -= yoff
                 if buffer:
                     result = _htiles.pop((x, y))
-                    if not result is None:
+                    if result is not None:
                         result = engine.begin_result(x, y, width, height)
                     _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
                     rect = numpy.ctypeslib.as_array(_buffer, shape=(width * height, 4))
-                    rect **= 2.2  # gamma correction
+                    #rect **= 2.2  # TODO: gamma correction, need??? kick is darker
                     result.layers[0].passes[0].rect = rect
                     engine.end_result(result)
                 else:

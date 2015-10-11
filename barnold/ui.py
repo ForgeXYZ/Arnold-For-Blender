@@ -138,11 +138,11 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
         sublayout = _subpanel(layout, "Gamma Correction", opts.ui_gamma, opts_path, "ui_gamma", "scene")
         if sublayout:
             col = sublayout.column()
-            col.prop(opts, "display_gamma")
-            col.separator()
             col.prop(opts, "texture_gamma")
             col.prop(opts, "light_gamma")
             col.prop(opts, "shader_gamma")
+            col.separator()
+            col.prop(opts, "display_gamma")
 
         sublayout = _subpanel(layout, "Textures", opts.ui_textures, opts_path, "ui_textures", "scene")
         if sublayout:
@@ -382,7 +382,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
         col.prop(light, "exposure")
 
         col = layout.column()
-        if not lamp_type in ('SUN', 'HEMI'):
+        if lamp_type not in ('SUN', 'HEMI'):
             col.prop(light, "decay_type")
         col.prop(light, "affect_diffuse")
         col.prop(light, "affect_specular")
