@@ -371,6 +371,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
         lamp_type = lamp.type
 
         light = lamp.arnold
+        light_type = light.type
         path_from_id = light.path_from_id()
 
         #layout.prop(lamp, "type", expand=True)
@@ -382,7 +383,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
         col.prop(light, "exposure")
 
         col = layout.column()
-        if lamp_type not in ('SUN', 'HEMI'):
+        if lamp_type not in ('SUN', 'HEMI') and light_type != 'photometric_light':
             col.prop(light, "decay_type")
         col.prop(light, "affect_diffuse")
         col.prop(light, "affect_specular")
@@ -402,7 +403,6 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
             col.prop(light, "resolution")
             col.prop(light, "format")
         else:
-            light_type = light.type
             if light_type == 'cylinder_light':
                 col.prop(light, "samples")
                 col.prop(light, "ui_size", text="Radius")
@@ -413,7 +413,6 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
                 col.prop(light, "ui_size", text="Radius")
                 col.prop(light, "normalize")
             elif light_type == 'quad_light':
-                #col = layout.column()
                 col.prop(light, "samples")
                 col.row().prop(lamp, "shape", expand=True)
                 sub = col.row(align=True)
@@ -424,7 +423,10 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
                     sub.prop(lamp, "size_y", text="Size Y")
                 col.prop(light, "quad_resolution")
                 col.prop(light, "normalize")
-
+            elif light_type == 'photometric_light':
+                col.prop(light, "filename")
+                col.prop(light, "samples")
+                col.prop(light, "normalize")
 
         # Geometry
         if lamp_type == 'SPOT':

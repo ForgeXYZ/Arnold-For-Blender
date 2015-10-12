@@ -749,6 +749,10 @@ class ArnoldLight(PropertyGroup):
         name="Resolution",
         default=512
     )
+    filename = StringProperty(
+        name="Photometry File",
+        subtype='FILE_PATH'
+    )
     # common parameters
     intensity = FloatProperty(
         name="Intensity",

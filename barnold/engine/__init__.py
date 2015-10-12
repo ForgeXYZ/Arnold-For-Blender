@@ -16,18 +16,19 @@ from contextlib import contextmanager
 
 import bpy
 from mathutils import Matrix, Vector, geometry
+
+from . import arnold
+
 from ..nodes import (
     ArnoldNode,
     ArnoldNodeOutput,
     ArnoldNodeWorldOutput,
     ArnoldNodeLightOutput
 )
-from . import arnold
-
 
 _RN = re.compile("[^-0-9A-Za-z_]")  # regex to cleanup names
 _CT = ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT')  # convertible types
-
+_MR = Matrix.Rotation(math.radians(90.0), 4, 'X')
 
 def _CleanNames(prefix, count):
     def fn(name):
@@ -363,6 +364,7 @@ def _export(data, scene, camera, xres, yres, session=None):
         elif ob.type == 'LAMP':
             lamp = ob.data
             light = lamp.arnold
+            matrix = ob.matrix_world.copy()
             if lamp.type == 'POINT':
                 node = arnold.AiNode("point_light")
                 arnold.AiNodeSetFlt(node, "radius", light.radius)
@@ -394,8 +396,10 @@ def _export(data, scene, camera, xres, yres, session=None):
                     bottom = arnold.AiArray(1, 1, arnold.AI_TYPE_POINT, arnold.AtPoint(0, -lamp.size_y / 2, 0))
                     arnold.AiNodeSetArray(node, "bottom", bottom)
                     arnold.AiNodeSetFlt(node, "radius", lamp.size / 2)
+                    arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
                 elif light.type == 'disk_light':
                     arnold.AiNodeSetFlt(node, "radius", lamp.size / 2)
+                    arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
                 elif light.type == 'quad_light':
                     x = lamp.size / 2
                     y = lamp.size_y / 2 if lamp.shape == 'RECTANGLE' else x
@@ -406,12 +410,18 @@ def _export(data, scene, camera, xres, yres, session=None):
                     arnold.AiArraySetPnt(verts, 3, arnold.AtPoint(x, -y, 0))
                     arnold.AiNodeSetArray(node, "vertices", verts)
                     arnold.AiNodeSetInt(node, "resolution", light.quad_resolution)
+                    arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
+                elif light.type == 'photometric_light':
+                    arnold.AiNodeSetStr(node, "filename", bpy.path.abspath(light.filename))
+                    matrix *= _MR
+                elif light.type == 'mesh_light':
+                    arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
             else:
                 arnold.AiMsgInfo(b"    skip (unsupported)")
                 continue
+
             name = _Name(ob.name)
             arnold.AiNodeSetStr(node, "name", name)
-            arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
             color_node = None
             if lamp.use_nodes:
                 filter_nodes = []
@@ -432,6 +442,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                 arnold.AiNodeSetRGB(node, "color", *lamp.color)
             else:
                 arnold.AiNodeLink(color_node, "color", node)
+            arnold.AiNodeSetArray(node, "matrix", _AiMatrix(matrix))
             arnold.AiNodeSetFlt(node, "intensity", light.intensity)
             arnold.AiNodeSetFlt(node, "exposure", light.exposure)
             arnold.AiNodeSetBool(node, "cast_shadows", light.cast_shadows)
