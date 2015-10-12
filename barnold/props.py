@@ -712,7 +712,8 @@ class ArnoldLight(PropertyGroup):
         name="Angle"
     )
     radius = FloatProperty(
-        name="Radius"
+        name="Radius",
+        min=0, soft_max=10
     )
     lens_radius = FloatProperty(
         name="Lens Radius"
@@ -744,13 +745,21 @@ class ArnoldLight(PropertyGroup):
         ],
         default='quadratic'
     )
+    quad_resolution = IntProperty(
+        name="Resolution",
+        default=512
+    )
     # common parameters
     intensity = FloatProperty(
         name="Intensity",
+        description="Intensity controls the brightness of light emitted by the light source by multiplying the color.",
+        soft_min=0, soft_max=10,
         default=1.0
     )
     exposure = FloatProperty(
-        name="Exposure"
+        name="Exposure",
+        description="Exposure is an f-stop value which multiplies the intensity by 2 to the power of the f-stop. Increasing the exposure by 1 results in double the amount of light.",
+        soft_min=0, soft_max=10
     )
     cast_shadows = BoolProperty(
         name="Cast Shadows",
@@ -772,6 +781,12 @@ class ArnoldLight(PropertyGroup):
     )
     samples = IntProperty(
         name="Samples",
+        description="Controls the quality of the noise in the soft shadows."
+                    " The higher the number of samples, the lower the noise,"
+                    " and the longer it takes to render. The exact number of"
+                    " shadow rays sent to the light is the square of this"
+                    " value multiplied by the AA samples.",
+        soft_min=1, max=100,
         default=1
     )
     normalize = BoolProperty(
@@ -780,10 +795,12 @@ class ArnoldLight(PropertyGroup):
     )
     affect_diffuse = BoolProperty(
         name="Emit Diffuse",
+        description="Allow the light to affect a material's diffuse component.",
         default=True
     )
     affect_specular = BoolProperty(
         name="Emit Specular",
+        description="Allow the light to affect a material's specular component.",
         default=True
     )
     affect_volumetrics = BoolProperty(
@@ -825,13 +842,67 @@ class ArnoldLight(PropertyGroup):
         default=1
     )
 
+    def _types():
+        _lamps = ('POINT', 'SUN', 'SPOT', 'HEMI', 'AREA')
+
+        def get(self):
+            lamp = self.id_data
+            i = _lamps.index(lamp.type)
+            if i == 4:  # AREA
+                _t = self.get("_type", 0)
+                if _t == 3:
+                    i = 8  # quad_light
+                elif lamp.shape == 'RECTANGLE':
+                    self["_type"] = 0
+                    i = 4  # cylinder_light
+                else:
+                    i = _t + 5
+            return i
+
+        def set(self, value):
+            lamp = self.id_data
+            if value > 4:
+                lamp.type = 'AREA'
+                lamp = lamp.type_recast()
+                if value != 8:
+                    lamp.shape = 'SQUARE'
+                self["_type"] = value - 5
+            elif value == 4:
+                lamp.type = 'AREA'
+                lamp = lamp.type_recast()
+                lamp.shape = 'RECTANGLE'
+                self["_type"] = 0
+            else:
+                lamp.type = _lamps[value]
+
+        return {"get": get, "set": set}
+
     type = EnumProperty(
         name="Type",
         description="Light Type",
         items=[
-            ('POINT', "Point", "Point light"),
-            ('QUAD', "Quad", "Quad light")
-        ]
+            ('point_light', "Point", "Point light", 0),
+            ('distant_light', "Distant", "Distant light", 1),
+            ('spot_light', "Spot", "Spot light", 2),
+            ('skydome_light', "Skydom", "Skydom light", 3),
+            ('cylinder_light', "Cylinder", "Cylinder light", 4),
+            ('disk_light', "Disk", "Disk light", 5),
+            ('mesh_light', "Mesh", "Mesh light", 6),
+            ('photometric_light', "Photometric", "Photometric light", 7),
+            ('quad_light', "Quad", "Quad light", 8)
+        ],
+        **_types()
+    )
+
+    ui_size = FloatProperty(
+        name="Radius",
+        get=lambda s: s.id_data.size / 2,
+        set=lambda s, v: setattr(s.id_data, "size", v * 2)
+    )
+    ui_size_y = FloatProperty(
+        name="Height",
+        get=lambda s: s.id_data.size_y / 2,
+        set=lambda s, v: setattr(s.id_data, "size_y", v * 2)
     )
 
     @classmethod

@@ -386,8 +386,26 @@ def _export(data, scene, camera, xres, yres, session=None):
                 arnold.AiNodeSetInt(node, "resolution", light.resolution)
                 arnold.AiNodeSetStr(node, "format", light.format)
                 arnold.AiMsgInfo(b"    skydome_light")
-            #elif lamp.type == 'AREA':
-            #    pass
+            elif lamp.type == 'AREA':
+                node = arnold.AiNode(light.type)
+                if light.type == 'cylinder_light':
+                    top = arnold.AiArray(1, 1, arnold.AI_TYPE_POINT, arnold.AtPoint(0, lamp.size_y / 2, 0))
+                    arnold.AiNodeSetArray(node, "top", top)
+                    bottom = arnold.AiArray(1, 1, arnold.AI_TYPE_POINT, arnold.AtPoint(0, -lamp.size_y / 2, 0))
+                    arnold.AiNodeSetArray(node, "bottom", bottom)
+                    arnold.AiNodeSetFlt(node, "radius", lamp.size / 2)
+                elif light.type == 'disk_light':
+                    arnold.AiNodeSetFlt(node, "radius", lamp.size / 2)
+                elif light.type == 'quad_light':
+                    x = lamp.size / 2
+                    y = lamp.size_y / 2 if lamp.shape == 'RECTANGLE' else x
+                    verts = arnold.AiArrayAllocate(4, 1, arnold.AI_TYPE_POINT)
+                    arnold.AiArraySetPnt(verts, 0, arnold.AtPoint(-x, -y, 0))
+                    arnold.AiArraySetPnt(verts, 1, arnold.AtPoint(-x, y, 0))
+                    arnold.AiArraySetPnt(verts, 2, arnold.AtPoint(x, y, 0))
+                    arnold.AiArraySetPnt(verts, 3, arnold.AtPoint(x, -y, 0))
+                    arnold.AiNodeSetArray(node, "vertices", verts)
+                    arnold.AiNodeSetInt(node, "resolution", light.quad_resolution)
             else:
                 arnold.AiMsgInfo(b"    skip (unsupported)")
                 continue

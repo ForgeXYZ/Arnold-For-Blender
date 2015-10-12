@@ -720,6 +720,7 @@ class ArnoldNodeImage(ArnoldNode):
 class ArnoldNodeSky(ArnoldNode):
     bl_label = "Sky"
     bl_icon = 'WORLD'
+    bl_width_default = 220
 
     ai_name = "sky"
 
@@ -741,27 +742,30 @@ class ArnoldNodeSky(ArnoldNode):
         default='angular'
     )
     X_angle = FloatProperty(
-        name = "X angle"
+        name="X",
+        description="X angle"
     )
     Y_angle = FloatProperty(
-        name = "X angle"
+        name="Y",
+        description="Y angle"
     )
     Z_angle = FloatProperty(
-        name = "X angle"
+        name="Z",
+        description="Z angle"
     )
     X = FloatVectorProperty(
         name="X",
-        soft_min=0, soft_max=1,
+        soft_min=-1, soft_max=1,
         default=(1, 0, 0)
     )
     Y = FloatVectorProperty(
         name="Y",
-        soft_min=0, soft_max=1,
+        soft_min=-1, soft_max=1,
         default=(0, 1, 0)
     )
     Z = FloatVectorProperty(
         name="Z",
-        soft_min=0, soft_max=1,
+        soft_min=-1, soft_max=1,
         default=(0, 0, 1)
     )
     
@@ -826,16 +830,10 @@ class ArnoldNodeSky(ArnoldNode):
 
         col = layout.column()
         col.label("Angle:")
-        row = col.row(align=True)
-        scol = row.column(align=True)
-        scol.alignment = 'LEFT'
-        scol.label("X:")
-        scol.label("Y:")
-        scol.label("Z:")
-        scol = row.column(align=True)
-        scol.prop(self, "X_angle", text="")
-        scol.prop(self, "Y_angle", text="")
-        scol.prop(self, "Z_angle", text="")
+        scol = col.column(align=True)
+        scol.prop(self, "X_angle")
+        scol.prop(self, "Y_angle")
+        scol.prop(self, "Z_angle")
 
         col.label("Orientation:")
         row = col.row(align=True)

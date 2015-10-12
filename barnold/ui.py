@@ -373,7 +373,8 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
         light = lamp.arnold
         path_from_id = light.path_from_id()
 
-        layout.prop(lamp, "type", expand=True)
+        #layout.prop(lamp, "type", expand=True)
+        layout.prop(light, "type")
 
         col = layout.column()
         col.row().prop(lamp, "color")
@@ -400,6 +401,30 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
             col.prop(light, "samples")
             col.prop(light, "resolution")
             col.prop(light, "format")
+        else:
+            light_type = light.type
+            if light_type == 'cylinder_light':
+                col.prop(light, "samples")
+                col.prop(light, "ui_size", text="Radius")
+                col.prop(light, "ui_size_y", text="Height")
+                col.prop(light, "normalize")
+            elif light_type == 'disk_light':
+                col.prop(light, "samples")
+                col.prop(light, "ui_size", text="Radius")
+                col.prop(light, "normalize")
+            elif light_type == 'quad_light':
+                #col = layout.column()
+                col.prop(light, "samples")
+                col.row().prop(lamp, "shape", expand=True)
+                sub = col.row(align=True)
+                if lamp.shape == 'SQUARE':
+                    sub.prop(lamp, "size")
+                elif lamp.shape == 'RECTANGLE':
+                    sub.prop(lamp, "size", text="Size X")
+                    sub.prop(lamp, "size_y", text="Size Y")
+                col.prop(light, "quad_resolution")
+                col.prop(light, "normalize")
+
 
         # Geometry
         if lamp_type == 'SPOT':

@@ -38,6 +38,7 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
         ), False)),
         ("properties_data_lamp", ((
             "DATA_PT_context_lamp",
+            #"DATA_PT_area",
             "DATA_PT_custom_props_lamp",
         ), False)),
         ("properties_material", ((
