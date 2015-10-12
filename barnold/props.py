@@ -753,6 +753,9 @@ class ArnoldLight(PropertyGroup):
         name="Photometry File",
         subtype='FILE_PATH'
     )
+    mesh = StringProperty(
+        name="Mesh"
+    )
     # common parameters
     intensity = FloatProperty(
         name="Intensity",

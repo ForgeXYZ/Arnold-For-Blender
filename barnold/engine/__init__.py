@@ -299,6 +299,7 @@ def _export(data, scene, camera, xres, yres, session=None):
     nodes = {}  # {Object: AiNode}
     inodes = {}  # {Object.data: AiNode}
     lamp_nodes = {}
+    mesh_lights = []
     duplicators = []
     duplicator_parent = False
 
@@ -416,6 +417,8 @@ def _export(data, scene, camera, xres, yres, session=None):
                     matrix *= _MR
                 elif light.type == 'mesh_light':
                     arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
+                    if light.mesh:
+                        mesh_lights.append((node, light.mesh))
             else:
                 arnold.AiMsgInfo(b"    skip (unsupported)")
                 continue
@@ -498,6 +501,22 @@ def _export(data, scene, camera, xres, yres, session=None):
         finally:
             arnold.AiMsgTab(-4)
             duplicator.dupli_list_clear()
+
+    for light_node, name in mesh_lights:
+        ob = scene.objects.get(name)
+        if ob is None:
+            continue
+        node = nodes.get(ob)
+        if node is None:
+            if ob.type not in _CT:
+                continue
+            arnold.AiMsgInfo(b"[%S] '%S'", ob.type, ob.name)
+            with _Mesh(ob) as mesh:
+                node = _AiPolymesh(mesh, shaders)
+                arnold.AiNodeSetStr(node, "name", _Name(ob.name))
+                arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
+                nodes[ob] = node
+        arnold.AiNodeSetPtr(light_node, "mesh", node)
 
     render = scene.render
     aspect_x = render.pixel_aspect_x

@@ -427,6 +427,10 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
                 col.prop(light, "filename")
                 col.prop(light, "samples")
                 col.prop(light, "normalize")
+            elif light_type == 'mesh_light':
+                col.prop_search(light, "mesh", context.scene, "objects", icon='OUTLINER_OB_MESH')
+                col.prop(light, "samples")
+                col.prop(light, "normalize")
 
         # Geometry
         if lamp_type == 'SPOT':
