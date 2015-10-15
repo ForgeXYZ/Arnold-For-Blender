@@ -752,31 +752,37 @@ def render(engine, scene):
         session["peak"] = 0  # memory peak usage
 
         def display_callback(x, y, width, height, buffer, data):
-            if engine.test_break():
-                arnold.AiRenderAbort()
-                while _htiles:
-                    (x, y), result = _htiles.popitem()
-                    engine.end_result(result, True)
-            else:
-                x -= xoff
-                y -= yoff
-                if buffer:
-                    result = _htiles.pop((x, y))
-                    if result is not None:
-                        result = engine.begin_result(x, y, width, height)
-                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
-                    rect = numpy.ctypeslib.as_array(_buffer, shape=(width * height, 4))
-                    #rect **= 2.2  # TODO: gamma correction, need??? kick is darker
-                    result.layers[0].passes[0].rect = rect
-                    engine.end_result(result)
+            try:
+                if engine.test_break():
+                    arnold.AiRenderAbort()
+                    while _htiles:
+                        (x, y), result = _htiles.popitem()
+                        engine.end_result(result, True)
                 else:
-                    result = engine.begin_result(x, y, width, height)
-                    # TODO: sometimes highlighted tiles become empty
-                    #engine.update_result(result)
-                    _htiles[(x, y)] = result
-            mem = arnold.AiMsgUtilGetUsedMemory() / 1048576  # 1024*1024
-            peak = session["peak"] = max(session["peak"], mem)
-            engine.update_memory_stats(mem, peak)
+                    x -= xoff
+                    y -= yoff
+                    if buffer:
+                        result = _htiles.pop((x, y))
+                        if result is not None:
+                            result = engine.begin_result(x, y, width, height)
+                        _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
+                        rect = numpy.ctypeslib.as_array(_buffer, shape=(width * height, 4))
+                        # TODO: gamma correction. need??? kick is darker
+                        # set 1/2.2 the driver_display node by default
+                        #rect **= 2.2
+                        result.layers[0].passes[0].rect = rect
+                        engine.end_result(result)
+                    else:
+                        result = engine.begin_result(x, y, width, height)
+                        # TODO: sometimes highlighted tiles become empty
+                        #engine.update_result(result)
+                        _htiles[(x, y)] = result
+                mem = session["mem"] = arnold.AiMsgUtilGetUsedMemory() / 1048576  # 1024*1024
+                peak = session["peak"] = max(session["peak"], mem)
+                engine.update_memory_stats(mem, peak)
+            finally:
+                if buffer:
+                    arnold.AiFree(buffer)
 
         # display callback must be a variable
         cb = arnold.AtDisplayCallBack(display_callback)
@@ -792,7 +798,7 @@ def render(engine, scene):
                     res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
                     if res != arnold.AI_SUCCESS:
                         break
-                    engine.update_stats("", "SL: %d" % sl)
+                    engine.update_stats("", "Mem: %.2fMb, SL: %d" % (session.get("mem", "NA"), sl))
         if res != arnold.AI_SUCCESS:
             engine.error_set("Render status: %d" % res)
     except:
