@@ -239,6 +239,18 @@ class ArnoldNodeStandard(ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
+class ArnoldNodeStandardTest(ArnoldNode):
+    bl_label = "Standard (test)"
+    bl_icon = 'MATERIAL'
+    bl_width_default = 250
+
+    ai_name = "standard"
+
+    def init(self, context):
+        self.outputs.new("NodeSocketShader", "RGB", "output")
+
+
+@ArnoldRenderEngine.register_class
 class ArnoldNodeUtility(ArnoldNode):
     bl_label = "Utility"
     bl_icon = 'MATERIAL'
@@ -1394,6 +1406,7 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeOutput")
         ]),
         ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_SHADERS", "Shaders", items=[
+            nodeitems_utils.NodeItem("ArnoldNodeStandardTest"),
             nodeitems_utils.NodeItem("ArnoldNodeStandard"),
             nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),

@@ -147,15 +147,15 @@ class Shaders:
                 node = arnold.AiNode('lambert')
                 arnold.AiNodeSetFlt(node, "Kd", mat.diffuse_intensity)
                 arnold.AiNodeSetRGB(node, "Kd_color", *mat.diffuse_color)
-                arnold.AiNodeSetRGB(node, "opacity", *shader.opacity)
+                arnold.AiNodeSetRGB(node, "opacity", *shader.lambert.opacity)
             elif shader.type == 'STANDARD':
                 standard = shader.standard
                 node = arnold.AiNode('standard')
                 arnold.AiNodeSetFlt(node, "Kd", mat.diffuse_intensity)
                 arnold.AiNodeSetRGB(node, "Kd_color", *mat.diffuse_color)
                 arnold.AiNodeSetFlt(node, "diffuse_roughness", standard.diffuse_roughness)
-                arnold.AiNodeSetFlt(node, "Ks", standard.ks)
-                arnold.AiNodeSetRGB(node, "Ks_color", *standard.ks_color)
+                arnold.AiNodeSetFlt(node, "Ks", mat.specular_intensity)
+                arnold.AiNodeSetRGB(node, "Ks_color", *mat.specular_color)
                 arnold.AiNodeSetFlt(node, "specular_roughness", standard.specular_roughness)
                 arnold.AiNodeSetFlt(node, "specular_anisotropy", standard.specular_anisotropy)
                 arnold.AiNodeSetFlt(node, "specular_rotation", standard.specular_rotation)
