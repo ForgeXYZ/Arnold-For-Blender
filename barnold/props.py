@@ -923,6 +923,8 @@ class ArnoldLight(PropertyGroup):
 
 @ArnoldRenderEngine.register_class
 class ArnoldShaderLambert(PropertyGroup):
+    #Kd = Material.diffuse_intensity
+    #Kd_color = Material.diffuse_color
     opacity = FloatVectorProperty(
         name="Opacity",
         description="",
@@ -1305,35 +1307,124 @@ class ArnoldShaderStandard(PropertyGroup):
 
 @ArnoldRenderEngine.register_class
 class ArnoldShaderUtility(PropertyGroup):
+    color_mode = EnumProperty(
+        name="Color Mode",
+        items=[
+            ('color', "Color", "Single color output"),
+            ('ng', "Geometric Normal", "Shader normals in world space."),
+            ('ns', "Un-bumped Normal", "Smooth un-bumped normals in screen space."),
+            ('n', "Normal", "Geometry normals in world space."),
+            ('bary', "Barycentric Coords", "Barycentry coordinates (bu corresponds to red and bv to green) of the primitive."),
+            ('uv', "UV Coords", "UV coordinates (u corresponds to red and v to green) of the primitive."),
+            ('u', "U Coords", "U coordinate mapped to the red, green and blue channels."),
+            ('v', "V Coords", "V coordinate mapped to the red, green and blue channels."),
+            ('dpdu', "U Surface Derivative (dPdu)", "Surface derivative with respect to u coordinate."),
+            ('dpdv', "V Surface Derivative (dPdv)", "Surface derivative with respect to v coordinate."),
+            ('p', "Shading Point", "Shading point, relative to the Bounding Box."),
+            ('prims', "Primitive ID", "Each primitive ID is represented as a different color."),
+            ('uniformid', "Uniform ID", "Allows you to color by patch instad of by polygon and by curve instead of curve segments."),
+            ('wire', "Triangle Wireframe", "Renders a triangulated wireframe of the mesh."),
+            ('polywire', "Polygon Wireframe", "Renders a plygon wireframe of the mesh."),
+            ('obj', "Object", "Object mode uses the name of the shapes to compute the color."),
+            ('edgelength', "Edge Length", "Shows the edge length of the primitive as a heatmap."),
+            ('floatgrid', "Floatgrid", "A color is mapped around a Hash function based on the Shading Point."),
+            ('reflectline', "Reflection Lines", "Use to diagnose the contour lines of a mesh."),
+            ('bad_uvs', "Bad UVs", "Returns magenta in the UV of the privitive that are degenerated."),
+            ('nlights', "Number of lights", "Shows the relative number of lights considered at the shading point."),
+            ('id', "Object ID", "Id mode uses the ID parameter shapes have in order to compute the color."),
+            ('bumpdiff', "Bump Difference", "This mode shows how far the bump and autobump normals vary from the base smooth-shaded normals as a heatmap."),
+            ('pixelerror', "Subdivision Pixel Error", "Shows as a heatmap mode, the edge lenth of the privitive based on how well the polygon matches the subdiv_pixel_error.")
+        ],
+        default='color'
+    )
+    shade_mode = EnumProperty(
+        name="Shade Mode",
+        items=[
+            ('ndoteye', "Ndoteye", "Uses a dot product between the Normal and the Eye vector."),
+            ('lambert', "Lambert", "Uses a Lambertian shading model."),
+            ('flat', "Flat", "Renders the model as a pure, solid flatly lit and shaded color."),
+            ('ambocc', "Ambocc", "Renders the model usgin an ambient occlusion technique."),
+            ('plastic', "Plastic", "Has both diffuse (0.7) and specular (0.1) components.")
+        ],
+        default='ndoteye'
+    )
+    overlay_mode = EnumProperty(
+        name="Overlay Mode",
+        items=[
+            ('none', "None", "None"),
+            ('wire', "Wire", "Wire"),
+            ('polywire', "Polywire", "Polywire")
+        ],
+        default='none'
+    )
+    color = FloatVectorProperty(
+        name="Color",
+        description="Color used as the shading mode for the model.",
+        get=lambda self: self.id_data.diffuse_color,
+        set=lambda self, value: setattr(self.id_data, "diffuse_color", value),
+        subtype='COLOR',
+        default=(1, 1, 1)
+    )
     opacity = FloatProperty(
         name="Opacity",
         default=1.0
+    )
+    ao_distance = FloatProperty(
+        name="AO Distance",
+        default=100
+    )
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldShaderFlat(PropertyGroup):
+    color = FloatVectorProperty(
+        name="Color",
+        description="The input color.",
+        get=lambda self: self.id_data.diffuse_color,
+        set=lambda self, value: setattr(self.id_data, "diffuse_color", value),
+        subtype='COLOR',
+        default=(1, 1, 1)
+    )
+    opacity = FloatVectorProperty(
+        name="Opacity",
+        description="The input opacity.",
+        subtype='COLOR',
+        min=0, max=1,
+        default=(1, 1, 1)
     )
 
 
 @ArnoldRenderEngine.register_class
 class ArnoldShaderWireframe(PropertyGroup):
+    line_width = FloatProperty(
+        name="Line Width",
+        default=1.0
+    )
+    fill_color = FloatVectorProperty(
+        name="Fill Color",
+        get=lambda self: self.id_data.diffuse_color,
+        set=lambda self, value: setattr(self.id_data, "diffuse_color"),
+        default=(1, 1, 1),
+        min=0, max=1,
+        subtype='COLOR'
+    )
+    line_color = FloatVectorProperty(
+        name="Line Color",
+        default=(0, 0, 0),
+        min=0, max=1,
+        subtype='COLOR'
+    )
+    raster_space = BoolProperty(
+        name="Raster Space",
+        default=True
+    )
     edge_type = EnumProperty(
-        name="Edge Type",
+        name="Color Mode",
         items=[
             ('polygons', "Polygons", "Polygons"),
             ('triangles', "Triangles", "Triangles")
         ],
         default='triangles'
-    )
-    fill_color = FloatVectorProperty(
-        name="Fill Color",
-        default=(1, 1, 1),
-        min=0, max=1,
-        subtype='COLOR'
-    )
-    line_width = FloatProperty(
-        name="Line Width",
-        default=1.0
-    )
-    raster_space = BoolProperty(
-        name="Raster Space",
-        default=True
     )
 
 
@@ -1345,13 +1436,16 @@ class ArnoldShader(PropertyGroup):
             ('lambert', "Lambert", "Lambert"),
             ('standard', "Standard", "Standard"),
             ('utility', "Utility", "Utility"),
-            ('flat', "Flat", "Flat")
+            ('flat', "Flat", "Flat"),
+            ('hair', "Hair", "Hair")
         ],
         default='lambert'
     )
     lambert = PointerProperty(type=ArnoldShaderLambert)
     standard = PointerProperty(type=ArnoldShaderStandard)
     utility = PointerProperty(type=ArnoldShaderUtility)
+    flat = PointerProperty(type=ArnoldShaderFlat)
+    #hair = PointerProperty(type=ArnoldShaderHair)
     wire = PointerProperty(type=ArnoldShaderWireframe)
 
     @classmethod

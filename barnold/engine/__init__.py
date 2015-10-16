@@ -30,6 +30,7 @@ _RN = re.compile("[^-0-9A-Za-z_]")  # regex to cleanup names
 _CT = ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT')  # convertible types
 _MR = Matrix.Rotation(math.radians(90.0), 4, 'X')
 
+
 def _CleanNames(prefix, count):
     def fn(name):
         return "%s%d::%s" % (prefix, next(count), _RN.sub("_", name))
@@ -143,14 +144,13 @@ class Shaders:
 
         shader = mat.arnold
         if mat.type == 'SURFACE':
-            if shader.type == 'LAMBERT':
-                node = arnold.AiNode('lambert')
+            node = arnold.AiNode(shader.type)
+            if shader.type == 'lambert':
                 arnold.AiNodeSetFlt(node, "Kd", mat.diffuse_intensity)
                 arnold.AiNodeSetRGB(node, "Kd_color", *mat.diffuse_color)
                 arnold.AiNodeSetRGB(node, "opacity", *shader.lambert.opacity)
-            elif shader.type == 'STANDARD':
+            elif shader.type == 'standard':
                 standard = shader.standard
-                node = arnold.AiNode('standard')
                 arnold.AiNodeSetFlt(node, "Kd", mat.diffuse_intensity)
                 arnold.AiNodeSetRGB(node, "Kd_color", *mat.diffuse_color)
                 arnold.AiNodeSetFlt(node, "diffuse_roughness", standard.diffuse_roughness)
@@ -159,12 +159,20 @@ class Shaders:
                 arnold.AiNodeSetFlt(node, "specular_roughness", standard.specular_roughness)
                 arnold.AiNodeSetFlt(node, "specular_anisotropy", standard.specular_anisotropy)
                 arnold.AiNodeSetFlt(node, "specular_rotation", standard.specular_rotation)
-            elif shader.type == 'UTILITY':
+                # TODO: other standard node parmas
+            elif shader.type == 'utility':
                 utility = shader.utility
-                node = arnold.AiNode('utility')
+                arnold.AiNodeSetStr(node, "color_mode", utility.color_mode)
+                arnold.AiNodeSetStr(node, "shade_mode", utility.shade_mode)
+                arnold.AiNodeSetStr(node, "overlay_mode", utility.overlay_mode)
                 arnold.AiNodeSetRGB(node, "color", *mat.diffuse_color)
                 arnold.AiNodeSetFlt(node, "opacity", utility.opacity)
-            else:
+                arnold.AiNodeSetFlt(node, "ao_distance", utility.ao_distance)
+            elif shader.type == 'flat':
+                arnold.AiNodeSetRGB(node, "color", *mat.diffuse_color)
+                arnold.AiNodeSetRGB(node, "opacity", *shader.flat.opacity)
+            elif shader.type == 'hair':
+                # TODO: implement hair
                 return None
         elif mat.type == 'WIRE':
             wire = shader.wire
@@ -752,37 +760,38 @@ def render(engine, scene):
         session["peak"] = 0  # memory peak usage
 
         def display_callback(x, y, width, height, buffer, data):
-            try:
-                if engine.test_break():
-                    arnold.AiRenderAbort()
-                    while _htiles:
-                        (x, y), result = _htiles.popitem()
-                        engine.end_result(result, True)
-                else:
-                    x -= xoff
-                    y -= yoff
-                    if buffer:
-                        result = _htiles.pop((x, y))
-                        if result is not None:
-                            result = engine.begin_result(x, y, width, height)
-                        _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
-                        rect = numpy.ctypeslib.as_array(_buffer, shape=(width * height, 4))
-                        # TODO: gamma correction. need??? kick is darker
-                        # set 1/2.2 the driver_display node by default
-                        #rect **= 2.2
-                        result.layers[0].passes[0].rect = rect
-                        engine.end_result(result)
-                    else:
-                        result = engine.begin_result(x, y, width, height)
-                        # TODO: sometimes highlighted tiles become empty
-                        #engine.update_result(result)
-                        _htiles[(x, y)] = result
-                mem = session["mem"] = arnold.AiMsgUtilGetUsedMemory() / 1048576  # 1024*1024
-                peak = session["peak"] = max(session["peak"], mem)
-                engine.update_memory_stats(mem, peak)
-            finally:
-                if buffer:
+            _x = x - xoff
+            _y = y - yoff
+
+            if buffer:
+                try:
+                    result = _htiles.pop((_x, _y))
+                    if result is not None:
+                        result = engine.begin_result(_x, _y, width, height)
+                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
+                    rect = numpy.ctypeslib.as_array(_buffer, shape=(width * height, 4))
+                    # TODO: gamma correction. need??? kick is darker
+                    # set 1/2.2 the driver_display node by default
+                    #rect **= 2.2
+                    result.layers[0].passes[0].rect = rect
+                    engine.end_result(result)
+                finally:
                     arnold.AiFree(buffer)
+            else:
+                result = engine.begin_result(_x, _y, width, height)
+                # TODO: sometimes highlighted tiles become empty
+                #engine.update_result(result)
+                _htiles[(_x, _y)] = result
+
+            if engine.test_break():
+                arnold.AiRenderAbort()
+                while _htiles:
+                    (_x, _y), result = _htiles.popitem()
+                    engine.end_result(result, True)
+
+            mem = session["mem"] = arnold.AiMsgUtilGetUsedMemory() / 1048576  # 1024*1024
+            peak = session["peak"] = max(session["peak"], mem)
+            engine.update_memory_stats(mem, peak)
 
         # display callback must be a variable
         cb = arnold.AtDisplayCallBack(display_callback)

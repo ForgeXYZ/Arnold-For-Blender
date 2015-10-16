@@ -500,14 +500,15 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
 
         mat_type = mat.type
         if mat_type == 'SURFACE':
+            shader_type = shader.type
             layout.prop(shader, "type", expand=True)
-            if shader.type == 'lambert':
+            if shader_type == 'lambert':
                 lambert = shader.lambert
                 col = layout.column()
                 col.row().prop(mat, "diffuse_color", text="Color")
                 col.prop(mat, "diffuse_intensity", text="Scale")
                 col.row().prop(lambert, "opacity")
-            elif shader.type == 'standard':
+            elif shader_type == 'standard':
                 standard = shader.standard
                 path_from_id = standard.path_from_id()
 
@@ -606,14 +607,30 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                     col.prop(standard, "enable_glossy_caustics")
                     col.prop(standard, "enable_reflective_caustics")
                     col.prop(standard, "enable_refractive_caustics")
+            elif shader_type == 'utility':
+                utility = shader.utility
+                col = layout.column()
+                col.row().prop(utility, "color")
+                col.prop(utility, "opacity")
+                col.prop(utility, "color_mode")
+                col.prop(utility, "shade_mode")
+                col.prop(utility, "overlay_mode")
+                col.prop(utility, "ao_distance")
+            elif shader_type == 'flat':
+                flat = shader.flat
+                col = layout.column()
+                col.row().prop(flat, "color")
+                col.row().prop(flat, "opacity")
+            elif shader_type == 'hair':
+                pass
         elif mat_type == 'WIRE':
             wire = shader.wire
-            layout.prop(wire, "edge_type")
-            layout.prop(mat, "diffuse_color", text="Line Color")
-            layout.prop(wire, "fill_color")
-            row = layout.row(align=True)
-            row.prop(wire, "raster_space")
-            row.prop(wire, "line_width")
+            col = layout.column()
+            col.row().prop(wire, "fill_color")
+            col.row().prop(wire, "line_color")
+            col.prop(wire, "edge_type")
+            col.prop(wire, "line_width")
+            col.prop(wire, "raster_space")
 
 ##
 ## Textures
