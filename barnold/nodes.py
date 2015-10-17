@@ -3,6 +3,8 @@
 __author__ = "Ildar Nikolaev"
 __email__ = "nildar@users.sourceforge.net"
 
+import collections
+
 import bpy
 import nodeitems_utils
 from bpy.types import NodeSocket, Node
@@ -12,9 +14,13 @@ from bpy.props import (
     EnumProperty,
     StringProperty,
     FloatProperty,
-    FloatVectorProperty
+    FloatVectorProperty,
+    PointerProperty
 )
+
 from . import ArnoldRenderEngine
+from . import props
+from .ui import _subpanel
 
 
 _WRAP_ITEMS = [
@@ -24,6 +30,37 @@ _WRAP_ITEMS = [
     ('mirror', "Mirror", "Mirror"),
     ('file', "File", "File")
 ]
+
+
+def _draw_property(layout, data, identifier, links):
+    state = links.get(identifier, None)
+    row = layout.row(align=True)
+    sub = row.row(align=True)
+    if state is True:
+        icon = 'PROP_ON'
+        sub.enabled = False
+    elif state is False:
+        icon = 'PROP_CON'
+    else:
+        icon = 'PROP_OFF'
+    sub.prop(data, identifier)
+    op = row.operator("barnold.node_socket_add", text="", icon=icon)
+    op.identifier = identifier
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeSocketVirtual(NodeSocket):
+    bl_label = "Virtual"
+
+    default_value = None
+
+    color = FloatVectorProperty(size=4, default=(0.78, 0.78, 0.16, 0.5))
+
+    def draw(self, context, layout, node, text):
+        layout.label(text)
+
+    def draw_color(self, context, node):
+        return self.color
 
 
 @ArnoldRenderEngine.register_class
@@ -246,8 +283,69 @@ class ArnoldNodeStandardTest(ArnoldNode):
 
     ai_name = "standard"
 
+    Kd = FloatProperty(
+        name="Scale",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=0.7
+    )
+    Kd_color = FloatVectorProperty(
+        name="Color",
+        subtype='COLOR',
+        min=0, max=1,
+        default=(1, 1, 1)
+    )
+    ext_properties = PointerProperty(
+        type=props.ArnoldShaderStandard
+    )
+    socket_names = collections.OrderedDict([
+        ("Kd_color", "Diffuse: Color"),
+        ("Kd", "Diffuse: Scale"),
+        ("diffuse_roughness", "Diffuse: Roughness"),
+        ("Fresnel_affect_diff", "Fresnel affect Diffuse"),
+        ("Kb", "Diffuse: BackLighting"),
+        ("direct_diffuse", "Diffuse: Direct"),
+        ("indirect_diffuse", "Diffuse: Indirect"),
+    ])
+
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
+
+    def draw_buttons(self, context, layout):
+        inputs = self.inputs
+        properties = self.ext_properties
+
+        links = {i.identifier: i.is_linked for i in inputs}
+
+        # Diffuse
+        sublayout = _subpanel(layout, "Diffuse", properties.ui_diffuse,
+                              "ext_properties", "ui_diffuse", "active_node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, self, "Kd_color", links)
+            _draw_property(col, self, "Kd", links)
+            _draw_property(col, properties, "diffuse_roughness", links)
+            _draw_property(col, properties, "Fresnel_affect_diff", links)
+            _draw_property(col, properties, "Kb", links)
+            _draw_property(col, properties, "direct_diffuse", links)
+            _draw_property(col, properties, "indirect_diffuse", links)
+
+    @property
+    def ai_properties(self):
+        links = [i.identifier for i in self.inputs if i.is_linked]
+        ret = {}
+        if "Kd_color" not in links:
+            ret["Kd_color"] = ('RGB', self.Kd_color)
+        if "Kd" not in links:
+            ret["Kd"] = ('FLOAT', self.Kd)
+        for t, n in (('FLOAT', "diffuse_roughness"),
+                     ('BOOL', "Fresnel_affect_diff"),
+                     ('FLOAT', "Kb"),
+                     ('FLOAT', "direct_diffuse"),
+                     ('FLOAT', "indirect_diffuse")):
+            if n not in links:
+                ret[n] = (t, getattr(self.ext_properties, n))
+        return ret
 
 
 @ArnoldRenderEngine.register_class
