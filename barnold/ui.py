@@ -321,6 +321,12 @@ class ArnoldObjectPanel(ObjectButtonsPanel, Panel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
     bl_label = "Arnold Parameters"
 
+    @classmethod
+    def poll(cls, context):
+        return context.object.type in (
+            'MESH"', 'CURVE', 'SURFACE', 'META', 'FONT'
+        )
+
     def draw(self, context):
         layout = self.layout
         props = context.object.arnold

@@ -59,7 +59,7 @@ _AiNodeSet = {
     "NodeSocketString": lambda n, i, v: arnold.AiNodeSetStr(n, i, v),
     "ArnoldNodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v),
     "ArnoldNodeSocketByte": lambda n, i, v: arnold.AiNodeSetByte(n, i, v),
-    "ArnoldNodeSocketVirtual": lambda n, i, v: True,
+    "ArnoldNodeSocketProperty": lambda n, i, v: True,
     "STRING": lambda n, i, v: arnold.AiNodeSetStr(n, i, v),
     "BOOL": lambda n, i, v: arnold.AiNodeSetBool(n, i, v),
     "BYTE": lambda n, i, v: arnold.AiNodeSetByte(n, i, v),

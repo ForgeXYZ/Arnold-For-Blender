@@ -49,15 +49,28 @@ def _draw_property(layout, data, identifier, links):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeSocketVirtual(NodeSocket):
-    bl_label = "Virtual"
+class ArnoldNodeSocketProperty(NodeSocket):
+    # stub
+    default_value = FloatProperty()
 
-    default_value = None
-
-    color = FloatVectorProperty(size=4, default=(0.78, 0.78, 0.16, 0.5))
+    path = StringProperty()
+    attr = StringProperty()
+    is_color = BoolProperty()
+    color = FloatVectorProperty(size=4)
 
     def draw(self, context, layout, node, text):
-        layout.label(text)
+        data = node
+        if self.path:
+            data = node.path_resolve(self.path)
+        if self.is_output or self.is_linked:
+            layout.label(text)
+        elif self.is_color:
+            row = layout.row()
+            row.alignment = 'LEFT'
+            row.prop(data, self.attr, text="")
+            row.label(text)
+        else:
+            layout.prop(data, self.attr, text=text)
 
     def draw_color(self, context, node):
         return self.color
@@ -218,70 +231,52 @@ class ArnoldNodeLambert(ArnoldNode):
 class ArnoldNodeStandard(ArnoldNode):
     bl_label = "Standard"
     bl_icon = 'MATERIAL'
-    bl_width_default = 250
+    bl_width_default = 200
 
     ai_name = "standard"
 
-    def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
+    sockets = collections.OrderedDict([
         # Diffuse
-        self.inputs.new("ArnoldNodeSocketColor", "Diffuse: Color", "Kd_color")
-        self.inputs.new("NodeSocketFloat", "Diffuse: Weight", "Kd").default_value = 0.7
-        self.inputs.new("NodeSocketFloat", "Diffuse: Roughness", "diffuse_roughness")
-        self.inputs.new("NodeSocketFloat", "Diffuse: Backlight", "Kb")
-        self.inputs.new("NodeSocketBool", "Fresnel affects Diffuse", "Fresnel_affect_diff").default_value = True
-        self.inputs.new("NodeSocketFloat", "Diffuse: Direct", "direct_diffuse").default_value = 1
-        self.inputs.new("NodeSocketFloat", "Diffuse: Indirect", "indirect_diffuse").default_value = 1
+        ("Kd_color"                 , ('RGB', "Diffuse: Color", "")),
+        ("Kd"                       , ('FLOAT', "Diffuse: Scale", "")),
+        ("diffuse_roughness"        , ('FLOAT', "Diffuse: Roughness", "ext_properties")),
+        ("Kb"                       , ('FLOAT', "Diffuse: BackLighting", "ext_properties")),
+        ("direct_diffuse"           , ('FLOAT', "Diffuse: Direct Scale", "ext_properties")),
+        ("indirect_diffuse"         , ('FLOAT', "Diffuse: Indirect Scale", "ext_properties")),
         # Specular
-        self.inputs.new("ArnoldNodeSocketColor", "Specular: Color", "Ks_color")
-        self.inputs.new("NodeSocketFloat", "Specular: Weight", "Ks")
-        self.inputs.new("NodeSocketFloat", "Specular: Roughness", "specular_roughness").default_value = 0.466905
-        self.inputs.new("NodeSocketFloat", "Specular: Anisotropy", "specular_anisotropy").default_value = 0.5
-        self.inputs.new("NodeSocketFloat", "Specular: Rotation", "specular_rotation")
-        self.inputs.new("NodeSocketBool", "Specular: Fresnel", "specular_Fresnel")
-        self.inputs.new("NodeSocketFloat", "Specular: Reflectance at Normal", "Ksn")
-        self.inputs.new("NodeSocketFloat", "Specular: Direct", "direct_specular").default_value = 1
-        self.inputs.new("NodeSocketFloat", "Specular: Indirect", "indirect_specular").default_value = 1
+        ("Ks_color"                 , ('RGB', "Specular: Color", "")),
+        ("Ks"                       , ('FLOAT', "Specular: Scale", "")),
+        ("specular_roughness"       , ('FLOAT', "Specular: Roughness", "ext_properties")),
+        ("specular_anisotropy"      , ('FLOAT', "Specular: Anisotropy", "ext_properties")),
+        ("specular_rotation"        , ('FLOAT', "Specular: Rotation", "ext_properties")),
+        ("direct_specular"          , ('FLOAT', "Specular: Direct Scale", "ext_properties")),
+        ("indirect_specular"        , ('FLOAT', "Specular: Indirect Scale", "ext_properties")),
+        ("Ksn"                      , ('FLOAT', "Specular: Refl. at Normal", "ext_properties")),
+        # Bounce Factor
+        ("bounce_factor"            , ('FLOAT', "Bounce Factor", "ext_properties")),
         # Reflection
-        self.inputs.new("ArnoldNodeSocketColor", "Reflection: Color", "Kr_color")
-        self.inputs.new("NodeSocketFloat", "Reflection: Weight", "Kr")
-        self.inputs.new("NodeSocketBool", "Reflection: Fresnel", "Fresnel")
-        self.inputs.new("NodeSocketFloat", "Reflection: Reflectance at Normal", "Krn")
-        self.inputs.new("NodeSocketBool", "Reflection: Exit Use Environment", "reflection_exit_use_environment").default_value = False
-        self.inputs.new("ArnoldNodeSocketColor", "Reflection: Exit Color", "reflection_exit_color").default_value = (0, 0, 0)
-        # Refraction (Transparency)
-        self.inputs.new("ArnoldNodeSocketColor", "Refraction: Color", "Kt_color")
-        self.inputs.new("NodeSocketFloat", "Refraction: Weight", "Kt")
-        self.inputs.new("NodeSocketFloat", "Refraction: IOR", "IOR").default_value = 1
-        self.inputs.new("NodeSocketFloat", "Refraction: Abbe Number", "dispersion_abbe")
-        self.inputs.new("NodeSocketFloat", "Refraction: Roughness", "refraction_roughness")
-        self.inputs.new("NodeSocketBool", "Fresnel use IOR", "Fresnel_use_IOR")
-        self.inputs.new("ArnoldNodeSocketColor", "Transmittance", "transmittance")
-        self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
-        self.inputs.new("NodeSocketBool", "Refraction: Exit Use Environment", "refraction_exit_use_environment")
-        self.inputs.new("ArnoldNodeSocketColor", "Refraction: Exit Color", "refraction_exit_color").default_value = (0, 0, 0)
-        # Sub-Surface Scattering
-        self.inputs.new("ArnoldNodeSocketColor", "SSS: Color", "Ksss_color")
-        self.inputs.new("NodeSocketFloat", "SSS: Weight", "Ksss")
-        self.inputs.new("ArnoldNodeSocketColor", "SSS: Radius", "sss_radius").default_value = (0.1, 0.1, 0.1)
+        ("Kr_color"                 , ('RGB', "Reflection: Color", "ext_properties")),
+        ("Kr"                       , ('FLOAT', "Reflection: Scale", "ext_properties")),
+        ("Krn"                      , ('FLOAT', "Reflection: Refl. at Normal", "ext_properties")),
+        ("reflection_exit_color"    , ('RGB', "Reflection: Exit Color", "ext_properties")),
+        # Refraction
+        ("Kt_color"                 , ('RGB', "Refraction: Color", "ext_properties")),
+        ("Kt"                       , ('FLOAT', "Refraction: Scale", "ext_properties")),
+        ("IOR"                      , ('FLOAT', "Refraction: IOR", "ext_properties")),
+        ("dispersion_abbe"          , ('FLOAT', "Refraction: Abbe Number", "ext_properties")),
+        ("refraction_roughness"     , ('FLOAT', "Refraction: Roughness", "ext_properties")),
+        ("transmittance"            , ('RGB', "Transmittance", "ext_properties")),
+        ("refraction_exit_color"    , ('RGB', "Refraction: Exit Color", "ext_properties")),
+        # Opacity
+        ("opacity"                  , ('RGB', "Opacity", "ext_properties")),
+        # SSS
+        ("Ksss_color"               , ('RGB', "SSS: Color", "ext_properties")),
+        ("Ksss"                     , ('FLOAT', "SSS: Scale", "ext_properties")),
+        ("sss_radius"               , ('RGB', "SSS: Radius", "ext_properties")),
         # Emission
-        self.inputs.new("ArnoldNodeSocketColor", "Emission: Color", "emission_color")
-        self.inputs.new("NodeSocketFloat", "Emission: Weight", "emission")
-        # Caustics
-        self.inputs.new("NodeSocketBool", "Glossy Caustics", "enable_glossy_caustics")
-        self.inputs.new("NodeSocketBool", "Reflective Caustics", "enable_reflective_caustics")
-        self.inputs.new("NodeSocketBool", "Refractive Caustics", "enable_refractive_caustics")
-        # Advanced
-        self.inputs.new("NodeSocketFloat", "Bounce Factor", "bounce_factor").default_value = 1
-
-
-@ArnoldRenderEngine.register_class
-class ArnoldNodeStandardTest(ArnoldNode):
-    bl_label = "Standard (test)"
-    bl_icon = 'MATERIAL'
-    bl_width_default = 250
-
-    ai_name = "standard"
+        ("emission_color"           , ('RGB', "Emission: Color", "ext_properties")),
+        ("emission"                 , ('FLOAT', "Emission: Scale", "ext_properties"))
+    ])
 
     Kd = FloatProperty(
         name="Scale",
@@ -295,23 +290,27 @@ class ArnoldNodeStandardTest(ArnoldNode):
         min=0, max=1,
         default=(1, 1, 1)
     )
+    Ks = FloatProperty(
+        name="Scale",
+        subtype='FACTOR',
+        min=0, max=1
+    )
+    Ks_color = FloatVectorProperty(
+        name="Color",
+        subtype='COLOR',
+        min=0, max=1,
+        default=(1, 1, 1)
+    )
     ext_properties = PointerProperty(
         type=props.ArnoldShaderStandard
     )
-    socket_names = collections.OrderedDict([
-        ("Kd_color", "Diffuse: Color"),
-        ("Kd", "Diffuse: Scale"),
-        ("diffuse_roughness", "Diffuse: Roughness"),
-        ("Fresnel_affect_diff", "Fresnel affect Diffuse"),
-        ("Kb", "Diffuse: BackLighting"),
-        ("direct_diffuse", "Diffuse: Direct"),
-        ("indirect_diffuse", "Diffuse: Indirect"),
-    ])
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.create_socket("Kd_color")
+        self.create_socket("Kd")
 
-    def draw_buttons(self, context, layout):
+    def draw_buttons_ext(self, context, layout):
         inputs = self.inputs
         properties = self.ext_properties
 
@@ -319,32 +318,138 @@ class ArnoldNodeStandardTest(ArnoldNode):
 
         # Diffuse
         sublayout = _subpanel(layout, "Diffuse", properties.ui_diffuse,
-                              "ext_properties", "ui_diffuse", "active_node")
+                              "ext_properties", "ui_diffuse", "node")
         if sublayout:
             col = sublayout.column()
             _draw_property(col, self, "Kd_color", links)
             _draw_property(col, self, "Kd", links)
             _draw_property(col, properties, "diffuse_roughness", links)
-            _draw_property(col, properties, "Fresnel_affect_diff", links)
+            col.prop(properties, "Fresnel_affect_diff")
             _draw_property(col, properties, "Kb", links)
             _draw_property(col, properties, "direct_diffuse", links)
             _draw_property(col, properties, "indirect_diffuse", links)
+
+        # Specular
+        sublayout = _subpanel(layout, "Specular", properties.ui_specular,
+                              "ext_properties", "ui_specular", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, self, "Ks_color", links)
+            _draw_property(col, self, "Ks", links)
+            _draw_property(col, properties, "specular_roughness", links)
+            _draw_property(col, properties, "specular_anisotropy", links)
+            _draw_property(col, properties, "specular_rotation", links)
+            _draw_property(col, properties, "direct_specular", links)
+            _draw_property(col, properties, "indirect_specular", links)
+            col.label("Fresnel", icon='SETTINGS')
+            box = col.box()
+            box.prop(properties, "specular_Fresnel")
+            sub = box.row()
+            sub.enabled = properties.specular_Fresnel
+            _draw_property(sub, properties, "Ksn", links)
+
+        _draw_property(layout, properties, "bounce_factor", links)
+
+        # Reflection
+        sublayout = _subpanel(layout, "Reflection", properties.ui_reflection,
+                              "ext_properties", "ui_reflection", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "Kr_color", links)
+            _draw_property(col, properties, "Kr", links)
+            col.label("Fresnel:", icon='SETTINGS')
+            box = col.box()
+            box.prop(properties, "Fresnel")
+            sub = box.row()
+            sub.enabled = properties.Fresnel
+            _draw_property(sub, properties, "Krn", links)
+            col.label("Exit Color:", icon='SETTINGS')
+            box = col.box()
+            box.prop(properties, "reflection_exit_use_environment")
+            _draw_property(box, properties, "reflection_exit_color", links)
+
+        # Refraction
+        sublayout = _subpanel(layout, "Refraction", properties.ui_refraction,
+                              "ext_properties", "ui_refraction", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "Kt_color", links)
+            _draw_property(col, properties, "Kt", links)
+            _draw_property(col, properties, "IOR", links)
+            _draw_property(col, properties, "dispersion_abbe", links)
+            col.prop(properties, "Fresnel_use_IOR")
+            _draw_property(col, properties, "refraction_roughness", links)
+            _draw_property(col, properties, "transmittance", links)
+            col.label("Exit Color:", icon='SETTINGS')
+            box = col.box()
+            box.prop(properties, "refraction_exit_use_environment")
+            _draw_property(box, properties, "refraction_exit_color", links)
+            col.prop(properties, "enable_internal_reflections")
+
+        _draw_property(layout, properties, "opacity", links)
+
+        # Sub-Surface Scattering
+        sublayout = _subpanel(layout, "Sub-Surface Scattering", properties.ui_sss,
+                              "ext_properties", "ui_sss", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "Ksss_color", links)
+            _draw_property(col, properties, "Ksss", links)
+            _draw_property(col, properties, "sss_radius", links)
+
+        # Emission
+        sublayout = _subpanel(layout, "Emission", properties.ui_emission,
+                              "ext_properties", "ui_emission", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "emission_color", links)
+            _draw_property(col, properties, "emission", links)
+
+        # Caustics
+        sublayout = _subpanel(layout, "Caustics", properties.ui_caustics,
+                              "ext_properties", "ui_caustics", "node")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(properties, "enable_glossy_caustics")
+            col.prop(properties, "enable_reflective_caustics")
+            col.prop(properties, "enable_refractive_caustics")
+
+    def _find_index(self, identifier):
+        ret = 0
+        socks = iter(self.sockets)
+        for i in self.inputs:
+            for s in socks:
+                if s == identifier:
+                    return ret
+                if s == i.identifier:
+                    ret += 1
+                    break
+            else:
+                break
+        return ret
+
+    def create_socket(self, identifier):
+        from_index = len(self.inputs)
+        to_index = self._find_index(identifier)
+        type, name, path = self.sockets[identifier]
+        sock = self.inputs.new("ArnoldNodeSocketProperty", name, identifier)
+        sock.path = path
+        sock.attr = identifier
+        if type in ('RGB', 'RGBA'):
+            sock.is_color = True
+            sock.color = (0.78, 0.78, 0.16, 1 if type == 'RGB' else 0.5)
+        elif type == 'FLOAT':
+            sock.color = (0.63, 0.63, 0.63, 1.0)
+        if to_index < from_index:
+            self.inputs.move(from_index, to_index)
 
     @property
     def ai_properties(self):
         links = [i.identifier for i in self.inputs if i.is_linked]
         ret = {}
-        if "Kd_color" not in links:
-            ret["Kd_color"] = ('RGB', self.Kd_color)
-        if "Kd" not in links:
-            ret["Kd"] = ('FLOAT', self.Kd)
-        for t, n in (('FLOAT', "diffuse_roughness"),
-                     ('BOOL', "Fresnel_affect_diff"),
-                     ('FLOAT', "Kb"),
-                     ('FLOAT', "direct_diffuse"),
-                     ('FLOAT', "indirect_diffuse")):
-            if n not in links:
-                ret[n] = (t, getattr(self.ext_properties, n))
+        for i, (t, n, p) in self.sockets.items():
+            if i not in links:
+                ret[i] = (t, self.path_resolve(p + "." + i if p else i))
         return ret
 
 
@@ -1504,7 +1609,6 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeOutput")
         ]),
         ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_SHADERS", "Shaders", items=[
-            nodeitems_utils.NodeItem("ArnoldNodeStandardTest"),
             nodeitems_utils.NodeItem("ArnoldNodeStandard"),
             nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),

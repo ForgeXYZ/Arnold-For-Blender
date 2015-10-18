@@ -50,24 +50,7 @@ class ArnoldNodeSocketAdd(Operator):
             inputs.remove(i)
             break
         else:
-            def pos():
-                ret = 0
-                names = iter(node.socket_names)
-                for i in inputs:
-                    for n in names:
-                        if identifier == n:
-                            return ret
-                        if i.identifier == n:
-                            ret += 1
-                            break
-                    else:
-                        break
-                return ret
-            to_index = pos()
-            from_index = len(inputs)
-            node.inputs.new("ArnoldNodeSocketVirtual", node.socket_names[identifier], identifier)
-            if to_index < from_index:
-                node.inputs.move(from_index, to_index)
+            node.create_socket(identifier)
         return {'FINISHED'}
 
 
