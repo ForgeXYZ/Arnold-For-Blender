@@ -1449,6 +1449,54 @@ class ArnoldNodeGobo(ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
+class ArnoldNodeLightDecay(ArnoldNode):
+    bl_label = "Light Decay"
+    bl_icon = 'LAMP'
+
+    ai_name = "light_decay"
+
+    use_near_atten = BoolProperty(
+        name="Use Near Attenuation"
+    )
+    use_far_atten = BoolProperty(
+        name="Use Far Attenuation"
+    )
+    near_start = FloatProperty(
+        name="Start",
+        description="Near Start"
+    )
+    near_end = FloatProperty(
+        name="End",
+        description="Near End"
+    )
+    far_start = FloatProperty(
+        name="Start",
+        description="Far Start"
+    )
+    far_end = FloatProperty(
+        name="End",
+        description="Far End"
+    )
+
+    def init(self, context):
+        self.outputs.new("NodeSocketVirtual", "Filter", "filter")
+
+    def draw_buttons(self, context, layout):
+        col = layout.column()
+        col.prop(self, "use_near_atten")
+        sub = col.column(align=True)
+        sub.label("Near:")
+        sub.prop(self, "near_start")
+        sub.prop(self, "near_end")
+        col.separator()
+        col.prop(self, "use_far_atten")
+        sub = col.column(align=True)
+        sub.label("Far:")
+        sub.prop(self, "far_start")
+        sub.prop(self, "far_end")
+
+
+@ArnoldRenderEngine.register_class
 class ArnoldNodeDensity(ArnoldNode):
     bl_label = "Density"
     bl_icon = 'TEXTURE'
@@ -1635,6 +1683,7 @@ def register():
         ArnoldLightNodeCategory("ARNOLD_NODES_LIGHT_FILTERS", "Filters", items=[
             nodeitems_utils.NodeItem("ArnoldNodeBarndoor"),
             nodeitems_utils.NodeItem("ArnoldNodeGobo"),
+            nodeitems_utils.NodeItem("ArnoldNodeLightDecay"),
         ]),
         # common
         ArnoldNodeCategory("ARNOLD_NODES_COLORS", "Color", items=[
