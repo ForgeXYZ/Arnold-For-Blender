@@ -37,16 +37,7 @@ def _CleanNames(prefix, count):
     return fn
 
 
-def _AiMatrix(m):
-    """
-    m: mathutils.Matrix
-    returns: pointer to AtArray
-    """
-    t = numpy.reshape(m.transposed(), [-1])
-    matrix = arnold.AiArrayAllocate(1, 1, arnold.AI_TYPE_MATRIX)
-    arnold.AiArraySetMtx(matrix, 0, arnold.AtMatrix(*t))
-    return matrix
-
+_AiMatrix = lambda m: arnold.AtMatrix(*numpy.reshape(m.transposed(), -1))
 
 _AiNodeSet = {
     "NodeSocketShader": lambda n, i, v: True,
@@ -69,6 +60,7 @@ _AiNodeSet = {
     "RGB": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v),
     "RGBA": lambda n, i, v: arnold.AiNodeSetRGBA(n, i, *v),
     "VECTOR": lambda n, i, v: arnold.AiNodeSetVec(n, i, *v),
+    "MATRIX": lambda n, i, v: arnold.AiNodeSetMatrix(n, i, _AiMatrix(v))
 }
 
 
@@ -354,7 +346,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                 if inode is not None:
                     node = arnold.AiNode("ginstance")
                     arnold.AiNodeSetStr(node, "name", _Name(ob.name))
-                    arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
+                    arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
                     arnold.AiNodeSetBool(node, "inherit_xform", False)
                     arnold.AiNodeSetPtr(node, "node", inode)
                     _export_object_properties(ob, node)
@@ -364,7 +356,7 @@ def _export(data, scene, camera, xres, yres, session=None):
             with _Mesh(ob) as mesh:
                 node = _AiPolymesh(mesh, shaders)
                 arnold.AiNodeSetStr(node, "name", _Name(ob.name))
-                arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
+                arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
                 _export_object_properties(ob, node)
                 if not modified:
                     # cache unmodified shapes for instancing
@@ -454,7 +446,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                 arnold.AiNodeSetRGB(node, "color", *lamp.color)
             else:
                 arnold.AiNodeLink(color_node, "color", node)
-            arnold.AiNodeSetArray(node, "matrix", _AiMatrix(matrix))
+            arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(matrix))
             arnold.AiNodeSetFlt(node, "intensity", light.intensity)
             arnold.AiNodeSetFlt(node, "exposure", light.exposure)
             arnold.AiNodeSetBool(node, "cast_shadows", light.cast_shadows)
@@ -495,12 +487,12 @@ def _export(data, scene, camera, xres, yres, session=None):
                         with _Mesh(ob) as mesh:
                             node = _AiPolymesh(mesh, shaders)
                             arnold.AiNodeSetStr(node, "name", _Name(ob.name))
-                            arnold.AiNodeSetArray(node, "matrix", _AiMatrix(d.matrix))
+                            arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix))
                             nodes[ob] = node
                     else:
                         node = arnold.AiNode("ginstance")
                         arnold.AiNodeSetStr(node, "name", _Name(ob.name))
-                        arnold.AiNodeSetArray(node, "matrix", _AiMatrix(d.matrix))
+                        arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix))
                         arnold.AiNodeSetBool(node, "inherit_xform", False)
                         arnold.AiNodeSetPtr(node, "node", onode)
                         i += 1
@@ -523,7 +515,7 @@ def _export(data, scene, camera, xres, yres, session=None):
             with _Mesh(ob) as mesh:
                 node = _AiPolymesh(mesh, shaders)
                 arnold.AiNodeSetStr(node, "name", _Name(ob.name))
-                arnold.AiNodeSetArray(node, "matrix", _AiMatrix(ob.matrix_world))
+                arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
                 nodes[ob] = node
         arnold.AiNodeSetPtr(light_node, "mesh", node)
 
@@ -618,7 +610,7 @@ def _export(data, scene, camera, xres, yres, session=None):
         cp = cd.arnold
         node = arnold.AiNode("persp_camera")
         arnold.AiNodeSetStr(node, "name", name)
-        arnold.AiNodeSetArray(node, "matrix", _AiMatrix(mw))
+        arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(mw))
         if cd.sensor_fit == 'VERTICAL':
             sw = cd.sensor_height * xres / yres * aspect_x / aspect_y
         else:
@@ -707,7 +699,7 @@ def _export(data, scene, camera, xres, yres, session=None):
     arnold.AiNodeSetBool(display, "rgba_packing", False)
     #arnold.AiNodeSetBool(display, "dither", True)
 
-    # TODO: unusable, camera fliped (top to buttom) for tiles hightlighting
+    # TODO: unusable, camera flipped (top to buttom) for tiles hightlighting
     #png = arnold.AiNode("driver_png")
     #arnold.AiNodeSetStr(png, "name", "__png")
     #arnold.AiNodeSetStr(png, "filename", render.frame_path())

@@ -6,7 +6,6 @@ __email__ = "nildar@users.sourceforge.net"
 import collections
 
 import bpy
-import nodeitems_utils
 from bpy.types import NodeSocket, Node
 from bpy.props import (
     IntProperty,
@@ -17,6 +16,8 @@ from bpy.props import (
     FloatVectorProperty,
     PointerProperty
 )
+from mathutils import Matrix, Euler
+import nodeitems_utils
 
 from . import ArnoldRenderEngine
 from . import props
@@ -1495,6 +1496,135 @@ class ArnoldNodeLightDecay(ArnoldNode):
         sub.prop(self, "far_start")
         sub.prop(self, "far_end")
 
+    @property
+    def ai_properties(self):
+        ret = {
+            "use_near_atten": ('BOOL', self.use_near_atten),
+            "use_far_atten": ('BOOL', self.use_far_atten),
+            "near_start": ('FLOAT', self.near_start),
+            "near_end": ('FLOAT', self.near_end),
+            "far_start": ('FLOAT', self.far_start),
+            "far_end": ('FLOAT', self.far_end),
+        }
+        return ret
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeLightBlocker(ArnoldNode):
+    bl_label = "Light Blocker"
+    bl_icon = 'LAMP'
+
+    ai_name = "light_blocker"
+
+    geometry_type = EnumProperty(
+        name="Type",
+        description="Geometry Type",
+        items=[
+            ('box', "Box", "Box"),
+            ('sphere', "Sphere", "Sphere"),
+            ('plane', "Plane", "Plane"),
+            ('cylinder', "Cylinder", "Cylinder")
+        ],
+        default='box'
+    )
+    #geometry_matrix = FloatVectorProperty(
+    #    name="Matrix",
+    #    subtype='MATRIX',
+    #    size=16
+    #)
+    geometry_matrix_object = StringProperty(
+        name="Object"
+    )
+    geometry_matrix_scale = FloatVectorProperty(
+        name="Scale",
+        subtype='XYZ',
+        default=(1, 1, 1)
+    )
+    geometry_matrix_rotation = FloatVectorProperty(
+        name="Rotation",
+        subtype='XYZ',
+        unit='ROTATION'
+    )
+    geometry_matrix_translation = FloatVectorProperty(
+        name="Translation",
+        subtype='XYZ'
+    )
+    #density = FloatProperty(
+    #    name="Density"
+    #)
+    roundness = FloatProperty(
+        name="Roundness"
+    )
+    width_edge = FloatProperty(
+        name="Width",
+        description="Width Edge"
+    )
+    height_edge = FloatProperty(
+        name="Height",
+        description="Height Edge"
+    )
+    ramp = FloatProperty(
+        name="Ramp"
+    )
+    axis = EnumProperty(
+        name="Axis",
+        items=[
+            ('x', "X", "X"),
+            ('y', "Y", "Y"),
+            ('z', "Z", "Z")
+        ],
+        default='x'
+    )
+
+    def init(self, context):
+        self.outputs.new("NodeSocketVirtual", "Filter", "filter")
+        self.inputs.new("ArnoldNodeSocketColor", "Shader", "shader").default_value = (0, 0, 0)
+        self.inputs.new("NodeSocketFloat", "Density", "density")
+
+    def draw_buttons(self, context, layout):
+        col = layout.column()
+        col.prop(self, "geometry_type")
+        col.prop(self, "axis")
+        col.prop(self, "ramp")
+        col.prop(self, "height_edge")
+        col.prop(self, "width_edge")
+        col.prop(self, "roundness")
+        col.label("Matrix:")
+        sub = col.box().column()
+        sub.prop_search(self, "geometry_matrix_object", context.scene, "objects", text="")
+        sub = sub.column()
+        sub.enabled = not self.geometry_matrix_object
+        sub.template_component_menu(self, "geometry_matrix_scale", name="Scale:")
+        sub.template_component_menu(self, "geometry_matrix_rotation", name="Rotation:")
+        sub.template_component_menu(self, "geometry_matrix_translation", name="Translation:")
+
+    @property
+    def ai_properties(self):
+        ret = {
+            "geometry_type": ('STRING', self.geometry_type),
+            "roundness": ('FLOAT', self.roundness),
+            "width_edge": ('FLOAT', self.width_edge),
+            "height_edge": ('FLOAT', self.height_edge),
+            "ramp": ('FLOAT', self.ramp),
+            "axis": ('STRING', self.axis)
+        }
+        name = self.geometry_matrix_object
+        ob = bpy.data.objects.get(name) if name else None
+        if ob is None:
+            scale = self.geometry_matrix_scale
+            matrix = Matrix([
+                [scale.x, 0, 0],
+                [0, scale.y, 0],
+                [0, 0, scale.z]
+            ])
+            matrix.rotate(Euler(self.geometry_matrix_rotation))
+            matrix = matrix.to_4x4()
+            matrix.translation = self.geometry_matrix_translation
+        else:
+            matrix = ob.matrix_world
+        ret['geometry_matrix'] = ('MATRIX', matrix)
+        return ret
+
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeDensity(ArnoldNode):
@@ -1684,6 +1814,7 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeBarndoor"),
             nodeitems_utils.NodeItem("ArnoldNodeGobo"),
             nodeitems_utils.NodeItem("ArnoldNodeLightDecay"),
+            nodeitems_utils.NodeItem("ArnoldNodeLightBlocker"),
         ]),
         # common
         ArnoldNodeCategory("ARNOLD_NODES_COLORS", "Color", items=[
