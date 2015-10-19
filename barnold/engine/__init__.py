@@ -758,8 +758,8 @@ def render(engine, scene):
 
             if buffer:
                 try:
-                    result = _htiles.pop((_x, _y))
-                    if result is not None:
+                    result = _htiles.pop((_x, _y), None)
+                    if result is None:
                         result = engine.begin_result(_x, _y, width, height)
                     _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
                     rect = numpy.ctypeslib.as_array(_buffer, shape=(width * height, 4))
@@ -809,3 +809,38 @@ def render(engine, scene):
     finally:
         del engine._session
         arnold.AiEnd()
+
+def _ipr(mn):
+    from types import ModuleType
+
+    fn = os.path.join(os.path.dirname(__file__), "ipr.py")
+    with open(fn, 'rb') as f:
+        code = compile(f.read(), fn, 'exec')
+
+        def _exec():
+            _mod = sys.modules.get(mn)
+            try:
+                mod = ModuleType(mn)
+                mod.__file__ = fn
+                sys.modules[mn] = mod
+                exec(code, mod.__dict__)
+            finally:
+                if mod:
+                    sys.modules[mn] = _mod
+                else:
+                    del sys.modules[mn]
+            return mod
+        return _exec
+
+_ipr = _ipr("__main__")
+
+
+def view_update(engine, context):
+    print("view_update:")
+    mod = _ipr()
+    mod.send(["test", 123])
+    engine._mod = mod
+
+
+def view_draw(engine, contenxt):
+    print("view_draw:", engine._mod.recv())

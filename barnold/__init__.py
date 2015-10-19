@@ -124,6 +124,12 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
     def render(self, scene):
         engine.render(self, scene)
 
+    def view_update(self, context):
+        engine.view_update(self, context)
+
+    def view_draw(self, context):
+        engine.view_draw(self, context)
+
 
 from . import engine
 from . import props
