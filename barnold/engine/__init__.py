@@ -15,6 +15,7 @@ import re
 from contextlib import contextmanager
 
 import bpy
+import bgl
 from mathutils import Matrix, Vector, geometry
 
 from . import arnold
@@ -810,17 +811,20 @@ def render(engine, scene):
         del engine._session
         arnold.AiEnd()
 
+
 def _ipr(mn):
+    import weakref
     from types import ModuleType
 
     fn = os.path.join(os.path.dirname(__file__), "ipr.py")
     with open(fn, 'rb') as f:
         code = compile(f.read(), fn, 'exec')
 
-        def _exec():
+        def _exec(engine):
             _mod = sys.modules.get(mn)
             try:
                 mod = ModuleType(mn)
+                mod.engine = weakref.ref(engine)
                 mod.__file__ = fn
                 sys.modules[mn] = mod
                 exec(code, mod.__dict__)
@@ -834,13 +838,41 @@ def _ipr(mn):
 
 _ipr = _ipr("__main__")
 
-
 def view_update(engine, context):
-    print("view_update:")
-    mod = _ipr()
-    mod.send(["test", 123])
-    engine._mod = mod
-
+    print(">>> view_update: ", engine)
+    ipr = getattr(engine, "_ipr", None)
+    if ipr is None:
+        ipr = _ipr(engine)
+        engine._ipr = ipr
 
 def view_draw(engine, contenxt):
-    print("view_draw:", engine._mod.recv())
+    print(">>> view_draw: ", engine)
+    tile = engine._ipr.tile()
+    if tile is not None:
+        try:
+            x, y, width, height, buf = tile
+            rect = numpy.frombuffer(buf, dtype=numpy.float32)
+
+            print(">>> view_draw:", x, y, width, height, len(rect))
+
+            v = bgl.Buffer(bgl.GL_FLOAT, 4)
+            bgl.glGetFloatv(bgl.GL_VIEWPORT, v)
+            vw = v[2]
+            vh = v[3]
+            bgl.glPixelZoom(vw / width, -vh / height)
+            bgl.glRasterPos2f(0, vh - 1.0)
+            bgl.glDrawPixels(width, height, bgl.GL_RGBA, bgl.GL_FLOAT,
+                             bgl.Buffer(bgl.GL_FLOAT, len(rect), rect))
+            bgl.glPixelZoom(1.0, 1.0)
+            bgl.glRasterPos2f(0, 0)
+        except:
+            import traceback
+            print("~" * 30)
+            traceback.print_exc()
+            print("~" * 30)
+
+def free(engine):
+    print(">>> free: ", engine)
+    if hasattr(engine, "_ipr"):
+        engine._ipr.stop()
+        del engine._ipr
