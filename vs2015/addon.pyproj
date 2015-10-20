@@ -25,6 +25,7 @@
     <PtvsTargetsFile>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets</PtvsTargetsFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="engine\ipr.py" />
     <Compile Include="engine\__init__.py" />
     <Compile Include="nodes.py" />
     <Compile Include="ops.py" />
