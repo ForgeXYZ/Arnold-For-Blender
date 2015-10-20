@@ -820,11 +820,12 @@ def _ipr(mn):
     with open(fn, 'rb') as f:
         code = compile(f.read(), fn, 'exec')
 
-        def _exec(engine):
+        def _exec(engine, data):
             _mod = sys.modules.get(mn)
             try:
                 mod = ModuleType(mn)
                 mod.engine = weakref.ref(engine)
+                mod.data = data
                 mod.__file__ = fn
                 sys.modules[mn] = mod
                 exec(code, mod.__dict__)
@@ -840,16 +841,66 @@ _ipr = _ipr("__main__")
 
 def view_update(engine, context):
     print(">>> view_update: ", engine)
-    ipr = getattr(engine, "_ipr", None)
-    if ipr is None:
-        ipr = _ipr(engine)
-        engine._ipr = ipr
+    try:
+        ipr = getattr(engine, "_ipr", None)
+        if ipr is None:
+            region = context.region
+            rv3d = context.region_data
 
-def view_draw(engine, contenxt):
+            w = region.width
+            h = region.height
+            m = max(w, h)
+            c = 900 / (m + 600) if m > 300 else 1.0
+            xres = int(w * c)
+            yres = int(h * c)
+
+            vm = rv3d.view_matrix.copy()
+
+            data = {
+                'options': {
+                    'xres': xres,
+                    'yres': yres,
+                    'camera': {
+                        'node': "persp_camera",
+                        'matrix': numpy.reshape(vm.inverted().transposed(), -1)
+                    }
+                },
+                'nodes': {
+                }
+            }
+            ipr = _ipr(engine, data)
+            ipr.vm = vm
+            engine._ipr = ipr
+    except:
+        import traceback
+        print("~" * 30)
+        traceback.print_exc()
+        print("~" * 30)
+
+def view_draw(engine, context):
     print(">>> view_draw: ", engine)
-    tile = engine._ipr.tile()
-    if tile is not None:
-        try:
+    try:
+        region = context.region
+        rv3d = context.region_data
+
+        vm = rv3d.view_matrix
+        #print(engine._ipr.vm)
+        #print(vm)
+        if engine._ipr.vm != vm:
+            print(">>> view_draw: ", vm)
+            data = {
+                'nodes': {
+                    '__camera': {
+                        'matrix': ('MATRIX', numpy.reshape(vm.inverted().transposed(), -1))
+                    }
+                }
+            }
+            engine._ipr.vm = vm.copy()
+            engine._ipr.update(data)
+            return
+
+        tile = engine._ipr.tile()
+        if tile is not None:
             x, y, width, height, buf = tile
             rect = numpy.frombuffer(buf, dtype=numpy.float32)
 
@@ -862,14 +913,14 @@ def view_draw(engine, contenxt):
             bgl.glPixelZoom(vw / width, -vh / height)
             bgl.glRasterPos2f(0, vh - 1.0)
             bgl.glDrawPixels(width, height, bgl.GL_RGBA, bgl.GL_FLOAT,
-                             bgl.Buffer(bgl.GL_FLOAT, len(rect), rect))
+                                bgl.Buffer(bgl.GL_FLOAT, len(rect), rect))
             bgl.glPixelZoom(1.0, 1.0)
             bgl.glRasterPos2f(0, 0)
-        except:
-            import traceback
-            print("~" * 30)
-            traceback.print_exc()
-            print("~" * 30)
+    except:
+        import traceback
+        print("~" * 30)
+        traceback.print_exc()
+        print("~" * 30)
 
 def free(engine):
     print(">>> free: ", engine)
