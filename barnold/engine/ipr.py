@@ -20,12 +20,31 @@ def _worker(data, new_data, redraw_event, tiles, state):
 
     import numpy, ctypes, queue, arnold
 
+    def _AiNodeSetArray(node, param, value):
+        t, a = value
+        _len = len(a)
+        if t == arnold.AI_TYPE_POINT:
+            _len //= 3
+        elif t == arnold.AI_TYPE_UINT:
+            pass
+        _a = arnold.AiArrayConvert(_len, 1, t, ctypes.c_void_p(a.ctypes.data))
+        arnold.AiNodeSetArray(node, param, _a)
+
+    _AiNodeSet = {
+        'BOOL': lambda n, p, v: arnold.AiNodeSetBool(n, p, v),
+        'MATRIX': lambda n, p, v: arnold.AiNodeSetMatrix(n, p, arnold.AtMatrix(*v)),
+        'ARRAY': _AiNodeSetArray
+    }
+
     arnold.AiBegin()
     try:
         #arnold.AiMsgSetConsoleFlags(arnold.AI_LOG_ALL)
         #arnold.AiMsgSetConsoleFlags(0x000E)
 
-        node = arnold.AiNode("box")
+        for ntype, params in data['nodes']:
+            node = arnold.AiNode(ntype)
+            for n, (t, v) in params.items():
+                _AiNodeSet[t](node, n, v)
 
         opts = data['options']
         xres = opts['xres']
@@ -40,8 +59,9 @@ def _worker(data, new_data, redraw_event, tiles, state):
 
         cam = opts['camera']
         node = arnold.AiNode(cam['node'])
-        arnold.AiNodeSetMatrix(node, "matrix", arnold.AtMatrix(*cam['matrix']))
         arnold.AiNodeSetStr(node, "name", "__camera")
+        arnold.AiNodeSetMatrix(node, "matrix", arnold.AtMatrix(*cam['matrix']))
+        arnold.AiNodeSetFlt(node, "fov", cam['fov'])
         arnold.AiNodeSetPtr(options, "camera", node)
 
         filter = arnold.AiNode("gaussian_filter")
@@ -58,13 +78,13 @@ def _worker(data, new_data, redraw_event, tiles, state):
         arnold.AiNodeSetArray(options, "outputs", outputs)
 
         def _callback(x, y, width, height, buffer, data):
-            print("+++ _callback:", x, y, width, height, ctypes.cast(buffer, ctypes.c_void_p))
+            #print("+++ _callback:", x, y, width, height, ctypes.cast(buffer, ctypes.c_void_p))
             if buffer:
                 try:
                     if not state.value and new_data.empty():
                         _buffer = ctypes.string_at(buffer, width * height * 4 * 4)
                         tiles.put((x, y, width, height, _buffer))
-                        print("+++ _callback:", tiles.qsize())
+                        #print("+++ _callback: tiles", tiles.qsize())
                         redraw_event.set()
                         return
                 finally:
@@ -86,18 +106,15 @@ def _worker(data, new_data, redraw_event, tiles, state):
             while True:
                 try:
                     _data = new_data.get(timeout=1)
-                    print(">>> worker: data", _data)
-                    while not new_data.empty():
-                        _data = new_data.get(timeout=1)
-                        print(">>> worker: data", _data)
-                    if _data is not None:
-                        for name, params in _data['nodes'].items():
-                            node = arnold.AiNodeLookUpByName(name)
-                            for n, (t, v) in params.items():
-                                if t == 'MATRIX':
-                                    arnold.AiNodeSetMatrix(node, n, arnold.AtMatrix(*v))
-                    break
-                except queue.Empty:
+                    #print(">>> worker: data")
+                    if new_data.empty():
+                        if _data is not None:
+                            for name, params in _data['nodes'].items():
+                                node = arnold.AiNodeLookUpByName(name)
+                                for n, (t, v) in params.items():
+                                    _AiNodeSet[t](node, n, v)
+                        break
+                except:
                     print("+++ worker: data empty")
 
         tiles.close()
@@ -112,18 +129,17 @@ def _main():
     tiles = _mp.Queue()
     new_data = _mp.Queue()
 
-    def _tile():
-        t = None
-        while not tiles.empty():
-            t = tiles.get()
-        return t
+    def _tile(wait=False):
+        if wait or not tiles.empty():
+            return tiles.get()
+        return None
 
     state = _mp.Value('i', 0)
     redraw_event = _mp.Event()
 
     def tag_redraw():
         while redraw_event.wait() and state.value != ABORT:
-            print("--- tag_redraw: event")
+            #print("--- tag_redraw: event")
             redraw_event.clear()
             e = engine()
             if e is not None:

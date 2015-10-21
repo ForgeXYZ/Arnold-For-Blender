@@ -447,7 +447,19 @@ class ArnoldNodeStandard(ArnoldNode):
     @property
     def ai_properties(self):
         links = [i.identifier for i in self.inputs if i.is_linked]
-        ret = {}
+        props = self.ext_properties
+        ret = {
+            'reflection_exit_use_environment': ('BOOL', props.reflection_exit_use_environment),
+            'refraction_exit_use_environment': ('BOOL', props.refraction_exit_use_environment),
+            'Fresnel': ('BOOL', props.Fresnel),
+            'specular_Fresnel': ('BOOL', props.specular_Fresnel),
+            'Fresnel_use_IOR': ('BOOL', props.Fresnel_use_IOR),
+            'Fresnel_affect_diff': ('BOOL', props.Fresnel_affect_diff),
+            'enable_glossy_caustics': ('BOOL', props.enable_glossy_caustics),
+            'enable_reflective_caustics': ('BOOL', props.enable_reflective_caustics),
+            'enable_refractive_caustics': ('BOOL', props.enable_refractive_caustics),
+            'enable_internal_reflections': ('BOOL', props.enable_internal_reflections),
+        }
         for i, (t, n, p) in self.sockets.items():
             if i not in links:
                 ret[i] = (t, self.path_resolve(p + "." + i if p else i))

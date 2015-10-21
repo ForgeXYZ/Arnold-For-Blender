@@ -732,7 +732,9 @@ class ArnoldLight(PropertyGroup):
     format = EnumProperty(
         name="Format",
         items=[
-            ('angular', "Angular", "Angular")
+            ('mirrored_ball', "Mirrored Ball", "Mirrored Ball"),
+            ('angular', "Angular", "Angular"),
+            ('latlong', "LatLong", "Latitude & Longitude")
         ],
         default='angular'
     )

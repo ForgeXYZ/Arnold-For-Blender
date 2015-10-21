@@ -824,9 +824,11 @@ def _ipr(mn):
             _mod = sys.modules.get(mn)
             try:
                 mod = ModuleType(mn)
+                mod.__file__ = fn
+
                 mod.engine = weakref.ref(engine)
                 mod.data = data
-                mod.__file__ = fn
+
                 sys.modules[mn] = mod
                 exec(code, mod.__dict__)
             finally:
@@ -844,7 +846,10 @@ def view_update(engine, context):
     try:
         ipr = getattr(engine, "_ipr", None)
         if ipr is None:
+            blend_data = context.blend_data
+            scene = context.scene
             region = context.region
+            v3d = context.space_data
             rv3d = context.region_data
 
             w = region.width
@@ -862,13 +867,50 @@ def view_update(engine, context):
                     'yres': yres,
                     'camera': {
                         'node': "persp_camera",
-                        'matrix': numpy.reshape(vm.inverted().transposed(), -1)
+                        'matrix': numpy.reshape(vm.inverted().transposed(), -1),
+                        'fov': math.degrees(2 * math.atan(64.0 / (2 * v3d.lens)))
                     }
-                },
-                'nodes': {
                 }
             }
+
+            @contextmanager
+            def _to_mesh(ob):
+                pc = time.perf_counter()
+                mesh = ob.to_mesh(scene, True, 'PREVIEW', False)
+                try:
+                    mesh.calc_normals_split()
+                    print("    to_mesh (%f)" % (time.perf_counter() - pc))
+                    yield mesh
+                finally:
+                    # force calling view_update
+                    blend_data.meshes.remove(mesh)
+
+            nodes = []
+
+            for ob in scene.objects:
+                if ob.is_visible(scene) and ob.type in _CT:
+                    with _to_mesh(ob) as mesh:
+                        verts = mesh.vertices
+                        polygons = mesh.polygons
+                        loops = mesh.loops
+                        vlist = numpy.ndarray(len(verts) * 3, dtype=numpy.float32)
+                        verts.foreach_get("co", vlist)
+                        nsides = numpy.ndarray(len(polygons), dtype=numpy.uint32)
+                        polygons.foreach_get("loop_total", nsides)
+                        vidxs = numpy.ndarray(len(loops), dtype=numpy.uint32)
+                        polygons.foreach_get("vertices", vidxs)
+                        nodes.append(('polymesh', {
+                            'matrix': ('MATRIX', numpy.reshape(ob.matrix_world.transposed(), -1)),
+                            'vlist': ('ARRAY', (arnold.AI_TYPE_POINT, vlist)),
+                            'nsides': ('ARRAY', (arnold.AI_TYPE_UINT, nsides)),
+                            'vidxs': ('ARRAY', (arnold.AI_TYPE_UINT, vidxs)),
+                            #'smoothing': ('BOOL', True),
+                        }))
+
+            data['nodes'] = nodes
+
             ipr = _ipr(engine, data)
+            ipr._tile = None
             ipr.vm = vm
             engine._ipr = ipr
     except:
@@ -884,10 +926,7 @@ def view_draw(engine, context):
         rv3d = context.region_data
 
         vm = rv3d.view_matrix
-        #print(engine._ipr.vm)
-        #print(vm)
         if engine._ipr.vm != vm:
-            print(">>> view_draw: ", vm)
             data = {
                 'nodes': {
                     '__camera': {
@@ -897,9 +936,21 @@ def view_draw(engine, context):
             }
             engine._ipr.vm = vm.copy()
             engine._ipr.update(data)
-            return
 
         tile = engine._ipr.tile()
+        if tile is None:
+            tile = engine._ipr._tile
+            if tile is None:
+                tile = engine._ipr.tile(True)
+                engine._ipr._tile = tile
+        else:
+            while True:
+                t = engine._ipr.tile()
+                if t is None:
+                    break
+                tile = t
+            engine._ipr._tile = tile
+
         if tile is not None:
             x, y, width, height, buf = tile
             rect = numpy.frombuffer(buf, dtype=numpy.float32)
