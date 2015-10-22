@@ -316,16 +316,20 @@ class ArnoldCameraPanel(CameraButtonsPanel, Panel):
 from bl_ui.properties_object import ObjectButtonsPanel
 
 
-@ArnoldRenderEngine.register_class
-class ArnoldObjectPanel(ObjectButtonsPanel, Panel):
+class _ObjectPanel(ObjectButtonsPanel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
-    bl_label = "Arnold Parameters"
 
     @classmethod
     def poll(cls, context):
-        return context.object.type in (
-            'MESH"', 'CURVE', 'SURFACE', 'META', 'FONT'
+        return (
+            context.scene.render.engine in cls.COMPAT_ENGINES and
+            context.object.type in ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT')
         )
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldObjectPanel(_ObjectPanel, Panel):
+    bl_label = "Arnold Parameters"
 
     def draw(self, context):
         layout = self.layout
@@ -357,6 +361,26 @@ class ArnoldObjectPanel(ObjectButtonsPanel, Panel):
         flow.prop(props, "sidedness_refraction")
         flow.prop(props, "sidedness_diffuse")
         flow.prop(props, "sidedness_glossy")
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldSubdivisionPanel(_ObjectPanel, Panel):
+    bl_label = "Arnold Subdivision"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        props = context.object.arnold
+
+        layout.prop(props, "subdiv_type", expand=True)
+        col = layout.column()
+        col.enabled = props.subdiv_type != 'none'
+        col.prop(props, "subdiv_iterations")
+        col.prop(props, "subdiv_adaptive_error")
+        col.prop(props, "subdiv_adaptive_metric")
+        col.prop(props, "subdiv_adaptive_space")
+        col.prop(props, "subdiv_uv_smoothing")
+        col.prop(props, "subdiv_smooth_derivs")
 
 ##
 ## Lights

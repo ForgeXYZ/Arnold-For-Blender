@@ -40,6 +40,10 @@ _LOG_FLAGS = [
     ('SSS', "SSS", "messages about sub-surface scattering pointclouds", 0x2000),
     ('ALL', "All", "All messages", 0x3fff)
 ]
+_SPACE_TYPES = [
+    ('raster', "Raster", "Raster"),
+    ('object', "Object", "Object")
+]
 
 
 @ArnoldRenderEngine.register_class
@@ -578,6 +582,70 @@ class ArnoldCamera(PropertyGroup):
 
 @ArnoldRenderEngine.register_class
 class ArnoldShape(PropertyGroup):
+    #UINT[]        nsides                            (empty)
+    #UINT[]        vidxs                             (empty)
+    #UINT[]        nidxs                             (empty)
+    #UINT[]        uvidxs                            (empty)
+    #UINT[]        crease_idxs                       (empty)
+    #FLOAT[]       crease_sharpness                  (empty)
+    #BYTE[]        shidxs                            (empty)
+    #POINT[]       vlist                             (empty)
+    #VECTOR[]      nlist                             (empty)
+    #POINT2[]      uvlist                            (empty)
+    #BOOL          smoothing                         false
+    subdiv_type = EnumProperty(
+        name="Type",
+        items=[
+            ('none', "None", "None"),
+            ('catclark', "Catmull-Clark", "Catmull-Clark"),
+            ('linear', "Linear", "Linear")
+        ],
+        default='none'
+    )
+    subdiv_iterations = IntProperty(
+        name="Iterations",
+        subtype='UNSIGNED',
+        min=0, max=255,
+        default=1
+    )
+    subdiv_adaptive_error = FloatProperty(
+        name="Adaptive Error",
+        default=0
+    )
+    #NODE          subdiv_dicing_camera              (null)
+    subdiv_adaptive_metric = EnumProperty(
+        name="Adaptive Metric",
+        items=[
+            ('auto', "Auto", "Auto"),
+            ('edge_length', "Edge Length", "Edge Length"),
+            ('flatness', "Flatness", "Flatness"),
+        ],
+        default='auto'
+    )
+    subdiv_adaptive_space = EnumProperty(
+        name="Adaptive Space",
+        items=_SPACE_TYPES,
+        default='raster'
+    )
+    subdiv_uv_smoothing = EnumProperty(
+        name="UV Smoothing",
+        items=[
+            ('pin_corners', "Pin Corners", "Pin Corners"),
+            ('pin_borders', "Pin Borders", "Pin Borders"),
+            ('linear', "Linear", "Linear"),
+            ('smooth', "Smooth", "Smooth")
+        ],
+        default='pin_corners'
+    )
+    subdiv_smooth_derivs = BoolProperty(
+        name="Smooth Tangents"
+    )
+    #NODE[]        disp_map                          (empty)
+    #FLOAT         disp_padding                      0
+    #FLOAT         disp_height                       1
+    #FLOAT         disp_zero_value                   0
+    #BOOL          disp_autobump                     false
+    #BYTE          autobump_visibility               159
     visibility = IntProperty(
         name="Visibility",
         default=255
@@ -597,6 +665,9 @@ class ArnoldShape(PropertyGroup):
     invert_normals = BoolProperty(
         name="Invert normals"
     )
+    # ray_bias (FLOAT)
+    # matrix (MATRIX[]) = Object.matrix_world
+    # shader (NODE[]) = Object.data.materials
     opaque = BoolProperty(
         name="Opaque",
         default=True
@@ -604,6 +675,14 @@ class ArnoldShape(PropertyGroup):
     matte = BoolProperty(
         name="Matte"
     )
+    # use_light_group (BOOL)
+    # light_group (NODE[])
+    # use_shadow_group (BOOL)
+    # shadow_group (NODE[])
+    # trace_sets (STRING[])
+    # transform_time_samples (FLOAT[])
+    # deform_time_samples (FLOAT[])
+    # id (INT)
 
     def _visibility(mask):
         def get(self):
@@ -1181,7 +1260,7 @@ class ArnoldShaderStandard(PropertyGroup):
         default=1
     )
     indirect_specular = FloatProperty(
-        name="Direct Scale",
+        name="Indirect Scale",
         description="The amount of specularity received from indirect sources"
                     " only. Values other than 1.0 will cause the materials"
                     " to not preserve energy and global illumination may not"

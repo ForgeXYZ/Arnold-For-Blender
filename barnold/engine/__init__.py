@@ -275,6 +275,14 @@ def _export_object_properties(ob, node):
     arnold.AiNodeSetBool(node, "invert_normals", props.invert_normals)
     arnold.AiNodeSetBool(node, "opaque", props.opaque)
     arnold.AiNodeSetBool(node, "matte", props.matte)
+    if props.subdiv_type != 'none':
+        arnold.AiNodeSetStr(node, "subdiv_type", props.subdiv_type)
+        arnold.AiNodeSetByte(node, "subdiv_iterations", props.subdiv_iterations)
+        arnold.AiNodeSetFlt(node, "subdiv_adaptive_error", props.subdiv_adaptive_error)
+        arnold.AiNodeSetStr(node, "subdiv_adaptive_metric", props.subdiv_adaptive_metric)
+        arnold.AiNodeSetStr(node, "subdiv_adaptive_space", props.subdiv_adaptive_space)
+        arnold.AiNodeSetStr(node, "subdiv_uv_smoothing", props.subdiv_uv_smoothing)
+        arnold.AiNodeSetBool(node, "subdiv_smooth_derivs", props.subdiv_smooth_derivs)
 
 
 def _export(data, scene, camera, xres, yres, session=None):
