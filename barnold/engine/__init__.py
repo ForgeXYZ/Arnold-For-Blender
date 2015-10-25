@@ -26,6 +26,9 @@ from ..nodes import (
     ArnoldNodeWorldOutput,
     ArnoldNodeLightOutput
 )
+from .ipr import ipr as _ipr
+
+_ipr = _ipr()
 
 _RN = re.compile("[^-0-9A-Za-z_]")  # regex to cleanup names
 _CT = ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT')  # convertible types
@@ -512,6 +515,8 @@ def _export(data, scene, camera, xres, yres, session=None):
             arnold.AiMsgTab(-4)
             duplicator.dupli_list_clear()
 
+    ##############################
+    ## mesh lights
     for light_node, name in mesh_lights:
         ob = scene.objects.get(name)
         if ob is None:
@@ -820,35 +825,6 @@ def render(engine, scene):
         arnold.AiEnd()
 
 
-def _ipr(mn):
-    import weakref
-    from types import ModuleType
-
-    fn = os.path.join(os.path.dirname(__file__), "ipr.py")
-    with open(fn, 'rb') as f:
-        code = compile(f.read(), fn, 'exec')
-
-        def _exec(engine, data):
-            _mod = sys.modules.get(mn)
-            try:
-                mod = ModuleType(mn)
-                mod.__file__ = fn
-
-                mod.engine = weakref.ref(engine)
-                mod.data = data
-
-                sys.modules[mn] = mod
-                exec(code, mod.__dict__)
-            finally:
-                if mod:
-                    sys.modules[mn] = _mod
-                else:
-                    del sys.modules[mn]
-            return mod
-        return _exec
-
-_ipr = _ipr("__main__")
-
 def view_update(engine, context):
     print(">>> view_update: ", engine)
     try:
@@ -866,20 +842,25 @@ def view_update(engine, context):
             c = 900 / (m + 600) if m > 300 else 1.0
             xres = int(w * c)
             yres = int(h * c)
+            bucket_size = 64 # xres if xres > yres else yres
 
             vm = rv3d.view_matrix.copy()
 
-            data = {
-                'options': {
-                    'xres': xres,
-                    'yres': yres,
-                    'camera': {
-                        'node': "persp_camera",
-                        'matrix': numpy.reshape(vm.inverted().transposed(), -1),
-                        'fov': math.degrees(2 * math.atan(64.0 / (2 * v3d.lens)))
-                    }
-                }
+            options = {
+                'skip_license_check': ('BOOL', True),
+                'xres': ('INT', xres),
+                'yres': ('INT', yres),
+                'bucket_size': ('INT', bucket_size),
+                'camera': ('NODE', '__camera'),
             }
+            nodes = []
+            _nodes = {}
+
+            nodes.append(('persp_camera', {
+                'name': ('STRING', '__camera'),
+                'matrix': ('MATRIX', numpy.reshape(vm.inverted().transposed(), -1)),
+                'fov': ('FLOAT', math.degrees(2 * math.atan(64.0 / (2 * v3d.lens))))
+            }))
 
             @contextmanager
             def _to_mesh(ob):
@@ -890,10 +871,41 @@ def view_update(engine, context):
                     print("    to_mesh (%f)" % (time.perf_counter() - pc))
                     yield mesh
                 finally:
-                    # force calling view_update
+                    # it force call view_update
                     blend_data.meshes.remove(mesh)
 
-            nodes = []
+            def _AiNode(node, prefix):
+                if not isinstance(node, ArnoldNode):
+                    return None
+
+                anode = _nodes.get(node)
+                if anode is None:
+                    name = "%s&N%d::%s" % (prefix, len(nodes), _RN.sub("_", node.name))
+                    params = {
+                        'name': ('STRING', name)
+                    }
+                    for input in node.inputs:
+                        if input.is_linked:
+                            _anode = _AiNode(input.links[0].from_node, prefix)
+                            if _anode is not None:
+                                params[input.identifier] = ('LINK', _anode[1]['name'][1])
+                                continue
+                        if not input.hide_value:
+                            v = input.default_value
+                            if input.bl_idname in ("NodeSocketColor",
+                                                   "NodeSocketVector",
+                                                   "NodeSocketVectorXYZ",
+                                                   "ArnoldNodeSocketColor"):
+                                v = v[:]
+                            params[input.identifier] = (input.bl_idname, v)
+                    for n, (t, v) in node.ai_properties.items():
+                        if t in ('RGB', 'RGBA', 'VECTOR'):
+                            v = v[:]
+                        params[n] = (t, v)
+                    anode = (node.ai_name, params)
+                    _nodes[node] = anode
+                    nodes.append(anode)
+                return anode
 
             for ob in scene.objects:
                 if ob.is_visible(scene) and ob.type in _CT:
@@ -908,6 +920,7 @@ def view_update(engine, context):
                         vidxs = numpy.ndarray(len(loops), dtype=numpy.uint32)
                         polygons.foreach_get("vertices", vidxs)
                         nodes.append(('polymesh', {
+                            'name': ('STRING', "O::" + ob.name),
                             'matrix': ('MATRIX', numpy.reshape(ob.matrix_world.transposed(), -1)),
                             'vlist': ('ARRAY', (arnold.AI_TYPE_POINT, vlist)),
                             'nsides': ('ARRAY', (arnold.AI_TYPE_UINT, nsides)),
@@ -915,11 +928,28 @@ def view_update(engine, context):
                             #'smoothing': ('BOOL', True),
                         }))
 
-            data['nodes'] = nodes
+            world = scene.world
+            if world and world.use_nodes:
+                for _node in world.node_tree.nodes:
+                    if isinstance(_node, ArnoldNodeWorldOutput) and _node.is_active:
+                        for input in _node.inputs:
+                            if input.is_linked:
+                                node = _AiNode(input.links[0].from_node, "W::" + world.name)
+                                if node:
+                                    options[input.identifier] = ('NODE', node[1]['name'][1])
 
-            ipr = _ipr(engine, data)
-            ipr._tile = None
+            #from pprint import pprint as pp
+            #pp(options)
+            #pp(nodes)
+
+            ipr = _ipr(engine, {
+                'options': options,
+                'nodes': nodes
+            })
+            ipr._width = xres
+            ipr._height = yres
             ipr.vm = vm
+
             engine._ipr = ipr
     except:
         import traceback
@@ -928,7 +958,7 @@ def view_update(engine, context):
         print("~" * 30)
 
 def view_draw(engine, context):
-    print(">>> view_draw: ", engine)
+    #print(">>> view_draw: ", engine)
     try:
         region = context.region
         rv3d = context.region_data
@@ -943,38 +973,23 @@ def view_draw(engine, context):
                 }
             }
             engine._ipr.vm = vm.copy()
+            engine._ipr._wait = True
             engine._ipr.update(data)
 
-        tile = engine._ipr.tile()
-        if tile is None:
-            tile = engine._ipr._tile
-            if tile is None:
-                tile = engine._ipr.tile(True)
-                engine._ipr._tile = tile
-        else:
-            while True:
-                t = engine._ipr.tile()
-                if t is None:
-                    break
-                tile = t
-            engine._ipr._tile = tile
+        width = engine._ipr._width
+        height = engine._ipr._height
+        rect = numpy.asarray(engine._ipr.tiles)
 
-        if tile is not None:
-            x, y, width, height, buf = tile
-            rect = numpy.frombuffer(buf, dtype=numpy.float32)
-
-            print(">>> view_draw:", x, y, width, height, len(rect))
-
-            v = bgl.Buffer(bgl.GL_FLOAT, 4)
-            bgl.glGetFloatv(bgl.GL_VIEWPORT, v)
-            vw = v[2]
-            vh = v[3]
-            bgl.glPixelZoom(vw / width, -vh / height)
-            bgl.glRasterPos2f(0, vh - 1.0)
-            bgl.glDrawPixels(width, height, bgl.GL_RGBA, bgl.GL_FLOAT,
-                                bgl.Buffer(bgl.GL_FLOAT, len(rect), rect))
-            bgl.glPixelZoom(1.0, 1.0)
-            bgl.glRasterPos2f(0, 0)
+        v = bgl.Buffer(bgl.GL_FLOAT, 4)
+        bgl.glGetFloatv(bgl.GL_VIEWPORT, v)
+        vw = v[2]
+        vh = v[3]
+        bgl.glPixelZoom(vw / width, -vh / height)
+        bgl.glRasterPos2f(0, vh - 1.0)
+        bgl.glDrawPixels(width, height, bgl.GL_RGBA, bgl.GL_FLOAT,
+                         bgl.Buffer(bgl.GL_FLOAT, len(rect), rect))
+        bgl.glPixelZoom(1.0, 1.0)
+        bgl.glRasterPos2f(0, 0)
     except:
         import traceback
         print("~" * 30)
