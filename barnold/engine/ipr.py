@@ -4,6 +4,8 @@ __author__ = "Ildar Nikolaev"
 __email__ = "nildar@users.sourceforge.net"
 
 import sys
+import ctypes
+import numpy
 
 ABORT = 1
 UPDATE = 2
@@ -15,14 +17,17 @@ def ipr():
 
     code = __spec__.loader.get_code(__name__)
 
-    def _exec(engine, data):
+    def _exec(engine, data, width, height):
         _main = sys.modules["__main__"]
         try:
             mod = ModuleType("__main__")
             mod.__file__ = __file__
 
             mod.engine = weakref.ref(engine)
-            mod.data = data
+            mod._data_ = data
+            mod._width_ = width
+            mod._height_ = height
+            mod._tiles_ = None
 
             sys.modules["__main__"] = mod
             exec(code, mod.__dict__)
@@ -37,8 +42,6 @@ def _worker(data, new_data, redraw_event, tiles, state):
     print("+++ _worker: started")
 
     import os
-    import numpy
-    import ctypes
 
     dir = os.path.dirname(__file__)
     if dir not in sys.path:
@@ -120,9 +123,12 @@ def _worker(data, new_data, redraw_event, tiles, state):
         outputs = arnold.AiArray(len(outputs_aovs), 1, arnold.AI_TYPE_STRING, *outputs_aovs)
         arnold.AiNodeSetArray(options, "outputs", outputs)
 
-        _width = data['options']['xres'][1]
-        _height = data['options']['yres'][1]
-        _tiles = numpy.asarray(tiles).reshape([_height, _width, 4])
+        print("+++ _callback:", tiles)
+        _width, _height, t = tiles
+        import mmap
+        t = mmap.mmap(-1, _width * _height * 4 * 4, t)
+        _tiles = numpy.frombuffer(t, dtype=numpy.float32).reshape([_width, _height, 4])
+        #_tiles = numpy.asarray(t).reshape([_height, _width, 4])
 
         def _callback(x, y, width, height, buffer, data):
             #print("+++ _callback:", x, y, width, height, ctypes.cast(buffer, ctypes.c_void_p))
@@ -153,13 +159,23 @@ def _worker(data, new_data, redraw_event, tiles, state):
             while True:
                 try:
                     _data = new_data.get(timeout=1)
-                    #print(">>> worker: data")
+                    #print(">>> worker (data):", _data)
                     if new_data.empty():
                         if _data is not None:
-                            for name, params in _data['nodes'].items():
-                                node = arnold.AiNodeLookUpByName(name)
-                                for n, (t, v) in params.items():
-                                    _AiNodeSet[t](node, n, v)
+                            _nodes = _data.get('nodes')
+                            if _nodes is not None:
+                                for name, params in _nodes.items():
+                                    node = arnold.AiNodeLookUpByName(name)
+                                    for n, (t, v) in params.items():
+                                        _AiNodeSet[t](node, n, v)
+                            opts = _data.get('options')
+                            if opts is not None:
+                                for n, (t, v) in opts.items():
+                                    _AiNodeSet[t](options, n, v)
+                            tiles = _data.get('tiles')
+                            if tiles is not None:
+                                _width, _height, t = tiles
+                                _tiles = numpy.asarray(t).reshape([_height, _width, 4])
                         break
                 except:
                     #print("+++ worker: data empty")
@@ -170,19 +186,19 @@ def _worker(data, new_data, redraw_event, tiles, state):
 
 
 def _main():
-    import threading
     import multiprocessing as _mp
+    import threading
+    import mmap
 
     import bpy
     _mp.set_executable(bpy.app.binary_path_python)
 
-    width = data['options']['xres'][1]
-    height = data['options']['yres'][1]
+    #import logging
+    #logger = _mp.log_to_stderr()
+    #logger.setLevel(logging.INFO)
 
     state = _mp.Value('i', 0)
     redraw_event = _mp.Event()
-    tiles = _mp.sharedctypes.RawArray('f', width * height * 4)
-    new_data = _mp.Queue()
 
     def tag_redraw():
         while redraw_event.wait() and state.value != ABORT:
@@ -192,8 +208,57 @@ def _main():
                 e.tag_redraw()
             del e
 
+    global _data_, _width_, _height_, _tiles_
+
+    def _tiles(opts):
+        m = max(_width_, _height_)
+        if m > 300:
+            c = 900 / (m + 600)
+            w = int(_width_ * c)
+            h = int(_height_ * c)
+        else:
+            w = _width_
+            h = _height_
+        opts['xres'] = ('INT', w)
+        opts['yres'] = ('INT', h)
+        #t = _mp.sharedctypes.RawArray('f', w * h * 4)#, lock=False)
+        n = "barnold-ipr-%d" % _mp.current_process().pid
+        t = mmap.mmap(-1, w * h * 4 * 4, n)
+        return w, h, n
+
+    _tiles_ = _tiles(_data_['options'])
+    new_data = _mp.Queue()
+
+    def update(width, height, view_matrix):
+        global _width_, _height_, _tiles_
+
+        data = {}
+
+        if _width_ != width or _height_ != height:
+            opts = {}
+            _width_ = width
+            _height_ = height
+            _tiles_ = _tiles(opts)
+            data['tiles'] = _tiles_
+            data['options'] =  opts
+
+        if _view_matrix != view_matrix:
+            _view_matrix[:] = view_matrix
+            data['nodes'] = {
+                '__camera': {
+                    'matrix': ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), -1))
+                }
+            }
+
+        if data:
+            new_data.put(data)
+        w, h, t = _tiles_
+        return w, h, mmap.mmap(-1, w * h * 4 * 4, t)
+
     redraw_thread = threading.Thread(target=tag_redraw)
-    process = _mp.Process(target=_worker, args=(data, new_data, redraw_event, tiles, state))
+    process = _mp.Process(target=_worker, args=(
+        _data_, new_data, redraw_event, _tiles_, state
+    ))
 
     def stop():
         print(">>> stop (1): started")
@@ -212,16 +277,12 @@ def _main():
         process.terminate()
         print(">>> stop (7):", process)
 
-    def update(data):
-        #state.value = UPDATE
-        new_data.put(data)
-
     redraw_thread.start()
     process.start()
 
-    return stop, tiles, update
+    return update, stop
 
 
 if __name__ == "__main__":
-    stop, tiles, update = _main()
-    del data
+    update, stop = _main()
+    del _data_

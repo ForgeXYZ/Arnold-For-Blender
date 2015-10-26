@@ -13,6 +13,7 @@ import math
 import time
 import re
 from contextlib import contextmanager
+import traceback
 
 import bpy
 import bgl
@@ -26,9 +27,9 @@ from ..nodes import (
     ArnoldNodeWorldOutput,
     ArnoldNodeLightOutput
 )
-from .ipr import ipr as _ipr
+from .ipr import ipr as _IPR
 
-_ipr = _ipr()
+_IPR = _IPR()
 
 _RN = re.compile("[^-0-9A-Za-z_]")  # regex to cleanup names
 _CT = ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT')  # convertible types
@@ -836,31 +837,8 @@ def view_update(engine, context):
             v3d = context.space_data
             rv3d = context.region_data
 
-            w = region.width
-            h = region.height
-            m = max(w, h)
-            c = 900 / (m + 600) if m > 300 else 1.0
-            xres = int(w * c)
-            yres = int(h * c)
-            bucket_size = 64 # xres if xres > yres else yres
-
-            vm = rv3d.view_matrix.copy()
-
-            options = {
-                'skip_license_check': ('BOOL', True),
-                'xres': ('INT', xres),
-                'yres': ('INT', yres),
-                'bucket_size': ('INT', bucket_size),
-                'camera': ('NODE', '__camera'),
-            }
             nodes = []
             _nodes = {}
-
-            nodes.append(('persp_camera', {
-                'name': ('STRING', '__camera'),
-                'matrix': ('MATRIX', numpy.reshape(vm.inverted().transposed(), -1)),
-                'fov': ('FLOAT', math.degrees(2 * math.atan(64.0 / (2 * v3d.lens))))
-            }))
 
             @contextmanager
             def _to_mesh(ob):
@@ -928,6 +906,20 @@ def view_update(engine, context):
                             #'smoothing': ('BOOL', True),
                         }))
 
+            view_matrix = rv3d.view_matrix.copy()
+            nodes.append(('persp_camera', {
+                'name': ('STRING', '__camera'),
+                'matrix': ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), -1)),
+                'fov': ('FLOAT', math.degrees(2 * math.atan(64.0 / (2 * v3d.lens))))
+            }))
+
+            opts = scene.arnold
+            options = {
+                'skip_license_check': ('BOOL', True),
+                'bucket_size': ('INT', opts.ipr_bucket_size),
+                'camera': ('NODE', '__camera'),
+            }
+
             world = scene.world
             if world and world.use_nodes:
                 for _node in world.node_tree.nodes:
@@ -942,43 +934,29 @@ def view_update(engine, context):
             #pp(options)
             #pp(nodes)
 
-            ipr = _ipr(engine, {
+            ipr = _IPR(engine, {
                 'options': options,
                 'nodes': nodes
-            })
-            ipr._width = xres
-            ipr._height = yres
-            ipr.vm = vm
+            }, region.width, region.height)
+            ipr._view_matrix = view_matrix
 
             engine._ipr = ipr
     except:
-        import traceback
         print("~" * 30)
         traceback.print_exc()
         print("~" * 30)
 
+
 def view_draw(engine, context):
-    #print(">>> view_draw: ", engine)
+    print(">>> view_draw: ", engine)
     try:
         region = context.region
         rv3d = context.region_data
 
-        vm = rv3d.view_matrix
-        if engine._ipr.vm != vm:
-            data = {
-                'nodes': {
-                    '__camera': {
-                        'matrix': ('MATRIX', numpy.reshape(vm.inverted().transposed(), -1))
-                    }
-                }
-            }
-            engine._ipr.vm = vm.copy()
-            engine._ipr._wait = True
-            engine._ipr.update(data)
-
-        width = engine._ipr._width
-        height = engine._ipr._height
-        rect = numpy.asarray(engine._ipr.tiles)
+        width, height, rect = engine._ipr.update(
+            region.width, region.height, rv3d.view_matrix
+        )
+        rect = numpy.frombuffer(rect, dtype=numpy.float32)
 
         v = bgl.Buffer(bgl.GL_FLOAT, 4)
         bgl.glGetFloatv(bgl.GL_VIEWPORT, v)
@@ -991,10 +969,10 @@ def view_draw(engine, context):
         bgl.glPixelZoom(1.0, 1.0)
         bgl.glRasterPos2f(0, 0)
     except:
-        import traceback
         print("~" * 30)
         traceback.print_exc()
         print("~" * 30)
+
 
 def free(engine):
     print(">>> free: ", engine)

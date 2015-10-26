@@ -183,6 +183,11 @@ class ArnoldOptions(PropertyGroup):
         min=-10, max=-1,
         default = -3
     )
+    ipr_bucket_size = IntProperty(
+        name="Bucket Size",
+        min=16, soft_max=1024,
+        default=64,
+    )
     display_gamma = FloatProperty(
         name="Display Driver",
         default=1 / 2.2  # TODO: inspect gamma correction
