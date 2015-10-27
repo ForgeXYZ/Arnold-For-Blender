@@ -901,8 +901,9 @@ def view_update(engine, context):
                         }))
 
             view_matrix = rv3d.view_matrix.copy()
-            if rv3d.view_perspective == 'CAMERA':
-                cd = v3d.camera.data
+            view_perspective = rv3d.view_perspective
+            if view_perspective == 'CAMERA':
+                cdata = v3d.camera.data
                 #if cd.sensor_fit == 'VERTICAL':
                 #    sw = cd.sensor_height * xres / yres * aspect_x / aspect_y
                 #else:
@@ -912,14 +913,17 @@ def view_update(engine, context):
                 #        y = xres * aspect_y
                 #        if x < y:
                 #            sw *= x / y
-                zoom = ((_SQRT2 + rv3d.view_camera_zoom / 50.0) ** 2.0) / 4.0
-                sensor_width = cd.sensor_width * zoom
-                lens = cd.lens
-                camera_data = (rv3d.view_camera_zoom, cd.sensor_width, lens)
-            else:
+                zoom = 4 / ((_SQRT2 + rv3d.view_camera_zoom / 50.0) ** 2.0)
+                sensor_width = cdata.sensor_width * zoom
+                lens = cdata.lens
+                camera_data = (rv3d.view_camera_zoom, cdata.sensor_width, lens)
+            elif view_perspective == 'PERSP':
                 sensor_width = 64.0
                 lens = v3d.lens
                 camera_data = (lens, )
+            else:
+                # TODO: orpho
+                pass
             camera = ('persp_camera', {
                 'name': ('STRING', '__camera'),
                 'matrix': ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), -1)),
@@ -1005,9 +1009,10 @@ def view_update(engine, context):
                 'nodes': nodes,
                 'sl': (opts.initial_sampling_level, opts.AA_samples)
             }, region.width, region.height)
-            ipr._view_perspective = rv3d.view_perspective
-            ipr._view_matrix = view_matrix
-            ipr._camera_data = camera_data
+
+            ipr.view_perspective = view_perspective
+            ipr.view_matrix = view_matrix
+            ipr.camera_data = camera_data
 
             engine._ipr = ipr
     except:
@@ -1023,17 +1028,60 @@ def view_draw(engine, context):
         v3d = context.space_data
         rv3d = context.region_data
 
-        #print("view_perspective %s" % rv3d.view_perspective,
-        #      rv3d.view_matrix.inverted(),
-        #      rv3d.view_camera_zoom,
-        #      v3d.lens,
-        #      sep="\n")
-        #if rv3d.view_perspective == 'CAMERA':
-        #    print(rv3d.view_matrix.inverted(), rv3d.view_distance)
-            #rv3d.update()
-            #print(rv3d.view_matrix.inverted(), region.width, region.height)
+        data = {}
+        _camera = {}
+        ipr = engine._ipr
+        width = region.width
+        height = region.height
 
-        (width, height), rect = engine._ipr.update(region, v3d, rv3d)
+        view_matrix = rv3d.view_matrix
+        if view_matrix != ipr.view_matrix:
+            ipr.view_matrix = view_matrix.copy()
+            _camera['matrix'] = ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), -1))
+
+        view_perspective = rv3d.view_perspective
+        if view_perspective != ipr.view_perspective:
+            ipr.view_perspective = view_perspective
+            if view_perspective == 'CAMERA':
+                cdata = v3d.camera.data
+                # TODO: sensor fit and camera shift
+                zoom = 4 / ((_SQRT2 + rv3d.view_camera_zoom / 50.0) ** 2.0)
+                sensor_width = cdata.sensor_width * zoom
+                lens = cdata.lens
+                ipr.camera_data = (rv3d.view_camera_zoom, cdata.sensor_width, lens)
+            elif view_perspective == 'PERSP':
+                sensor_width = 64.0
+                lens = v3d.lens
+                ipr.camera_data = (lens, )
+            else:
+                # TODO: orpho
+                return
+            _camera['fov'] = ('FLOAT', math.degrees(2 * math.atan(sensor_width / (2 * lens))))
+        elif view_perspective == 'CAMERA':
+            cdata = v3d.camera.data
+            view_camera_zoom = rv3d.view_camera_zoom
+            sensor_width = cdata.sensor_width
+            lens = cdata.lens
+            camera_data = (view_camera_zoom, sensor_width, lens)
+            if camera_data != ipr.camera_data:
+                # TODO: sensor fit and camera shift
+                sensor_width *= 4 / ((_SQRT2 + rv3d.view_camera_zoom / 50.0) ** 2.0)
+                _camera['fov'] = ('FLOAT', math.degrees(2 * math.atan(sensor_width / (2 * lens))))
+                ipr.camera_data = camera_data
+        elif view_perspective == 'PERSP':
+            lens = v3d.lens
+            _lens, = ipr.camera_data
+            if lens != _lens:
+                _camera['fov'] = ('FLOAT', math.degrees(2 * math.atan(64.0 / (2 * lens))))
+                ipr.camera_data = (lens, )
+        else:
+            # TODO: orpho
+            pass
+
+        if _camera:
+            data.setdefault('nodes', {})['__camera'] = _camera
+
+        (width, height), rect = ipr.update(width, height, data)
 
         v = bgl.Buffer(bgl.GL_FLOAT, 4)
         bgl.glGetFloatv(bgl.GL_VIEWPORT, v)

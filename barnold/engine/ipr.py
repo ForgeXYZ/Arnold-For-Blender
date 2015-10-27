@@ -155,6 +155,15 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
         cb = arnold.AtDisplayCallBack(_callback)
         arnold.AiNodeSetPtr(driver, "callback", cb)
 
+        class _Dict(dict):
+            def update(self, u):
+                for k, v in u.items():
+                    if isinstance(v, dict):
+                        self[k] = _Dict.update(self.get(k, {}), v)
+                    else:
+                        self[k] = u[k]
+                return self
+
         while state.value != ABORT:
             for _sl in range(*sl):
                 arnold.AiNodeSetInt(options, "AA_samples", _sl)
@@ -162,7 +171,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
                 if res != arnold.AI_SUCCESS:
                     break
 
-            data = {}
+            data = _Dict()
             _data = new_data.get()
             while _data is not None:
                 data.update(_data)
@@ -218,6 +227,7 @@ def _main():
             del e
 
     def _mmap_size(opts):
+        global _mmap_
         m = max(_width_, _height_)
         if m > 300:
             c = 900 / (m + 600)
@@ -226,45 +236,25 @@ def _main():
         else:
             w = _width_
             h = _height_
+        _mmap_ = mmap.mmap(-1, w * h * 4 * 4, _mmap_name)
         opts['xres'] = ('INT', w)
         opts['yres'] = ('INT', h)
-
-        global _mmap_
-        _mmap_ = mmap.mmap(-1, w * h * 4 * 4, _mmap_name)
-
         return w, h
 
     _mmap_size_ = _mmap_size(_data_['options'])
     new_data = _mp.Queue()
 
-    def update(region, v3d, rv3d):
-        global _width_, _height_, _mmap_size_, _mmap_
-
-        data = {}
-
-        if _width_ != region.width or _height_ != region.height:
+    def update(width, height, data):
+        global _width_, _height_, _mmap_size_
+        if _width_ != width or _height_ != height:
             opts = {}
-            _width_ = region.width
-            _height_ = region.height
+            _width_ = width
+            _height_ = height
             _mmap_size_ = _mmap_size(opts)
+            data.update({'options': opts})
             data['mmap_size'] = _mmap_size_
-            data['options'] =  opts
-
-        if _view_perspective != rv3d.view_perspective:
-            pass
-
-        if _view_matrix != rv3d.view_matrix:
-            _view_matrix[:] = rv3d.view_matrix
-            data['nodes'] = {
-                '__camera': {
-                    'matrix': ('MATRIX', numpy.reshape(_view_matrix.inverted().transposed(), -1))
-                }
-            }
-
         if data:
-            print(data)
             new_data.put(data)
-
         return _mmap_size_, numpy.frombuffer(_mmap_, dtype=numpy.float32)
 
     redraw_thread = threading.Thread(target=tag_redraw)
