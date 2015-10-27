@@ -114,7 +114,6 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
             arnold.AiNodeSetPtr(n, p, nodes[id(v)])
         for n, p, v in links:
             arnold.AiNodeLink(nodes[id(v)], p, n)
-        del nodes, nptrs, links, data
 
         ## Outputs
         filter = arnold.AiNode("gaussian_filter")
@@ -127,6 +126,10 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
         )
         outputs = arnold.AiArray(len(outputs_aovs), 1, arnold.AI_TYPE_STRING, *outputs_aovs)
         arnold.AiNodeSetArray(options, "outputs", outputs)
+
+        sl = data['sl']
+
+        del nodes, nptrs, links, data
 
         _rect = lambda n, w, h: numpy.frombuffer(
             mmap.mmap(-1, w * h * 4 * 4, n), dtype=numpy.float32
@@ -153,11 +156,10 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
         arnold.AiNodeSetPtr(driver, "callback", cb)
 
         while state.value != ABORT:
-            for sl in range(-3, 1):
-                arnold.AiNodeSetInt(options, "AA_samples", sl)
+            for _sl in range(*sl):
+                arnold.AiNodeSetInt(options, "AA_samples", _sl)
                 res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
                 if res != arnold.AI_SUCCESS:
-                    # TODO: clear new_data, process may hangs
                     break
 
             data = {}
@@ -180,6 +182,9 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
                         rect = _rect(mmap_name, *size)
                     break
                 _data = new_data.get()
+        # clean queue to prevent hangs
+        while not new_data.empty():
+            new_data.get()
     finally:
         arnold.AiEnd()
     print("+++ _worker: finished")
@@ -232,28 +237,32 @@ def _main():
     _mmap_size_ = _mmap_size(_data_['options'])
     new_data = _mp.Queue()
 
-    def update(width, height, view_matrix):
+    def update(region, v3d, rv3d):
         global _width_, _height_, _mmap_size_, _mmap_
 
         data = {}
 
-        if _width_ != width or _height_ != height:
+        if _width_ != region.width or _height_ != region.height:
             opts = {}
-            _width_ = width
-            _height_ = height
+            _width_ = region.width
+            _height_ = region.height
             _mmap_size_ = _mmap_size(opts)
             data['mmap_size'] = _mmap_size_
             data['options'] =  opts
 
-        if _view_matrix != view_matrix:
-            _view_matrix[:] = view_matrix
+        if _view_perspective != rv3d.view_perspective:
+            pass
+
+        if _view_matrix != rv3d.view_matrix:
+            _view_matrix[:] = rv3d.view_matrix
             data['nodes'] = {
                 '__camera': {
-                    'matrix': ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), -1))
+                    'matrix': ('MATRIX', numpy.reshape(_view_matrix.inverted().transposed(), -1))
                 }
             }
 
         if data:
+            print(data)
             new_data.put(data)
 
         return _mmap_size_, numpy.frombuffer(_mmap_, dtype=numpy.float32)
@@ -278,8 +287,9 @@ def _main():
         process.join(5)
         print(">>> stop (6):", process)
         if process.is_alive():
+            print(">>> stop (7):", process)
             process.terminate()
-        print(">>> stop (7):", process)
+        print(">>> stop (8):", process)
 
     redraw_thread.start()
     process.start()

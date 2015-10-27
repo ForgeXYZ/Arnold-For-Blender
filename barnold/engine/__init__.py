@@ -34,7 +34,7 @@ _IPR = _IPR()
 _RN = re.compile("[^-0-9A-Za-z_]")  # regex to cleanup names
 _CT = ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT')  # convertible types
 _MR = Matrix.Rotation(math.radians(90.0), 4, 'X')
-
+_SQRT2 = math.sqrt(2)
 
 def _CleanNames(prefix, count):
     def fn(name):
@@ -901,18 +901,89 @@ def view_update(engine, context):
                         }))
 
             view_matrix = rv3d.view_matrix.copy()
+            if rv3d.view_perspective == 'CAMERA':
+                cd = v3d.camera.data
+                #if cd.sensor_fit == 'VERTICAL':
+                #    sw = cd.sensor_height * xres / yres * aspect_x / aspect_y
+                #else:
+                #    sw = cd.sensor_width
+                #    if cd.sensor_fit == 'AUTO':
+                #        x = xres * aspect_x
+                #        y = xres * aspect_y
+                #        if x < y:
+                #            sw *= x / y
+                zoom = ((_SQRT2 + rv3d.view_camera_zoom / 50.0) ** 2.0) / 4.0
+                sensor_width = cd.sensor_width * zoom
+                lens = cd.lens
+                camera_data = (rv3d.view_camera_zoom, cd.sensor_width, lens)
+            else:
+                sensor_width = 64.0
+                lens = v3d.lens
+                camera_data = (lens, )
             camera = ('persp_camera', {
                 'name': ('STRING', '__camera'),
                 'matrix': ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), -1)),
-                'fov': ('FLOAT', math.degrees(2 * math.atan(64.0 / (2 * v3d.lens))))
+                'fov': ('FLOAT', math.degrees(2 * math.atan(sensor_width / (2 * lens))))
             })
             nodes.append(camera)
 
             opts = scene.arnold
             options = {
-                'skip_license_check': ('BOOL', True),
-                'bucket_size': ('INT', opts.ipr_bucket_size),
                 'camera': ('NODE', camera),
+                'thread_priority': ('STRING', opts.thread_priority),
+                'pin_threads': ('STRING', opts.pin_threads),
+                'abort_on_error': ('BOOL', opts.abort_on_error),
+                'abort_on_license_fail': ('BOOL', opts.abort_on_license_fail),
+                'skip_license_check': ('BOOL', opts.skip_license_check),
+                'error_color_bad_texture': ('RGB', opts.error_color_bad_texture[:]),
+                'error_color_bad_pixel': ('RGB', opts.error_color_bad_pixel[:]),
+                'error_color_bad_shader': ('RGB', opts.error_color_bad_shader[:]),
+                'bucket_size': ('INT', opts.ipr_bucket_size),
+                'bucket_scanning': ('STRING', opts.bucket_scanning),
+                'ignore_textures': ('BOOL', opts.ignore_textures),
+                'ignore_shaders': ('BOOL', opts.ignore_shaders),
+                'ignore_atmosphere': ('BOOL', opts.ignore_atmosphere),
+                'ignore_lights': ('BOOL', opts.ignore_lights),
+                'ignore_shadows': ('BOOL', opts.ignore_shadows),
+                'ignore_direct_lighting': ('BOOL', opts.ignore_direct_lighting),
+                'ignore_subdivision': ('BOOL', opts.ignore_subdivision),
+                'ignore_displacement': ('BOOL', opts.ignore_displacement),
+                'ignore_bump': ('BOOL', opts.ignore_bump),
+                'ignore_motion_blur': ('BOOL', opts.ignore_motion_blur),
+                'ignore_dof': ('BOOL', opts.ignore_dof),
+                'ignore_smoothing': ('BOOL', opts.ignore_smoothing),
+                'ignore_sss': ('BOOL', opts.ignore_sss),
+                'auto_transparency_mode': ('STRING', opts.auto_transparency_mode),
+                'auto_transparency_depth': ('INT', opts.auto_transparency_depth),
+                'auto_transparency_threshold': ('FLOAT', opts.auto_transparency_threshold),
+                'texture_max_open_files': ('INT', opts.texture_max_open_files),
+                'texture_max_memory_MB': ('FLOAT', opts.texture_max_memory_MB),
+                'texture_searchpath': ('STRING', opts.texture_searchpath),
+                'texture_automip': ('BOOL', opts.texture_automip),
+                'texture_autotile': ('INT', opts.texture_autotile),
+                'texture_accept_untiled': ('BOOL', opts.texture_accept_untiled),
+                'texture_accept_unmipped': ('BOOL', opts.texture_accept_unmipped),
+                'texture_glossy_blur': ('FLOAT', opts.texture_glossy_blur),
+                'texture_diffuse_blur': ('FLOAT', opts.texture_diffuse_blur),
+                'low_light_threshold': ('FLOAT', opts.low_light_threshold),
+                'sss_bssrdf_samples': ('INT', opts.sss_bssrdf_samples),
+                'sss_use_autobump': ('BOOL', opts.sss_use_autobump),
+                'volume_indirect_samples': ('INT', opts.volume_indirect_samples),
+                'max_subdivisions': ('INT', opts.max_subdivisions),
+                'procedural_searchpath': ('STRING', opts.procedural_searchpath),
+                'shader_searchpath': ('STRING', opts.shader_searchpath),
+                'texture_gamma': ('FLOAT', opts.texture_gamma),
+                'light_gamma': ('FLOAT', opts.light_gamma),
+                'shader_gamma': ('FLOAT', opts.shader_gamma),
+                'GI_diffuse_depth': ('INT', opts.GI_diffuse_depth),
+                'GI_glossy_depth': ('INT', opts.GI_glossy_depth),
+                'GI_reflection_depth': ('INT', opts.GI_reflection_depth),
+                'GI_refraction_depth': ('INT', opts.GI_refraction_depth),
+                'GI_volume_depth': ('INT', opts.GI_volume_depth),
+                'GI_total_depth': ('INT', opts.GI_total_depth),
+                'GI_diffuse_samples': ('INT', opts.GI_diffuse_samples),
+                'GI_glossy_samples': ('INT', opts.GI_glossy_samples),
+                'GI_refraction_samples': ('INT', opts.GI_refraction_samples),
             }
 
             world = scene.world
@@ -931,9 +1002,12 @@ def view_update(engine, context):
 
             ipr = _IPR(engine, {
                 'options': options,
-                'nodes': nodes
+                'nodes': nodes,
+                'sl': (opts.initial_sampling_level, opts.AA_samples)
             }, region.width, region.height)
+            ipr._view_perspective = rv3d.view_perspective
             ipr._view_matrix = view_matrix
+            ipr._camera_data = camera_data
 
             engine._ipr = ipr
     except:
@@ -943,21 +1017,30 @@ def view_update(engine, context):
 
 
 def view_draw(engine, context):
-    #print(">>> view_draw [%f]:" % time.clock(), engine)
+    print(">>> view_draw [%f]:" % time.clock(), engine)
     try:
         region = context.region
+        v3d = context.space_data
         rv3d = context.region_data
 
-        (width, height), rect = engine._ipr.update(
-            region.width, region.height, rv3d.view_matrix
-        )
+        #print("view_perspective %s" % rv3d.view_perspective,
+        #      rv3d.view_matrix.inverted(),
+        #      rv3d.view_camera_zoom,
+        #      v3d.lens,
+        #      sep="\n")
+        #if rv3d.view_perspective == 'CAMERA':
+        #    print(rv3d.view_matrix.inverted(), rv3d.view_distance)
+            #rv3d.update()
+            #print(rv3d.view_matrix.inverted(), region.width, region.height)
+
+        (width, height), rect = engine._ipr.update(region, v3d, rv3d)
 
         v = bgl.Buffer(bgl.GL_FLOAT, 4)
         bgl.glGetFloatv(bgl.GL_VIEWPORT, v)
         vw = v[2]
         vh = v[3]
-        bgl.glPixelZoom(vw / width, -vh / height)
         bgl.glRasterPos2f(0, vh - 1.0)
+        bgl.glPixelZoom(vw / width, -vh / height)
         bgl.glDrawPixels(width, height, bgl.GL_RGBA, bgl.GL_FLOAT,
                          bgl.Buffer(bgl.GL_FLOAT, len(rect), rect))
         bgl.glPixelZoom(1.0, 1.0)
