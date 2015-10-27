@@ -827,7 +827,7 @@ def render(engine, scene):
 
 
 def view_update(engine, context):
-    print(">>> view_update: ", engine)
+    print(">>> view_update [%f]:" % time.clock(), engine)
     try:
         ipr = getattr(engine, "_ipr", None)
         if ipr is None:
@@ -853,20 +853,14 @@ def view_update(engine, context):
                     blend_data.meshes.remove(mesh)
 
             def _AiNode(node, prefix):
-                if not isinstance(node, ArnoldNode):
-                    return None
-
                 anode = _nodes.get(node)
-                if anode is None:
-                    name = "%s&N%d::%s" % (prefix, len(nodes), _RN.sub("_", node.name))
-                    params = {
-                        'name': ('STRING', name)
-                    }
+                if anode is None and isinstance(node, ArnoldNode):
+                    params = {'name': ('STRING', "%s&N::%s" % (prefix, node.name))}
                     for input in node.inputs:
                         if input.is_linked:
                             _anode = _AiNode(input.links[0].from_node, prefix)
                             if _anode is not None:
-                                params[input.identifier] = ('LINK', _anode[1]['name'][1])
+                                params[input.identifier] = ('LINK', _anode)
                                 continue
                         if not input.hide_value:
                             v = input.default_value
@@ -907,17 +901,18 @@ def view_update(engine, context):
                         }))
 
             view_matrix = rv3d.view_matrix.copy()
-            nodes.append(('persp_camera', {
+            camera = ('persp_camera', {
                 'name': ('STRING', '__camera'),
                 'matrix': ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), -1)),
                 'fov': ('FLOAT', math.degrees(2 * math.atan(64.0 / (2 * v3d.lens))))
-            }))
+            })
+            nodes.append(camera)
 
             opts = scene.arnold
             options = {
                 'skip_license_check': ('BOOL', True),
                 'bucket_size': ('INT', opts.ipr_bucket_size),
-                'camera': ('NODE', '__camera'),
+                'camera': ('NODE', camera),
             }
 
             world = scene.world
@@ -928,7 +923,7 @@ def view_update(engine, context):
                             if input.is_linked:
                                 node = _AiNode(input.links[0].from_node, "W::" + world.name)
                                 if node:
-                                    options[input.identifier] = ('NODE', node[1]['name'][1])
+                                    options[input.identifier] = ('NODE', node)
 
             #from pprint import pprint as pp
             #pp(options)
@@ -948,15 +943,14 @@ def view_update(engine, context):
 
 
 def view_draw(engine, context):
-    print(">>> view_draw: ", engine)
+    #print(">>> view_draw [%f]:" % time.clock(), engine)
     try:
         region = context.region
         rv3d = context.region_data
 
-        width, height, rect = engine._ipr.update(
+        (width, height), rect = engine._ipr.update(
             region.width, region.height, rv3d.view_matrix
         )
-        rect = numpy.frombuffer(rect, dtype=numpy.float32)
 
         v = bgl.Buffer(bgl.GL_FLOAT, 4)
         bgl.glGetFloatv(bgl.GL_VIEWPORT, v)
@@ -975,7 +969,7 @@ def view_draw(engine, context):
 
 
 def free(engine):
-    print(">>> free: ", engine)
+    print(">>> free: [%f]:" % time.clock(), engine)
     if hasattr(engine, "_ipr"):
         engine._ipr.stop()
         del engine._ipr

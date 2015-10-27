@@ -191,6 +191,7 @@ class ArnoldRenderSystemPanel(RenderButtonsPanel, Panel):
             col = sublayout.column()
             col.prop(opts, "progressive_refinement")
             col.prop(opts, "initial_sampling_level")
+            col.label("Viewport Rendering", icon='SETTINGS')
             col.prop(opts, "ipr_bucket_size")
 
         sublayout = _subpanel(layout, "Search paths", opts.ui_paths, opts_path, "ui_paths", "scene")

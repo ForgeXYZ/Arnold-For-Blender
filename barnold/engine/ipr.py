@@ -4,8 +4,8 @@ __author__ = "Ildar Nikolaev"
 __email__ = "nildar@users.sourceforge.net"
 
 import sys
-import ctypes
 import numpy
+import mmap
 
 ABORT = 1
 UPDATE = 2
@@ -23,11 +23,12 @@ def ipr():
             mod = ModuleType("__main__")
             mod.__file__ = __file__
 
-            mod.engine = weakref.ref(engine)
+            mod._engine_ = weakref.ref(engine)
             mod._data_ = data
             mod._width_ = width
             mod._height_ = height
-            mod._tiles_ = None
+            mod._mmap_size_ = None
+            mod._mmap_ = None
 
             sys.modules["__main__"] = mod
             exec(code, mod.__dict__)
@@ -38,10 +39,11 @@ def ipr():
     return _exec
 
 
-def _worker(data, new_data, redraw_event, tiles, state):
+def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
     print("+++ _worker: started")
 
     import os
+    import ctypes
 
     dir = os.path.dirname(__file__)
     if dir not in sys.path:
@@ -50,7 +52,8 @@ def _worker(data, new_data, redraw_event, tiles, state):
     import arnold
 
     nodes = {}
-    links = []
+    nptrs = []  # nodes linked by AiNodeSetPtr
+    links = []  # nodes linked by AiNodeLink
 
     def _AiNodeSetArray(node, param, value):
         t, a = value
@@ -83,10 +86,10 @@ def _worker(data, new_data, redraw_event, tiles, state):
         'RGBA': lambda n, p, v: arnold.AiNodeSetRGBA(n, p, *v),
         'VECTOR': lambda n, p, v: arnold.AiNodeSetVec(n, p, *v),
         'STRING': lambda n, p, v: arnold.AiNodeSetStr(n, p, v),
-        'NODE': lambda n, p, v: arnold.AiNodeSetPtr(n, p, nodes[v]),
         'MATRIX': lambda n, p, v: arnold.AiNodeSetMatrix(n, p, arnold.AtMatrix(*v)),
         'ARRAY': _AiNodeSetArray,
         'LINK': lambda n, p, v: links.append((n, p, v)),
+        'NODE': lambda n, p, v: nptrs.append((n, p, v)),
     }
 
     arnold.AiBegin()
@@ -97,52 +100,52 @@ def _worker(data, new_data, redraw_event, tiles, state):
         #from pprint import pprint as pp
         #pp(data)
 
-        for ntype, params in data['nodes']:
-            node = arnold.AiNode(ntype)
-            for n, (t, v) in params.items():
-                _AiNodeSet[t](node, n, v)
-            nodes[params['name'][1]] = node
-
+        ## Nodes
+        for node in data['nodes']:
+            nt, np = node
+            anode = arnold.AiNode(nt)
+            for n, (t, v) in np.items():
+                _AiNodeSet[t](anode, n, v)
+            nodes[id(node)] = anode
         options = arnold.AiUniverseGetOptions()
         for n, (t, v) in data['options'].items():
             _AiNodeSet[t](options, n, v)
-
+        for n, p, v in nptrs:
+            arnold.AiNodeSetPtr(n, p, nodes[id(v)])
         for n, p, v in links:
-            arnold.AiNodeLink(nodes[v], p, n)
+            arnold.AiNodeLink(nodes[id(v)], p, n)
+        del nodes, nptrs, links, data
 
+        ## Outputs
         filter = arnold.AiNode("gaussian_filter")
-        arnold.AiNodeSetStr(filter, "name", "__outfilter")
-
+        arnold.AiNodeSetStr(filter, "name", "__filter")
         driver = arnold.AiNode("driver_display")
-        arnold.AiNodeSetStr(driver, "name", "__outdriver")
+        arnold.AiNodeSetStr(driver, "name", "__driver")
         arnold.AiNodeSetBool(driver, "rgba_packing", False)
-
         outputs_aovs = (
-            b"RGBA RGBA __outfilter __outdriver",
+            b"RGBA RGBA __filter __driver",
         )
         outputs = arnold.AiArray(len(outputs_aovs), 1, arnold.AI_TYPE_STRING, *outputs_aovs)
         arnold.AiNodeSetArray(options, "outputs", outputs)
 
-        print("+++ _callback:", tiles)
-        _width, _height, t = tiles
-        import mmap
-        t = mmap.mmap(-1, _width * _height * 4 * 4, t)
-        _tiles = numpy.frombuffer(t, dtype=numpy.float32).reshape([_width, _height, 4])
-        #_tiles = numpy.asarray(t).reshape([_height, _width, 4])
+        _rect = lambda n, w, h: numpy.frombuffer(
+            mmap.mmap(-1, w * h * 4 * 4, n), dtype=numpy.float32
+        ).reshape([h, w, 4])
+        rect = _rect(mmap_name, *mmap_size)
 
         def _callback(x, y, width, height, buffer, data):
             #print("+++ _callback:", x, y, width, height, ctypes.cast(buffer, ctypes.c_void_p))
             if buffer:
                 try:
-                    if not state.value and new_data.empty():
+                    if new_data.empty():
                         _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
-                        tile = numpy.ctypeslib.as_array(_buffer, shape=(height, width, 4))
-                        _tiles[y : y + height, x : x + width] = tile
+                        a = numpy.ctypeslib.as_array(_buffer, shape=(height, width, 4))
+                        rect[y : y + height, x : x + width] = a
                         redraw_event.set()
                         return
                 finally:
                     arnold.AiFree(buffer)
-            elif not state.value and new_data.empty():
+            elif new_data.empty():
                 return
             arnold.AiRenderAbort()
 
@@ -154,32 +157,29 @@ def _worker(data, new_data, redraw_event, tiles, state):
                 arnold.AiNodeSetInt(options, "AA_samples", sl)
                 res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
                 if res != arnold.AI_SUCCESS:
+                    # TODO: clear new_data, process may hangs
                     break
 
-            while True:
-                try:
-                    _data = new_data.get(timeout=1)
-                    #print(">>> worker (data):", _data)
-                    if new_data.empty():
-                        if _data is not None:
-                            _nodes = _data.get('nodes')
-                            if _nodes is not None:
-                                for name, params in _nodes.items():
-                                    node = arnold.AiNodeLookUpByName(name)
-                                    for n, (t, v) in params.items():
-                                        _AiNodeSet[t](node, n, v)
-                            opts = _data.get('options')
-                            if opts is not None:
-                                for n, (t, v) in opts.items():
-                                    _AiNodeSet[t](options, n, v)
-                            tiles = _data.get('tiles')
-                            if tiles is not None:
-                                _width, _height, t = tiles
-                                _tiles = numpy.asarray(t).reshape([_height, _width, 4])
-                        break
-                except:
-                    #print("+++ worker: data empty")
-                    pass
+            data = {}
+            _data = new_data.get()
+            while _data is not None:
+                data.update(_data)
+                if new_data.empty():
+                    _nodes = data.get('nodes')
+                    if _nodes is not None:
+                        for name, params in _nodes.items():
+                            node = arnold.AiNodeLookUpByName(name)
+                            for n, (t, v) in params.items():
+                                _AiNodeSet[t](node, n, v)
+                    opts = data.get('options')
+                    if opts is not None:
+                        for n, (t, v) in opts.items():
+                            _AiNodeSet[t](options, n, v)
+                    size = data.get('mmap_size')
+                    if size is not None:
+                        rect = _rect(mmap_name, *size)
+                    break
+                _data = new_data.get()
     finally:
         arnold.AiEnd()
     print("+++ _worker: finished")
@@ -188,7 +188,6 @@ def _worker(data, new_data, redraw_event, tiles, state):
 def _main():
     import multiprocessing as _mp
     import threading
-    import mmap
 
     import bpy
     _mp.set_executable(bpy.app.binary_path_python)
@@ -197,20 +196,23 @@ def _main():
     #logger = _mp.log_to_stderr()
     #logger.setLevel(logging.INFO)
 
+    global _engine_, _data_, _width_, _height_, _mmap_size_, _mmap_
+
+    _mmap_name = "blender/barnold/ipr/pid-%d" % id(_engine_)
+    _mmap_ = mmap.mmap(-1, 64 * 1024 * 1024, _mmap_name)  # 64Mb
+
     state = _mp.Value('i', 0)
     redraw_event = _mp.Event()
 
     def tag_redraw():
         while redraw_event.wait() and state.value != ABORT:
             redraw_event.clear()
-            e = engine()
+            e = _engine_()
             if e is not None:
                 e.tag_redraw()
             del e
 
-    global _data_, _width_, _height_, _tiles_
-
-    def _tiles(opts):
+    def _mmap_size(opts):
         m = max(_width_, _height_)
         if m > 300:
             c = 900 / (m + 600)
@@ -221,16 +223,17 @@ def _main():
             h = _height_
         opts['xres'] = ('INT', w)
         opts['yres'] = ('INT', h)
-        #t = _mp.sharedctypes.RawArray('f', w * h * 4)#, lock=False)
-        n = "barnold-ipr-%d" % _mp.current_process().pid
-        t = mmap.mmap(-1, w * h * 4 * 4, n)
-        return w, h, n
 
-    _tiles_ = _tiles(_data_['options'])
+        global _mmap_
+        _mmap_ = mmap.mmap(-1, w * h * 4 * 4, _mmap_name)
+
+        return w, h
+
+    _mmap_size_ = _mmap_size(_data_['options'])
     new_data = _mp.Queue()
 
     def update(width, height, view_matrix):
-        global _width_, _height_, _tiles_
+        global _width_, _height_, _mmap_size_, _mmap_
 
         data = {}
 
@@ -238,8 +241,8 @@ def _main():
             opts = {}
             _width_ = width
             _height_ = height
-            _tiles_ = _tiles(opts)
-            data['tiles'] = _tiles_
+            _mmap_size_ = _mmap_size(opts)
+            data['mmap_size'] = _mmap_size_
             data['options'] =  opts
 
         if _view_matrix != view_matrix:
@@ -252,12 +255,12 @@ def _main():
 
         if data:
             new_data.put(data)
-        w, h, t = _tiles_
-        return w, h, mmap.mmap(-1, w * h * 4 * 4, t)
+
+        return _mmap_size_, numpy.frombuffer(_mmap_, dtype=numpy.float32)
 
     redraw_thread = threading.Thread(target=tag_redraw)
     process = _mp.Process(target=_worker, args=(
-        _data_, new_data, redraw_event, _tiles_, state
+        _data_, new_data, redraw_event, _mmap_size_, _mmap_name, state
     ))
 
     def stop():
@@ -274,7 +277,8 @@ def _main():
         print(">>> stop (5):", process)
         process.join(5)
         print(">>> stop (6):", process)
-        process.terminate()
+        if process.is_alive():
+            process.terminate()
         print(">>> stop (7):", process)
 
     redraw_thread.start()
