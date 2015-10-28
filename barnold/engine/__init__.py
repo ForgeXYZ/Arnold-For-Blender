@@ -621,30 +621,30 @@ def _export(data, scene, camera, xres, yres, session=None):
     if camera:
         name = "C::" + _RN.sub("_", camera.name)
         mw = camera.matrix_world
-        cd = camera.data
-        cp = cd.arnold
+        cdata = camera.data
+        cp = cdata.arnold
         node = arnold.AiNode("persp_camera")
         arnold.AiNodeSetStr(node, "name", name)
         arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(mw))
-        if cd.sensor_fit == 'VERTICAL':
-            sw = cd.sensor_height * xres / yres * aspect_x / aspect_y
+        if cdata.sensor_fit == 'VERTICAL':
+            sw = cdata.sensor_height * xres / yres * aspect_x / aspect_y
         else:
-            sw = cd.sensor_width
-            if cd.sensor_fit == 'AUTO':
+            sw = cdata.sensor_width
+            if cdata.sensor_fit == 'AUTO':
                 x = xres * aspect_x
                 y = xres * aspect_y
                 if x < y:
                     sw *= x / y
-        fov = math.degrees(2 * math.atan(sw / (2 * cd.lens)))
+        fov = math.degrees(2 * math.atan(sw / (2 * cdata.lens)))
         arnold.AiNodeSetFlt(node, "fov", fov)
-        if cd.dof_object:
+        if cdata.dof_object:
             dof = geometry.distance_point_to_plane(
                 mw.to_translation(),
-                cd.dof_object.matrix_world.to_translation(),
+                cdata.dof_object.matrix_world.to_translation(),
                 mw.col[2][:3]
             )
         else:
-           dof = cd.dof_distance
+           dof = cdata.dof_distance
         arnold.AiNodeSetFlt(node, "focus_distance", dof)
         if cp.enable_dof:
             arnold.AiNodeSetFlt(node, "aperture_size", cp.aperture_size)
@@ -652,8 +652,8 @@ def _export(data, scene, camera, xres, yres, session=None):
             arnold.AiNodeSetFlt(node, "aperture_rotation", cp.aperture_rotation)
             arnold.AiNodeSetFlt(node, "aperture_blade_curvature", cp.aperture_blade_curvature)
             arnold.AiNodeSetFlt(node, "aperture_aspect_ratio", cp.aperture_aspect_ratio)
-        arnold.AiNodeSetFlt(node, "near_clip", cd.clip_start)
-        arnold.AiNodeSetFlt(node, "far_clip", cd.clip_end)
+        arnold.AiNodeSetFlt(node, "near_clip", cdata.clip_start)
+        arnold.AiNodeSetFlt(node, "far_clip", cdata.clip_end)
         arnold.AiNodeSetFlt(node, "shutter_start", cp.shutter_start)
         arnold.AiNodeSetFlt(node, "shutter_end", cp.shutter_end)
         arnold.AiNodeSetStr(node, "shutter_type", cp.shutter_type)
@@ -688,7 +688,7 @@ def _export(data, scene, camera, xres, yres, session=None):
     ## outputs
     sft = opts.sample_filter_type
     filter = arnold.AiNode(sft)
-    arnold.AiNodeSetStr(filter, "name", "__outfilter")
+    arnold.AiNodeSetStr(filter, "name", "__filter")
     if sft == 'blackman_harris_filter':
         arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_bh_width)
     elif sft == 'sinc_filter':
@@ -709,10 +709,9 @@ def _export(data, scene, camera, xres, yres, session=None):
         arnold.AiNodeSetBool(filter, "scalar_mode", opts.sample_filter_scalar_mode)
 
     display = arnold.AiNode("driver_display")
-    arnold.AiNodeSetStr(display, "name", "__outdriver")
+    arnold.AiNodeSetStr(display, "name", "__driver")
     arnold.AiNodeSetFlt(display, "gamma", opts.display_gamma)
     arnold.AiNodeSetBool(display, "rgba_packing", False)
-    #arnold.AiNodeSetBool(display, "dither", True)
 
     # TODO: unusable, camera flipped (top to buttom) for tiles hightlighting
     #png = arnold.AiNode("driver_png")
@@ -720,8 +719,8 @@ def _export(data, scene, camera, xres, yres, session=None):
     #arnold.AiNodeSetStr(png, "filename", render.frame_path())
 
     outputs_aovs = (
-        b"RGBA RGBA __outfilter __outdriver",
-        #b"RGBA RGBA __outfilter __png"
+        b"RGBA RGBA __filter __driver",
+        #b"RGBA RGBA __filter __png"
     )
     outputs = arnold.AiArray(len(outputs_aovs), 1, arnold.AI_TYPE_STRING, *outputs_aovs)
     arnold.AiNodeSetArray(options, "outputs", outputs)
@@ -900,37 +899,25 @@ def view_update(engine, context):
                             #'smoothing': ('BOOL', True),
                         }))
 
+            #####################################
+            ## camera
             view_matrix = rv3d.view_matrix.copy()
-            view_perspective = rv3d.view_perspective
-            if view_perspective == 'CAMERA':
-                cdata = v3d.camera.data
-                #if cd.sensor_fit == 'VERTICAL':
-                #    sw = cd.sensor_height * xres / yres * aspect_x / aspect_y
-                #else:
-                #    sw = cd.sensor_width
-                #    if cd.sensor_fit == 'AUTO':
-                #        x = xres * aspect_x
-                #        y = xres * aspect_y
-                #        if x < y:
-                #            sw *= x / y
-                zoom = 4 / ((_SQRT2 + rv3d.view_camera_zoom / 50.0) ** 2.0)
-                sensor_width = cdata.sensor_width * zoom
-                lens = cdata.lens
-                camera_data = (rv3d.view_camera_zoom, cdata.sensor_width, lens)
-            elif view_perspective == 'PERSP':
-                sensor_width = 64.0
-                lens = v3d.lens
-                camera_data = (lens, )
-            else:
-                # TODO: orpho
-                pass
-            camera = ('persp_camera', {
+            _camera = {
                 'name': ('STRING', '__camera'),
                 'matrix': ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), -1)),
-                'fov': ('FLOAT', math.degrees(2 * math.atan(sensor_width / (2 * lens))))
-            })
+            }
+            view_perspective = rv3d.view_perspective
+            if view_perspective == 'CAMERA':
+                camera_data = _view_update_camera(region.width / region.height, v3d, rv3d, _camera)
+            elif view_perspective == 'PERSP':
+                camera_data = _view_update_persp(v3d, _camera)
+            else:  # view_perspective == 'PERSP'
+                pass
+            camera = ('persp_camera', _camera)
             nodes.append(camera)
 
+            #####################################
+            ## options
             opts = scene.arnold
             options = {
                 'camera': ('NODE', camera),
@@ -990,6 +977,8 @@ def view_update(engine, context):
                 'GI_refraction_samples': ('INT', opts.GI_refraction_samples),
             }
 
+            #####################################
+            ## world
             world = scene.world
             if world and world.use_nodes:
                 for _node in world.node_tree.nodes:
@@ -1022,7 +1011,7 @@ def view_update(engine, context):
 
 
 def view_draw(engine, context):
-    print(">>> view_draw [%f]:" % time.clock(), engine)
+    #print(">>> view_draw [%f]:" % time.clock(), engine)
     try:
         region = context.region
         v3d = context.space_data
@@ -1043,40 +1032,29 @@ def view_draw(engine, context):
         if view_perspective != ipr.view_perspective:
             ipr.view_perspective = view_perspective
             if view_perspective == 'CAMERA':
-                cdata = v3d.camera.data
-                # TODO: sensor fit and camera shift
-                zoom = 4 / ((_SQRT2 + rv3d.view_camera_zoom / 50.0) ** 2.0)
-                sensor_width = cdata.sensor_width * zoom
-                lens = cdata.lens
-                ipr.camera_data = (rv3d.view_camera_zoom, cdata.sensor_width, lens)
+                ipr.camera_data = _view_update_camera(region.width / region.height, v3d, rv3d, _camera)
             elif view_perspective == 'PERSP':
-                sensor_width = 64.0
-                lens = v3d.lens
-                ipr.camera_data = (lens, )
+                ipr.camera_data = _view_update_persp(v3d, _camera)
             else:
                 # TODO: orpho
                 return
-            _camera['fov'] = ('FLOAT', math.degrees(2 * math.atan(sensor_width / (2 * lens))))
         elif view_perspective == 'CAMERA':
             cdata = v3d.camera.data
-            view_camera_zoom = rv3d.view_camera_zoom
-            sensor_width = cdata.sensor_width
-            lens = cdata.lens
-            camera_data = (view_camera_zoom, sensor_width, lens)
+            fit = cdata.sensor_fit
+            sensor = cdata.sensor_height if fit == 'VERTICAL' else cdata.sensor_width
+            offset_x, offset_y = rv3d.view_camera_offset
+            camera_data = (rv3d.view_camera_zoom, fit, sensor, cdata.lens,
+                           offset_x, offset_y, cdata.shift_x, cdata.shift_y)
             if camera_data != ipr.camera_data:
-                # TODO: sensor fit and camera shift
-                sensor_width *= 4 / ((_SQRT2 + rv3d.view_camera_zoom / 50.0) ** 2.0)
-                _camera['fov'] = ('FLOAT', math.degrees(2 * math.atan(sensor_width / (2 * lens))))
-                ipr.camera_data = camera_data
+                ipr.camera_data = _view_update_camera(region.width / region.height, v3d, rv3d, _camera)
         elif view_perspective == 'PERSP':
             lens = v3d.lens
-            _lens, = ipr.camera_data
-            if lens != _lens:
+            if lens != ipr.camera_data[0]:
                 _camera['fov'] = ('FLOAT', math.degrees(2 * math.atan(64.0 / (2 * lens))))
                 ipr.camera_data = (lens, )
         else:
             # TODO: orpho
-            pass
+            return
 
         if _camera:
             data.setdefault('nodes', {})['__camera'] = _camera
@@ -1104,3 +1082,38 @@ def free(engine):
     if hasattr(engine, "_ipr"):
         engine._ipr.stop()
         del engine._ipr
+
+
+def _view_update_camera(aspect, v3d, rv3d, camera):
+    zoom = rv3d.view_camera_zoom
+    z = ((_SQRT2 + zoom / 50) ** 2) / 4
+
+    cdata = v3d.camera.data
+    fit = cdata.sensor_fit
+    if fit == 'VERTICAL':
+        sensor = cdata.sensor_height
+        _sensor = (16 * sensor / 9) / z  # sensor / (18 / 32)
+        z *= 9 / 16  # 18 / 32
+    else:
+        sensor = cdata.sensor_width
+        _sensor = sensor / z
+    lens = cdata.lens
+    camera['fov'] = ('FLOAT', math.degrees(2 * math.atan(_sensor / (2 * lens))))
+
+    offset_x, offset_y = rv3d.view_camera_offset
+    shift_x = cdata.shift_x
+    shift_y = cdata.shift_y
+    shx = 2 * z * (2 * offset_x + shift_x)
+    shy = 2 * z * (2 * offset_y + shift_y * aspect)
+    camera['screen_window_min'] = ('POINT2', (-1 + shx, -1 + shy))
+    camera['screen_window_max'] = ('POINT2', (1 + shx, 1 + shy))
+
+    return (zoom, fit, sensor, lens, offset_x, offset_y, shift_x, shift_y)
+
+
+def _view_update_persp(v3d, camera):
+    lens = v3d.lens
+    camera['fov'] = ('FLOAT', math.degrees(2 * math.atan(64.0 / (2 * lens))))
+    camera['screen_window_min'] = ('POINT2', (-1, -1))
+    camera['screen_window_max'] = ('POINT2', (1, 1))
+    return (lens, )

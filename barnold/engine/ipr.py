@@ -140,7 +140,8 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
             #print("+++ _callback:", x, y, width, height, ctypes.cast(buffer, ctypes.c_void_p))
             if buffer:
                 try:
-                    if new_data.empty():
+                    if not new_data.poll():
+                        #print("+++ _callback: tile", x, y, width, height)
                         _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
                         a = numpy.ctypeslib.as_array(_buffer, shape=(height, width, 4))
                         rect[y : y + height, x : x + width] = a
@@ -148,9 +149,10 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
                         return
                 finally:
                     arnold.AiFree(buffer)
-            elif new_data.empty():
+            elif not new_data.poll():
                 return
             arnold.AiRenderAbort()
+            #print("+++ _callback: abort")
 
         cb = arnold.AtDisplayCallBack(_callback)
         arnold.AiNodeSetPtr(driver, "callback", cb)
@@ -164,18 +166,25 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
                         self[k] = u[k]
                 return self
 
+
         while state.value != ABORT:
             for _sl in range(*sl):
                 arnold.AiNodeSetInt(options, "AA_samples", _sl)
                 res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
                 if res != arnold.AI_SUCCESS:
                     break
+            if state.value == ABORT:
+                #print("+++ _worker: abort")
+                break;
 
             data = _Dict()
-            _data = new_data.get()
+            _data = new_data.recv()
             while _data is not None:
+                #from pprint import pprint as pp
+                #print("+++ _worker: data")
+                #pp(_data)
                 data.update(_data)
-                if new_data.empty():
+                if not new_data.poll():
                     _nodes = data.get('nodes')
                     if _nodes is not None:
                         for name, params in _nodes.items():
@@ -190,10 +199,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
                     if size is not None:
                         rect = _rect(mmap_name, *size)
                     break
-                _data = new_data.get()
-        # clean queue to prevent hangs
-        while not new_data.empty():
-            new_data.get()
+                _data = new_data.recv()
     finally:
         arnold.AiEnd()
     print("+++ _worker: finished")
@@ -202,6 +208,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
 def _main():
     import multiprocessing as _mp
     import threading
+    import time
 
     import bpy
     _mp.set_executable(bpy.app.binary_path_python)
@@ -242,44 +249,42 @@ def _main():
         return w, h
 
     _mmap_size_ = _mmap_size(_data_['options'])
-    new_data = _mp.Queue()
+    pout, pin = _mp.Pipe(False)
 
     def update(width, height, data):
         global _width_, _height_, _mmap_size_
         if _width_ != width or _height_ != height:
-            opts = {}
             _width_ = width
             _height_ = height
-            _mmap_size_ = _mmap_size(opts)
-            data.update({'options': opts})
+            _mmap_size_ = _mmap_size(data.setdefault('options', {}))
             data['mmap_size'] = _mmap_size_
         if data:
-            new_data.put(data)
+            #print(">>> update [%f]" % time.clock())
+            pin.send(data)
         return _mmap_size_, numpy.frombuffer(_mmap_, dtype=numpy.float32)
 
     redraw_thread = threading.Thread(target=tag_redraw)
     process = _mp.Process(target=_worker, args=(
-        _data_, new_data, redraw_event, _mmap_size_, _mmap_name, state
+        _data_, pout, redraw_event, _mmap_size_, _mmap_name, state
     ))
 
     def stop():
-        print(">>> stop (1): started")
+        print(">>> stop [%f]: ABORT" % time.clock())
         state.value = ABORT
-        print(">>> stop (2): ABORT")
-        new_data.put(None)
-        new_data.close()
-        print(">>> stop (2): data")
+        print(">>> stop [%f]: close data" % time.clock())
+        pin.send(None)
+        pin.close()
+        print(">>> stop [%f]: set event" % time.clock())
         redraw_event.set()
-        print(">>> stop (3):", redraw_thread)
+        print(">>> stop [%f]: join" % time.clock(), redraw_thread)
         redraw_thread.join()
-        print(">>> stop (4):", redraw_thread)
-        print(">>> stop (5):", process)
+        print(">>> stop [%f]:" % time.clock(), redraw_thread)
+        print(">>> stop [%f]: join" % time.clock(), process)
         process.join(5)
-        print(">>> stop (6):", process)
         if process.is_alive():
-            print(">>> stop (7):", process)
+            print(">>> stop [%f]: terminate" % time.clock(), process)
             process.terminate()
-        print(">>> stop (8):", process)
+        print(">>> stop [%f]:" % time.clock(), process)
 
     redraw_thread.start()
     process.start()
