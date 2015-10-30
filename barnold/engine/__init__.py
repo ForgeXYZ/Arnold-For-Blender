@@ -352,6 +352,45 @@ def _export(data, scene, camera, xres, yres, session=None):
             arnold.AiMsgInfo(b"    skip (duplicator)")
             continue
 
+        particle_systems = [
+            m.particle_system 
+            for m in ob.modifiers
+            if m.type == 'PARTICLE_SYSTEM' and m.show_render
+        ]
+        if particle_systems:
+            use_render_emitter = False
+            for ps in particle_systems:
+                ps.set_resolution(scene, ob, 'RENDER')
+                try:
+                    pss = ps.settings
+                    if pss.use_render_emitter:
+                        use_render_emitter = True
+                    if pss.type == 'HAIR' and pss.render_type == 'PATH':
+                        pc = time.perf_counter()
+
+                        nparts = len(ps.child_particles)
+                        if nparts == 0 or pss.use_parent_particles:
+                            nparts += len(ps.particles)
+                        steps = 2 ** pss.render_step
+
+                        points = numpy.ndarray([nparts, steps, 3], dtype=numpy.float32)
+                        for i in range(nparts):
+                            for j in range(steps):
+                                points[i, j] = ps.co_hair(ob, i, j)
+
+                        arnold.AiMsgInfo(b"    hair [%d] (%f)", ctypes.c_int(nparts),
+                                         ctypes.c_double(time.perf_counter() - pc))
+                        node = arnold.AiNode("curves")
+                        points = arnold.AiArrayConvert(nparts * steps, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(points.ctypes.data))
+                        arnold.AiNodeSetUInt(node, "num_points", steps)
+                        arnold.AiNodeSetArray(node, "points", points)
+                        arnold.AiNodeSetFlt(node, "radius", 0.001)
+                        arnold.AiNodeSetStr(node, "basis", 'b-spline')  # bezier, b-spline, catmull-rom, linear
+                finally:
+                    ps.set_resolution(scene, ob, 'PREVIEW')
+            if not use_render_emitter:
+                continue
+
         if ob.type in _CT:
             modified = ob.is_modified(scene, 'RENDER')
             if not modified:
