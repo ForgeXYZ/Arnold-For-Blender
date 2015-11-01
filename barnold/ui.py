@@ -744,7 +744,8 @@ class ArnoldCurvesPanel(ParticleButtonsPanel, Panel):
         curves = pss.arnold.curves
 
         col = layout.column()
-        col.prop(curves, "radius")
+        col.prop(curves, "radius_tip")
+        col.prop(curves, "radius_root")
         col.prop(curves, "basis")
         col.prop(curves, "mode")
         col.prop(curves, "min_pixel_width")

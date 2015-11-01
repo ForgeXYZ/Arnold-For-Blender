@@ -459,31 +459,46 @@ def _export(data, scene, camera, xres, yres, session=None):
                     if pss.type == 'HAIR' and pss.render_type == 'PATH':
                         pc = time.perf_counter()
 
+                        _ps = _ParticleSystem.from_address(ps.as_pointer())
                         np = len(ps.particles)
                         nch = len(ps.child_particles)
                         steps = 2 ** pss.render_step
+                        props = pss.arnold.curves
+
+                        radius = numpy.linspace(props.radius_root, props.radius_tip, steps - 2, dtype=numpy.float32)
+
                         if nch == 0:
-                            points = numpy.ndarray([np, steps, 3], dtype=numpy.float32)
+                            points = arnold.AiArrayAllocate(np * steps, 1, arnold.AI_TYPE_POINT)
+                            p = ctypes.cast(ctypes.c_void_p(points.contents.data),
+                                            ctypes.POINTER(ctypes.c_float * 3))
+                            n = 0
                             for i in range(np):
-                                for j in range(steps):
-                                    points[i, j] = ps.co_hair(ob, i, j)
-                            points = arnold.AiArrayConvert(np * steps, 1, arnold.AI_TYPE_POINT,
-                                                           ctypes.c_void_p(points.ctypes.data))
+                                c = _ps.pathcache[i]
+                                for k in range(steps):
+                                    p[n] = c[k].co
+                                    n += 1
+                            radius = numpy.tile(radius, np)
+                            radius = arnold.AiArrayConvert(np * (steps - 2), 1, arnold.AI_TYPE_FLOAT,
+                                                           ctypes.c_void_p(radius.ctypes.data))
                         elif pss.use_parent_particles:
-                            points = numpy.ndarray([np + nch, steps, 3], dtype=numpy.float32)
-                            for i in range(np + nch):
-                                for j in range(steps):
-                                    points[i, j] = ps.co_hair(ob, i, j)
-                            points = arnold.AiArrayConvert(np + nch * steps, 1, arnold.AI_TYPE_POINT,
-                                                           ctypes.c_void_p(points.ctypes.data))
+                            points = arnold.AiArrayAllocate((np + nch) * steps, 1, arnold.AI_TYPE_POINT)
+                            p = ctypes.cast(ctypes.c_void_p(points.contents.data),
+                                            ctypes.POINTER(ctypes.c_float * 3))
+                            n = 0
+                            for i in range(np):
+                                c = _ps.pathcache[i]
+                                for k in range(steps):
+                                    p[n] = c[k].co
+                                    n += 1
+                            for i in range(nch):
+                                c = _ps.childcache[i]
+                                for k in range(steps):
+                                    p[n] = c[k].co
+                                    n += 1
+                            radius = numpy.tile(radius, np + nch)
+                            radius = arnold.AiArrayConvert((np + nch) * (steps - 2), 1, arnold.AI_TYPE_FLOAT,
+                                                           ctypes.c_void_p(radius.ctypes.data))
                         else:
-                            #points = numpy.ndarray([nch, steps, 3], dtype=numpy.float32)
-                            #for i in range(nch):
-                            #    for j in range(steps):
-                            #        points[i, j] = ps.co_hair(ob, i + np, j)
-                            #points = arnold.AiArrayConvert(nch * steps, 1, arnold.AI_TYPE_POINT,
-                            #                               ctypes.c_void_p(points.ctypes.data))
-                            _ps = _ParticleSystem.from_address(ps.as_pointer())
                             points = arnold.AiArrayAllocate(nch * steps, 1, arnold.AI_TYPE_POINT)
                             p = ctypes.cast(ctypes.c_void_p(points.contents.data),
                                             ctypes.POINTER(ctypes.c_float * 3))
@@ -493,14 +508,17 @@ def _export(data, scene, camera, xres, yres, session=None):
                                 for k in range(steps):
                                     p[n] = c[k].co
                                     n += 1
+                            radius = numpy.tile(radius, nch)
+                            radius = arnold.AiArrayConvert(nch * (steps - 2), 1, arnold.AI_TYPE_FLOAT,
+                                                           ctypes.c_void_p(radius.ctypes.data))
+
 
                         arnold.AiMsgInfo(b"    hair [%d, %d] (%f)", ctypes.c_int(np), ctypes.c_int(nch),
                                          ctypes.c_double(time.perf_counter() - pc))
-                        props = pss.arnold.curves
                         node = arnold.AiNode("curves")
                         arnold.AiNodeSetUInt(node, "num_points", steps)
                         arnold.AiNodeSetArray(node, "points", points)
-                        arnold.AiNodeSetFlt(node, "radius", props.radius)
+                        arnold.AiNodeSetArray(node, "radius", radius)
                         arnold.AiNodeSetStr(node, "basis", props.basis)
                         arnold.AiNodeSetStr(node, "mode", props.mode)
                         arnold.AiNodeSetFlt(node, "min_pixel_width", props.min_pixel_width)

@@ -1546,8 +1546,12 @@ class ArnoldShader(PropertyGroup):
 
 @ArnoldRenderEngine.register_class
 class ArnoldCurves(PropertyGroup):
-    radius = FloatProperty(
-        name="Radius",
+    radius_tip = FloatProperty(
+        name="Tip Radius",
+        default=0.0001
+    )
+    radius_root = FloatProperty(
+        name="Root Radius",
         default=0.001
     )
     basis = EnumProperty(
