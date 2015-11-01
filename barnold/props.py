@@ -10,7 +10,8 @@ from bpy.types import (
     Camera,
     Object,
     Material,
-    Lamp
+    Lamp,
+    ParticleSettings
 )
 from bpy.props import (
     PointerProperty,
@@ -1541,3 +1542,48 @@ class ArnoldShader(PropertyGroup):
     @classmethod
     def unregister(cls):
         del Material.arnold
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldCurves(PropertyGroup):
+    radius = FloatProperty(
+        name="Radius",
+        default=0.001
+    )
+    basis = EnumProperty(
+        name="Basis",
+        items=[
+            ('bezier', "Bezier", "Bezier"),
+            ('b-spline', "B-Spline", "B-Spline"),
+            ('catmull-rom', "Catmull-Rom", "Catmull-Rom"),
+            ('linear', "Linear", "Linear"),
+        ],
+        default='bezier'
+    )
+    mode = EnumProperty(
+        name="Mode",
+        items=[
+            ('ribbon', "Ribbon", "Ribbon"),
+            ('thick', "Thick", "Thick"),
+            ('oriented', "Oriented", "Oriented")
+        ],
+        default='ribbon'
+    )
+    min_pixel_width = FloatProperty(
+        name="Min. Pixel Width",
+        min=0,
+        subtype='UNSIGNED'
+    )
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldParticleSystem(PropertyGroup):
+    curves = PointerProperty(type=ArnoldCurves)
+
+    @classmethod
+    def register(cls):
+        ParticleSettings.arnold = PointerProperty(type=cls)
+
+    @classmethod
+    def unregister(cls):
+        del ParticleSettings.arnold

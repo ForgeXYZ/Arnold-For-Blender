@@ -36,6 +36,97 @@ _CT = ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT')  # convertible types
 _MR = Matrix.Rotation(math.radians(90.0), 4, 'X')
 _SQRT2 = math.sqrt(2)
 
+
+# <blender sources>\source\blender\makesdna\DNA_listBase.h:59
+class _ListBase(ctypes.Structure):
+    pass
+
+_ListBase._fields_ = [
+    ("first", ctypes.POINTER(_ListBase)),
+    ("last", ctypes.POINTER(_ListBase))
+]
+
+
+# <blender sources>\source\blender\blenkernel\BKE_particle.h:121
+class _ParticleCacheKey(ctypes.Structure):
+    _fields_ = [
+        ("co", ctypes.c_float * 3),
+        ("vel", ctypes.c_float * 3),
+        ("rot", ctypes.c_float * 4),
+        ("col", ctypes.c_float * 3),
+        ("time", ctypes.c_float),
+        ("segments", ctypes.c_int),
+    ]
+
+
+# <blender sources>\source\blender\makesdna\DNA_particle_types.h:264
+class _ParticleSystem(ctypes.Structure):
+    pass
+
+_ParticleSystem._fields_ = [
+    ("next", ctypes.POINTER(_ParticleSystem)),
+    ("prev", ctypes.POINTER(_ParticleSystem)),
+    # particle settings
+    ("part", ctypes.c_void_p),
+    # (parent) particles
+    ("particles", ctypes.c_void_p),
+    # child particles
+    ("child", ctypes.c_void_p),
+    # particle editmode (runtime)
+    ("edit", ctypes.c_void_p),
+    # free callback
+    ("free_edit", ctypes.c_void_p),
+    # path cache (runtime)
+    ("pathcache", ctypes.POINTER(ctypes.POINTER(_ParticleCacheKey))),
+    # child cache (runtime)
+    ("childcache", ctypes.POINTER(ctypes.POINTER(_ParticleCacheKey))),
+    # buffers for the above
+    ("pathcachebufs", _ListBase),
+    ("childcachebufs", _ListBase),
+    # cloth simulation for hair
+    ("clmd", ctypes.c_void_p),
+    # input/output for cloth simulation
+    ("hair_in_dm", ctypes.c_void_p),
+    ("hair_out_dm", ctypes.c_void_p),
+    #
+    ("target_ob", ctypes.c_void_p),
+    # run-time only lattice deformation data
+    ("lattice_deform_data", ctypes.c_void_p),
+    # particles from global space -> parent space
+    ("parent", ctypes.c_void_p),
+    # used for keyed and boid physics
+    ("targets", _ListBase),
+    # particle system name, MAX_NAME
+    ("name", ctypes.c_char * 64),
+    # used for duplicators
+    ("imat", ctypes.c_float * 4 * 4),
+    #
+    ("cfra", ctypes.c_float),
+    ("tree_frame", ctypes.c_float),
+    ("bvhtree_frame", ctypes.c_float),
+    ("seed", ctypes.c_int),
+    ("child_seed", ctypes.c_int),
+    ("flag", ctypes.c_int),
+    ("totpart", ctypes.c_int),
+    ("totunexist", ctypes.c_int),
+    ("totchild", ctypes.c_int),
+    ("totcached", ctypes.c_int),
+    ("totchildcache", ctypes.c_int),
+    ("recalc", ctypes.c_short),
+    ("target_psys", ctypes.c_short),
+    ("totkeyed", ctypes.c_short),
+    ("bakespace", ctypes.c_short),
+    # billboard uv name, MAX_CUSTOMDATA_LAYER_NAME
+    ("bb_uvname", ctypes.c_char * 64 * 3),
+    # vertex groups, 0==disable, 1==starting index
+    ("vgroup", ctypes.c_short * 12),
+    ("vg_neg", ctypes.c_short),
+    ("rt3", ctypes.c_short),
+    # temporary storage during render
+    ("renderdata", ctypes.c_void_p)
+]
+
+
 def _CleanNames(prefix, count):
     def fn(name):
         return "%s%d::%s" % (prefix, next(count), _RN.sub("_", name))
@@ -368,24 +459,56 @@ def _export(data, scene, camera, xres, yres, session=None):
                     if pss.type == 'HAIR' and pss.render_type == 'PATH':
                         pc = time.perf_counter()
 
-                        nparts = len(ps.child_particles)
-                        if nparts == 0 or pss.use_parent_particles:
-                            nparts += len(ps.particles)
+                        np = len(ps.particles)
+                        nch = len(ps.child_particles)
                         steps = 2 ** pss.render_step
+                        if nch == 0:
+                            points = numpy.ndarray([np, steps, 3], dtype=numpy.float32)
+                            for i in range(np):
+                                for j in range(steps):
+                                    points[i, j] = ps.co_hair(ob, i, j)
+                            points = arnold.AiArrayConvert(np * steps, 1, arnold.AI_TYPE_POINT,
+                                                           ctypes.c_void_p(points.ctypes.data))
+                        elif pss.use_parent_particles:
+                            points = numpy.ndarray([np + nch, steps, 3], dtype=numpy.float32)
+                            for i in range(np + nch):
+                                for j in range(steps):
+                                    points[i, j] = ps.co_hair(ob, i, j)
+                            points = arnold.AiArrayConvert(np + nch * steps, 1, arnold.AI_TYPE_POINT,
+                                                           ctypes.c_void_p(points.ctypes.data))
+                        else:
+                            #points = numpy.ndarray([nch, steps, 3], dtype=numpy.float32)
+                            #for i in range(nch):
+                            #    for j in range(steps):
+                            #        points[i, j] = ps.co_hair(ob, i + np, j)
+                            #points = arnold.AiArrayConvert(nch * steps, 1, arnold.AI_TYPE_POINT,
+                            #                               ctypes.c_void_p(points.ctypes.data))
+                            _ps = _ParticleSystem.from_address(ps.as_pointer())
+                            points = arnold.AiArrayAllocate(nch * steps, 1, arnold.AI_TYPE_POINT)
+                            p = ctypes.cast(ctypes.c_void_p(points.contents.data),
+                                            ctypes.POINTER(ctypes.c_float * 3))
+                            n = 0
+                            for i in range(nch):
+                                c = _ps.childcache[i]
+                                for k in range(steps):
+                                    p[n] = c[k].co
+                                    n += 1
 
-                        points = numpy.ndarray([nparts, steps, 3], dtype=numpy.float32)
-                        for i in range(nparts):
-                            for j in range(steps):
-                                points[i, j] = ps.co_hair(ob, i, j)
-
-                        arnold.AiMsgInfo(b"    hair [%d] (%f)", ctypes.c_int(nparts),
+                        arnold.AiMsgInfo(b"    hair [%d, %d] (%f)", ctypes.c_int(np), ctypes.c_int(nch),
                                          ctypes.c_double(time.perf_counter() - pc))
+                        props = pss.arnold.curves
                         node = arnold.AiNode("curves")
-                        points = arnold.AiArrayConvert(nparts * steps, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(points.ctypes.data))
                         arnold.AiNodeSetUInt(node, "num_points", steps)
                         arnold.AiNodeSetArray(node, "points", points)
-                        arnold.AiNodeSetFlt(node, "radius", 0.001)
-                        arnold.AiNodeSetStr(node, "basis", 'b-spline')  # bezier, b-spline, catmull-rom, linear
+                        arnold.AiNodeSetFlt(node, "radius", props.radius)
+                        arnold.AiNodeSetStr(node, "basis", props.basis)
+                        arnold.AiNodeSetStr(node, "mode", props.mode)
+                        arnold.AiNodeSetFlt(node, "min_pixel_width", props.min_pixel_width)
+                        # TODO: own properties (visibility, shadow, ...)
+                        slots = ob.material_slots
+                        m = pss.material
+                        if 0 < m <= len(slots):
+                            arnold.AiNodeSetPtr(node, "shader", shaders.get(slots[m - 1].material))
                 finally:
                     ps.set_resolution(scene, ob, 'PREVIEW')
             if not use_render_emitter:

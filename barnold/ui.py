@@ -716,3 +716,35 @@ class ArnoldTexturePanel(TextureButtonsPanel, Panel):
             #    layout.menu("ArnoldNodeTexturesMenu", text="* Select Node *", icon='NODE')
         elif space.texture_context == 'OTHER':
             layout.template_texture_user()
+
+##
+## Particles
+##
+
+from bl_ui.properties_particle import ParticleButtonsPanel
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldCurvesPanel(ParticleButtonsPanel, Panel):
+    COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
+    bl_label = "Arnold Curves"
+
+    @classmethod
+    def poll(cls, context):
+        if super().poll(context):
+            pss = context.particle_system.settings
+            return pss.type == 'HAIR' and pss.render_type == 'PATH'
+        return False
+
+    def draw(self, context):
+        layout = self.layout
+
+        ps = context.particle_system
+        pss = ps.settings
+        curves = pss.arnold.curves
+
+        col = layout.column()
+        col.prop(curves, "radius")
+        col.prop(curves, "basis")
+        col.prop(curves, "mode")
+        col.prop(curves, "min_pixel_width")
