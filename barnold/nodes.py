@@ -752,9 +752,9 @@ class ArnoldNodeHair(ArnoldNode):
     def ai_properties(self):
         props = {}
         if self.uparam:
-            props["uparam"] = self.uparam
+            props['uparam'] = ('STRING', self.uparam)
         if self.vparam:
-            props["vparam"] = self.vparam
+            props['vparam'] = ('STRING', self.vparam)
         return props
 
 
