@@ -463,55 +463,42 @@ def _export(data, scene, camera, xres, yres, session=None):
                         np = len(ps.particles)
                         nch = len(ps.child_particles)
                         steps = 2 ** pss.render_step
-                        props = pss.arnold.curves
 
-                        radius = numpy.linspace(props.radius_root, props.radius_tip, steps - 2, dtype=numpy.float32)
-
-                        if nch == 0:
-                            points = arnold.AiArrayAllocate(np * steps, 1, arnold.AI_TYPE_POINT)
+                        n = 0
+                        if nch == 0 or pss.use_parent_particles:
+                            tot = np + nch
+                            if tot <= 0:
+                                continue
+                            points = arnold.AiArrayAllocate(tot * steps, 1, arnold.AI_TYPE_POINT)
                             p = ctypes.cast(ctypes.c_void_p(points.contents.data),
                                             ctypes.POINTER(ctypes.c_float * 3))
-                            n = 0
                             for i in range(np):
                                 c = _ps.pathcache[i]
-                                for k in range(steps):
-                                    p[n] = c[k].co
+                                for j in range(steps):
+                                    p[n] = c[j].co
                                     n += 1
-                            radius = numpy.tile(radius, np)
-                            radius = arnold.AiArrayConvert(np * (steps - 2), 1, arnold.AI_TYPE_FLOAT,
-                                                           ctypes.c_void_p(radius.ctypes.data))
-                        elif pss.use_parent_particles:
-                            points = arnold.AiArrayAllocate((np + nch) * steps, 1, arnold.AI_TYPE_POINT)
-                            p = ctypes.cast(ctypes.c_void_p(points.contents.data),
-                                            ctypes.POINTER(ctypes.c_float * 3))
-                            n = 0
-                            for i in range(np):
-                                c = _ps.pathcache[i]
-                                for k in range(steps):
-                                    p[n] = c[k].co
-                                    n += 1
-                            for i in range(nch):
-                                c = _ps.childcache[i]
-                                for k in range(steps):
-                                    p[n] = c[k].co
-                                    n += 1
-                            radius = numpy.tile(radius, np + nch)
-                            radius = arnold.AiArrayConvert((np + nch) * (steps - 2), 1, arnold.AI_TYPE_FLOAT,
-                                                           ctypes.c_void_p(radius.ctypes.data))
-                        else:
+                        elif nch > 0:
+                            tot = nch
                             points = arnold.AiArrayAllocate(nch * steps, 1, arnold.AI_TYPE_POINT)
                             p = ctypes.cast(ctypes.c_void_p(points.contents.data),
                                             ctypes.POINTER(ctypes.c_float * 3))
-                            n = 0
-                            for i in range(nch):
-                                c = _ps.childcache[i]
-                                for k in range(steps):
-                                    p[n] = c[k].co
-                                    n += 1
-                            radius = numpy.tile(radius, nch)
-                            radius = arnold.AiArrayConvert(nch * (steps - 2), 1, arnold.AI_TYPE_FLOAT,
-                                                           ctypes.c_void_p(radius.ctypes.data))
+                        else:
+                            continue
+                        for i in range(nch):
+                            c = _ps.childcache[i]
+                            for j in range(steps):
+                                p[n] = c[j].co
+                                n += 1
 
+                        props = pss.arnold.curves
+                        radius = numpy.tile(
+                            numpy.linspace(
+                                props.radius_root, props.radius_tip, steps - 2, dtype=numpy.float32
+                            ),
+                            tot
+                        )
+                        radius = arnold.AiArrayConvert(tot * (steps - 2), 1, arnold.AI_TYPE_FLOAT,
+                                                       ctypes.c_void_p(radius.ctypes.data))
 
                         arnold.AiMsgInfo(b"    hair [%d, %d] (%f)", ctypes.c_int(np), ctypes.c_int(nch),
                                          ctypes.c_double(time.perf_counter() - pc))
