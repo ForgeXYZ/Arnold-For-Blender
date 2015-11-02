@@ -95,6 +95,39 @@ class _DerivedMesh(ctypes.Structure):
     ]
 
 
+# <blender sources>\source\blender\makesdna\DNA_particle_types.h:50
+class _ParticleKey(ctypes.Structure):
+    _fields_ = [
+        # location
+        ("co", ctypes.c_float * 3),
+        # velocity
+        ("vel", ctypes.c_float * 3),
+        # rotation quaternion
+        ("rot", ctypes.c_float * 4),
+        # angular velocity
+        ("ave", ctypes.c_float * 3),
+        # when this key happens
+        ("time", ctypes.c_float)
+    ]
+
+
+# <blender sources>\source\blender\makesdna\DNA_particle_types.h:72
+class _ChildParticle(ctypes.Structure):
+    _fields_ = [
+        # num is face index on the final derived mesh
+        ("num", ctypes.c_int),
+        ("parent", ctypes.c_int),
+        # nearest particles to the child, used for the interpolation
+        ("pa", ctypes.c_int * 4),
+        # interpolation weights for the above particles
+        ("w", ctypes.c_float * 4),
+        # face vertex weights and offset
+        ("fuv", ctypes.c_float * 4),
+        ("foffset", ctypes.c_float),
+        ("rt", ctypes.c_float)
+    ]
+
+
 # <blender sources>\source\blender\blenkernel\BKE_particle.h:121
 class _ParticleCacheKey(ctypes.Structure):
     _fields_ = [
@@ -103,7 +136,7 @@ class _ParticleCacheKey(ctypes.Structure):
         ("rot", ctypes.c_float * 4),
         ("col", ctypes.c_float * 3),
         ("time", ctypes.c_float),
-        ("segments", ctypes.c_int),
+        ("segments", ctypes.c_int)
     ]
 
 
@@ -181,7 +214,7 @@ class _ModifierData(ctypes.Structure):
 
 _ModifierData._fields_ = [
     ("next", ctypes.POINTER(_ModifierData)),
-    ("pref", ctypes.POINTER(_ModifierData)),
+    ("prev", ctypes.POINTER(_ModifierData)),
     ("type", ctypes.c_int),
     ("mode", ctypes.c_int),
     ("stackindex", ctypes.c_int),
