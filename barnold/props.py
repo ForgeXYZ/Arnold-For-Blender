@@ -191,7 +191,7 @@ class ArnoldOptions(PropertyGroup):
     )
     display_gamma = FloatProperty(
         name="Display Driver",
-        default=1 / 2.2  # TODO: inspect gamma correction
+        default=1  # / 2.2  # TODO: inspect gamma correction
     )
 
     def _get_bucket_size(self):

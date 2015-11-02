@@ -47,6 +47,54 @@ _ListBase._fields_ = [
 ]
 
 
+# <blender sources>\source\blender\makesdna\DNA_customdata_types.h:64
+class _CustomData(ctypes.Structure):
+    _fileds_ = [
+        ("layers", ctypes.c_void_p),
+        ("typemap", ctypes.c_int * 42),
+        ("pad_i1", ctypes.c_int),
+        ("totlayer", ctypes.c_int),
+        ("maxlayer", ctypes.c_int),
+        ("totsize", ctypes.c_int),
+        ("pool", ctypes.c_void_p),
+        ("external", ctypes.c_void_p)
+    ]
+
+
+# <blender sources>\source\blender\blenkernel\BKE_DerivedMesh.h:176
+class _DerivedMesh(ctypes.Structure):
+    class _LoopTris(ctypes.Structure):
+        _fields_ = [
+            ("array", ctypes.c_void_p),
+            ("num", ctypes.c_int),
+            ("num_alloc", ctypes.c_int)
+        ]
+
+    _fields_ = [
+        ("vertData", _CustomData),
+        ("edgeData", _CustomData),
+        ("faceData", _CustomData),
+        ("loopData", _CustomData),
+        ("polyData", _CustomData),
+        ("numVertData", ctypes.c_int),
+        ("numEdgeData", ctypes.c_int),
+        ("numTessFaceData", ctypes.c_int),
+        ("numLoopData", ctypes.c_int),
+        ("numPolyData", ctypes.c_int),
+        ("needsFree", ctypes.c_int),
+        ("deformedOnly", ctypes.c_int),
+        ("bvhCache", ctypes.c_void_p),
+        ("drawObject", ctypes.c_void_p),
+        ("type", ctypes.c_int),  # enum DerivedMeshType
+        ("auto_bump_scale", ctypes.c_float),
+        ("dirty", ctypes.c_int),  # enum DMDirtyFlag
+        ("totmat", ctypes.c_int),
+        ("mat", ctypes.POINTER(ctypes.c_void_p)),
+        ("looptris", _LoopTris),
+        ("cd_flag", ctypes.c_char),
+    ]
+
+
 # <blender sources>\source\blender\blenkernel\BKE_particle.h:121
 class _ParticleCacheKey(ctypes.Structure):
     _fields_ = [
@@ -125,6 +173,37 @@ _ParticleSystem._fields_ = [
     # temporary storage during render
     ("renderdata", ctypes.c_void_p)
 ]
+
+
+# <blender sources>\source\blender\makesdna\DNA_modifier_types.h:102
+class _ModifierData(ctypes.Structure):
+    pass
+
+_ModifierData._fields_ = [
+    ("next", ctypes.POINTER(_ModifierData)),
+    ("pref", ctypes.POINTER(_ModifierData)),
+    ("type", ctypes.c_int),
+    ("mode", ctypes.c_int),
+    ("stackindex", ctypes.c_int),
+    ("pad", ctypes.c_int),
+    ("name", ctypes.c_char * 64),
+    ("scene", ctypes.c_void_p),
+    ("error", ctypes.c_char_p)
+]
+
+
+# <blender sources>\source\blender\makesdna\DNA_modifier_types.h:704
+class _ParticleSystemModifierData(ctypes.Structure):
+    _fields_ = [
+        ("modifier", _ModifierData),
+        ("psys", ctypes.POINTER(_ParticleSystem)),
+        ("dm", ctypes.c_void_p),
+        ("totdmvert", ctypes.c_int),
+        ("totdmedge", ctypes.c_int),
+        ("totdmface", ctypes.c_int),
+        ("flag", ctypes.c_short),
+        ("pad", ctypes.c_short)
+    ]
 
 
 def _CleanNames(prefix, count):
@@ -500,8 +579,9 @@ def _export(data, scene, camera, xres, yres, session=None):
                         radius = arnold.AiArrayConvert(tot * (steps - 2), 1, arnold.AI_TYPE_FLOAT,
                                                        ctypes.c_void_p(radius.ctypes.data))
 
-                        arnold.AiMsgInfo(b"    hair [%d, %d] (%f)", ctypes.c_int(np), ctypes.c_int(nch),
+                        arnold.AiMsgInfo(b"    hair [%d] (%f)", ctypes.c_int(tot),
                                          ctypes.c_double(time.perf_counter() - pc))
+
                         node = arnold.AiNode("curves")
                         arnold.AiNodeSetUInt(node, "num_points", steps)
                         arnold.AiNodeSetArray(node, "points", points)
@@ -514,6 +594,14 @@ def _export(data, scene, camera, xres, yres, session=None):
                         m = pss.material
                         if 0 < m <= len(slots):
                             arnold.AiNodeSetPtr(node, "shader", shaders.get(slots[m - 1].material))
+
+                        arnold.AiNodeDeclare(node, "uparamcoord", "uniform FLOAT")
+                        arnold.AiNodeDeclare(node, "vparamcoord", "uniform FLOAT")
+                        #a1 = arnold.AiArray(2, 1, arnold.AI_TYPE_FLOAT, ctypes.c_double(0.1), ctypes.c_double(0.2))
+                        #a2 = arnold.AiArray(2, 1, arnold.AI_TYPE_FLOAT, ctypes.c_double(0.3), ctypes.c_double(0.4))
+                        #arnold.AiNodeSetArray(node, "uparamcoord", a1)
+                        #arnold.AiNodeSetArray(node, "vparamcoord", a2)
+
                 finally:
                     ps.set_resolution(scene, ob, 'PREVIEW')
             if not use_render_emitter:
