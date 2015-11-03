@@ -47,10 +47,49 @@ _ListBase._fields_ = [
 ]
 
 
+# <blender sources>\source\blender\makesdna\DNA_meshdata_types.h:41
+class _MFace(ctypes.Structure):
+    _fields_ = [
+        ("v1", ctypes.c_uint),
+        ("v2", ctypes.c_uint),
+        ("v3", ctypes.c_uint),
+        ("v4", ctypes.c_uint),
+        ("mat_nr", ctypes.c_short),
+        ("edcode", ctypes.c_char),
+        ("flag", ctypes.c_char)
+    ]
+
+
+# <blender sources>\source\blender\makesdna\DNA_customdata_types.h:42
+class _CustomDataLayer(ctypes.Structure):
+    _fields_ = [
+        # type of data in layer
+        ("type", ctypes.c_int),
+        # in editmode, offset of layer in block
+        ("offset", ctypes.c_int),
+        # general purpose flag
+        ("flag", ctypes.c_int),
+        # number of the active layer of this type
+        ("active", ctypes.c_int),
+        # number of the layer to render
+        ("active_rnd", ctypes.c_int),
+        # number of the layer to render
+        ("active_clone", ctypes.c_int),
+        # number of the layer to render
+        ("active_mask", ctypes.c_int),
+        # shape keyblock unique id reference
+        ("uid", ctypes.c_int),
+        # layer name, MAX_CUSTOMDATA_LAYER_NAME
+        ("name", ctypes.c_char * 64),
+        # layer data
+        ("data", ctypes.c_void_p)
+    ]
+
+
 # <blender sources>\source\blender\makesdna\DNA_customdata_types.h:64
 class _CustomData(ctypes.Structure):
-    _fileds_ = [
-        ("layers", ctypes.c_void_p),
+    _fields_ = [
+        ("layers", ctypes.POINTER(_CustomDataLayer)),
         ("typemap", ctypes.c_int * 42),
         ("pad_i1", ctypes.c_int),
         ("totlayer", ctypes.c_int),
@@ -61,38 +100,101 @@ class _CustomData(ctypes.Structure):
     ]
 
 
+# <blender sources>\source\blender\makesdna\DNA_customdata_types.h:77
+_CD_MTFACE = 5
+
+
 # <blender sources>\source\blender\blenkernel\BKE_DerivedMesh.h:176
 class _DerivedMesh(ctypes.Structure):
-    class _LoopTris(ctypes.Structure):
+    class LoopTris(ctypes.Structure):
         _fields_ = [
             ("array", ctypes.c_void_p),
             ("num", ctypes.c_int),
             ("num_alloc", ctypes.c_int)
         ]
 
-    _fields_ = [
-        ("vertData", _CustomData),
-        ("edgeData", _CustomData),
-        ("faceData", _CustomData),
-        ("loopData", _CustomData),
-        ("polyData", _CustomData),
-        ("numVertData", ctypes.c_int),
-        ("numEdgeData", ctypes.c_int),
-        ("numTessFaceData", ctypes.c_int),
-        ("numLoopData", ctypes.c_int),
-        ("numPolyData", ctypes.c_int),
-        ("needsFree", ctypes.c_int),
-        ("deformedOnly", ctypes.c_int),
-        ("bvhCache", ctypes.c_void_p),
-        ("drawObject", ctypes.c_void_p),
-        ("type", ctypes.c_int),  # enum DerivedMeshType
-        ("auto_bump_scale", ctypes.c_float),
-        ("dirty", ctypes.c_int),  # enum DMDirtyFlag
-        ("totmat", ctypes.c_int),
-        ("mat", ctypes.POINTER(ctypes.c_void_p)),
-        ("looptris", _LoopTris),
-        ("cd_flag", ctypes.c_char),
-    ]
+_DerivedMesh._fields_ = [
+    ("vertData", _CustomData),
+    ("edgeData", _CustomData),
+    ("faceData", _CustomData),
+    ("loopData", _CustomData),
+    ("polyData", _CustomData),
+
+    ("numVertData", ctypes.c_int),
+    ("numEdgeData", ctypes.c_int),
+    ("numTessFaceData", ctypes.c_int),
+    ("numLoopData", ctypes.c_int),
+    ("numPolyData", ctypes.c_int),
+
+    ("needsFree", ctypes.c_int),
+    ("deformedOnly", ctypes.c_int),
+    ("bvhCache", ctypes.c_void_p),
+    ("drawObject", ctypes.c_void_p),
+    ("type", ctypes.c_int),  # enum DerivedMeshType
+    ("auto_bump_scale", ctypes.c_float),
+    ("dirty", ctypes.c_int),  # enum DMDirtyFlag
+    ("totmat", ctypes.c_int),
+    ("mat", ctypes.POINTER(ctypes.c_void_p)),
+    
+    ("looptris", _DerivedMesh.LoopTris),
+    ("cd_flag", ctypes.c_char),
+
+    # Calculate vert and face normals
+    # void (*calcNormals)(DerivedMesh *dm);
+    ("calcNormals", ctypes.c_void_p),
+    # Calculate loop (split) normals
+    # void (*calcLoopNormals)(DerivedMesh *dm, const bool use_split_normals, const float split_angle);
+    ("calcLoopNormals", ctypes.c_void_p),
+    # Calculate loop (split) normals, and returns split loop normal spacearr
+    # void (*calcLoopNormalsSpaceArray)(DerivedMesh *dm, const bool use_split_normals, const float split_angle,
+    #                                   struct MLoopNorSpaceArray *r_lnors_spacearr);
+    ("calcLoopNormalsSpaceArray", ctypes.c_void_p),
+    # void (*calcLoopTangents)(DerivedMesh *dm);
+    ("calcLoopTangents", ctypes.c_void_p),
+    # Recalculates mesh tessellation
+    # void (*recalcTessellation)(DerivedMesh *dm);
+    ("recalcTessellation", ctypes.CFUNCTYPE(None, ctypes.POINTER(_DerivedMesh))),
+
+    # Loop tessellation cache
+    # void (*recalcLoopTri)(DerivedMesh *dm);
+    ("recalcLoopTri", ctypes.c_void_p),
+    # accessor functions
+    # const struct MLoopTri *(*getLoopTriArray)(DerivedMesh * dm);
+    ("getLoopTriArray", ctypes.c_void_p),
+    # int (*getNumLoopTri)(DerivedMesh *dm);
+    ("getNumLoopTri", ctypes.c_void_p),
+
+    # int (*getNumVerts)(DerivedMesh *dm);
+    ("getNumVerts", ctypes.c_void_p),
+    # int (*getNumEdges)(DerivedMesh *dm);
+    ("getNumEdges", ctypes.c_void_p),
+    # int (*getNumTessFaces)(DerivedMesh *dm);
+    ("getNumTessFaces", ctypes.c_void_p),
+    # int (*getNumLoops)(DerivedMesh *dm);
+    ("getNumLoops", ctypes.c_void_p),
+    # int (*getNumPolys)(DerivedMesh *dm);
+    ("getNumPolys", ctypes.c_void_p),
+
+    # void (*getVert)(DerivedMesh *dm, int index, struct MVert *r_vert);
+    ("getVert", ctypes.c_void_p),
+    # void (*getEdge)(DerivedMesh *dm, int index, struct MEdge *r_edge);
+    ("getEdge", ctypes.c_void_p),
+    # void (*getTessFace)(DerivedMesh *dm, int index, struct MFace *r_face);
+    ("getTessFace", ctypes.c_void_p),
+
+    # struct MVert *(*getVertArray)(DerivedMesh * dm);
+    ("getVertArray", ctypes.c_void_p),
+    # struct MEdge *(*getEdgeArray)(DerivedMesh * dm);
+    ("getEdgeArray", ctypes.c_void_p),
+    # struct MFace *(*getTessFaceArray)(DerivedMesh * dm);
+    ("getTessFaceArray", ctypes.CFUNCTYPE(ctypes.POINTER(_MFace), ctypes.POINTER(_DerivedMesh))),
+    # struct MLoop *(*getLoopArray)(DerivedMesh * dm);
+    ("getLoopArray", ctypes.c_void_p),
+    # struct MPoly *(*getPolyArray)(DerivedMesh * dm);
+    ("getPolyArray", ctypes.c_void_p),
+
+    # ...
+]
 
 
 # <blender sources>\source\blender\makesdna\DNA_particle_types.h:50
@@ -136,7 +238,7 @@ class _ParticleCacheKey(ctypes.Structure):
         ("rot", ctypes.c_float * 4),
         ("col", ctypes.c_float * 3),
         ("time", ctypes.c_float),
-        ("segments", ctypes.c_int)
+        ("segments", ctypes.c_int),
     ]
 
 
@@ -230,7 +332,7 @@ class _ParticleSystemModifierData(ctypes.Structure):
     _fields_ = [
         ("modifier", _ModifierData),
         ("psys", ctypes.POINTER(_ParticleSystem)),
-        ("dm", ctypes.c_void_p),
+        ("dm", ctypes.POINTER(_DerivedMesh)),
         ("totdmvert", ctypes.c_int),
         ("totdmedge", ctypes.c_int),
         ("totdmface", ctypes.c_int),
@@ -556,13 +658,12 @@ def _export(data, scene, camera, xres, yres, session=None):
             continue
 
         particle_systems = [
-            m.particle_system 
-            for m in ob.modifiers
+            (m, m.particle_system ) for m in ob.modifiers
             if m.type == 'PARTICLE_SYSTEM' and m.show_render
         ]
         if particle_systems:
             use_render_emitter = False
-            for ps in particle_systems:
+            for mod, ps in particle_systems:
                 ps.set_resolution(scene, ob, 'RENDER')
                 try:
                     pss = ps.settings
