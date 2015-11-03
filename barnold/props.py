@@ -1578,6 +1578,9 @@ class ArnoldCurves(PropertyGroup):
         min=0,
         subtype='UNSIGNED'
     )
+    uvmap = StringProperty(
+        name="UV Map"
+    )
 
 
 @ArnoldRenderEngine.register_class

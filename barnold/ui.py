@@ -749,3 +749,4 @@ class ArnoldCurvesPanel(ParticleButtonsPanel, Panel):
         col.prop(curves, "basis")
         col.prop(curves, "mode")
         col.prop(curves, "min_pixel_width")
+        col.prop_search(curves, "uvmap", context.object.data, "uv_textures")

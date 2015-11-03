@@ -672,7 +672,10 @@ def _export(data, scene, camera, xres, yres, session=None):
                     if pss.type == 'HAIR' and pss.render_type == 'PATH':
                         pc = time.perf_counter()
 
-                        _ps = _ParticleSystem.from_address(ps.as_pointer())
+                        _mod = _ParticleSystemModifierData.from_address(mod.as_pointer())
+                        #_ps = _ParticleSystem.from_address(ps.as_pointer())
+                        _ps = _mod.psys.contents
+
                         np = len(ps.particles)
                         nch = len(ps.child_particles)
                         steps = 2 ** pss.render_step
@@ -692,7 +695,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                                     n += 1
                         elif nch > 0:
                             tot = nch
-                            points = arnold.AiArrayAllocate(nch * steps, 1, arnold.AI_TYPE_POINT)
+                            points = arnold.AiArrayAllocate(tot * steps, 1, arnold.AI_TYPE_POINT)
                             p = ctypes.cast(ctypes.c_void_p(points.contents.data),
                                             ctypes.POINTER(ctypes.c_float * 3))
                         else:
@@ -713,7 +716,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                         radius = arnold.AiArrayConvert(tot * (steps - 2), 1, arnold.AI_TYPE_FLOAT,
                                                        ctypes.c_void_p(radius.ctypes.data))
 
-                        arnold.AiMsgInfo(b"    hair [%d] (%f)", ctypes.c_int(tot),
+                        arnold.AiMsgInfo(b"    hair [%dx%d] (%f)", ctypes.c_int(steps), ctypes.c_int(tot),
                                          ctypes.c_double(time.perf_counter() - pc))
 
                         node = arnold.AiNode("curves")
@@ -729,12 +732,47 @@ def _export(data, scene, camera, xres, yres, session=None):
                         if 0 < m <= len(slots):
                             arnold.AiNodeSetPtr(node, "shader", shaders.get(slots[m - 1].material))
 
-                        arnold.AiNodeDeclare(node, "uparamcoord", "uniform FLOAT")
-                        arnold.AiNodeDeclare(node, "vparamcoord", "uniform FLOAT")
-                        #a1 = arnold.AiArray(2, 1, arnold.AI_TYPE_FLOAT, ctypes.c_double(0.1), ctypes.c_double(0.2))
-                        #a2 = arnold.AiArray(2, 1, arnold.AI_TYPE_FLOAT, ctypes.c_double(0.3), ctypes.c_double(0.4))
-                        #arnold.AiNodeSetArray(node, "uparamcoord", a1)
-                        #arnold.AiNodeSetArray(node, "vparamcoord", a2)
+                        if props.uvmap:
+                            uv_no = ob.data.uv_layers.find(props.uvmap)
+                            if uv_no >= 0:
+                                pc = time.perf_counter()
+
+                                if nch == 0 or pss.use_parent_particles:
+                                    tot = np + nch
+                                    uparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
+                                    vparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
+                                    for i, p in enumerate(ps.particles):
+                                        uv = ps.uv_on_emitter(mod, p, i, uv_no)
+                                        arnold.AiArraySetFlt(uparam, i, uv.x)
+                                        arnold.AiArraySetFlt(vparam, i, uv.y)
+                                    n = i + 1
+                                else:
+                                    uparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
+                                    vparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
+                                    n = 0
+                                if nch > 0:
+                                    j = np
+                                    r = nch // np
+                                    for p in ps.particles:
+                                        for i in range(r):
+                                            uv = ps.uv_on_emitter(mod, p, j, uv_no)
+                                            arnold.AiArraySetFlt(uparam, n, uv.x)
+                                            arnold.AiArraySetFlt(vparam, n, uv.y)
+                                            j += 1
+                                            n += 1
+
+                                #_dm = _mod.dm.contents
+                                #_fd = _dm.faceData
+                                #for i in range(_fd.totlayer):
+                                #    _layer = _fd.layers[i]
+                                #    print(_layer.name, _layer.type, _layer.data)
+
+                                arnold.AiMsgInfo(b"    hair uvs (%f)", ctypes.c_double(time.perf_counter() - pc))
+
+                                arnold.AiNodeDeclare(node, "uparamcoord", "uniform FLOAT")
+                                arnold.AiNodeDeclare(node, "vparamcoord", "uniform FLOAT")
+                                arnold.AiNodeSetArray(node, "uparamcoord", uparam)
+                                arnold.AiNodeSetArray(node, "vparamcoord", vparam)
 
                 finally:
                     ps.set_resolution(scene, ob, 'PREVIEW')
