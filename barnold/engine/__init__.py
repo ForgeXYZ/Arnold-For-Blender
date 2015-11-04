@@ -47,227 +47,6 @@ _ListBase._fields_ = [
 ]
 
 
-# <blender sources>\source\blender\makesdna\DNA_meshdata_types.h:41
-class _MFace(ctypes.Structure):
-    _fields_ = [
-        ("v1", ctypes.c_uint),
-        ("v2", ctypes.c_uint),
-        ("v3", ctypes.c_uint),
-        ("v4", ctypes.c_uint),
-        ("mat_nr", ctypes.c_short),
-        ("edcode", ctypes.c_char),
-        ("flag", ctypes.c_char)
-    ]
-
-
-# <blender sources>\source\blender\makesdna\DNA_meshdata_types.h:257
-class _MTFace(ctypes.Structure):
-    _fields_ = [
-        ("uv", ctypes.c_float * 2 * 4),
-        ("tpage", ctypes.c_void_p),
-        ("flag", ctypes.c_char),
-        ("transp", ctypes.c_char),
-        ("mode", ctypes.c_short),
-        ("tile", ctypes.c_short),
-        ("unwrap", ctypes.c_short)
-    ]
-
-
-# <blender sources>\source\blender\makesdna\DNA_customdata_types.h:42
-class _CustomDataLayer(ctypes.Structure):
-    _fields_ = [
-        # type of data in layer
-        ("type", ctypes.c_int),
-        # in editmode, offset of layer in block
-        ("offset", ctypes.c_int),
-        # general purpose flag
-        ("flag", ctypes.c_int),
-        # number of the active layer of this type
-        ("active", ctypes.c_int),
-        # number of the layer to render
-        ("active_rnd", ctypes.c_int),
-        # number of the layer to render
-        ("active_clone", ctypes.c_int),
-        # number of the layer to render
-        ("active_mask", ctypes.c_int),
-        # shape keyblock unique id reference
-        ("uid", ctypes.c_int),
-        # layer name, MAX_CUSTOMDATA_LAYER_NAME
-        ("name", ctypes.c_char * 64),
-        # layer data
-        ("data", ctypes.c_void_p)
-    ]
-
-
-# <blender sources>\source\blender\makesdna\DNA_customdata_types.h:64
-class _CustomData(ctypes.Structure):
-    _fields_ = [
-        ("layers", ctypes.POINTER(_CustomDataLayer)),
-        ("typemap", ctypes.c_int * 42),
-        ("pad_i1", ctypes.c_int),
-        ("totlayer", ctypes.c_int),
-        ("maxlayer", ctypes.c_int),
-        ("totsize", ctypes.c_int),
-        ("pool", ctypes.c_void_p),
-        ("external", ctypes.c_void_p)
-    ]
-
-
-# <blender sources>\source\blender\makesdna\DNA_customdata_types.h:77
-_CD_MTFACE = 5
-
-
-# <blender sources>\source\blender\blenkernel\BKE_DerivedMesh.h:176
-class _DerivedMesh(ctypes.Structure):
-    class LoopTris(ctypes.Structure):
-        _fields_ = [
-            ("array", ctypes.c_void_p),
-            ("num", ctypes.c_int),
-            ("num_alloc", ctypes.c_int)
-        ]
-
-_DerivedMesh._fields_ = [
-    ("vertData", _CustomData),
-    ("edgeData", _CustomData),
-    ("faceData", _CustomData),
-    ("loopData", _CustomData),
-    ("polyData", _CustomData),
-
-    ("numVertData", ctypes.c_int),
-    ("numEdgeData", ctypes.c_int),
-    ("numTessFaceData", ctypes.c_int),
-    ("numLoopData", ctypes.c_int),
-    ("numPolyData", ctypes.c_int),
-
-    ("needsFree", ctypes.c_int),
-    ("deformedOnly", ctypes.c_int),
-    ("bvhCache", ctypes.c_void_p),
-    ("drawObject", ctypes.c_void_p),
-    ("type", ctypes.c_int),  # enum DerivedMeshType
-    ("auto_bump_scale", ctypes.c_float),
-    ("dirty", ctypes.c_int),  # enum DMDirtyFlag
-    ("totmat", ctypes.c_int),
-    ("mat", ctypes.POINTER(ctypes.c_void_p)),
-    
-    ("looptris", _DerivedMesh.LoopTris),
-    ("cd_flag", ctypes.c_char),
-
-    # Calculate vert and face normals
-    # void (*calcNormals)(DerivedMesh *dm);
-    ("calcNormals", ctypes.c_void_p),
-    # Calculate loop (split) normals
-    # void (*calcLoopNormals)(DerivedMesh *dm, const bool use_split_normals, const float split_angle);
-    ("calcLoopNormals", ctypes.c_void_p),
-    # Calculate loop (split) normals, and returns split loop normal spacearr
-    # void (*calcLoopNormalsSpaceArray)(DerivedMesh *dm, const bool use_split_normals, const float split_angle,
-    #                                   struct MLoopNorSpaceArray *r_lnors_spacearr);
-    ("calcLoopNormalsSpaceArray", ctypes.c_void_p),
-    # void (*calcLoopTangents)(DerivedMesh *dm);
-    ("calcLoopTangents", ctypes.c_void_p),
-    # Recalculates mesh tessellation
-    # void (*recalcTessellation)(DerivedMesh *dm);
-    ("recalcTessellation", ctypes.CFUNCTYPE(None, ctypes.POINTER(_DerivedMesh))),
-
-    # Loop tessellation cache
-    # void (*recalcLoopTri)(DerivedMesh *dm);
-    ("recalcLoopTri", ctypes.c_void_p),
-    # accessor functions
-    # const struct MLoopTri *(*getLoopTriArray)(DerivedMesh * dm);
-    ("getLoopTriArray", ctypes.c_void_p),
-    # int (*getNumLoopTri)(DerivedMesh *dm);
-    ("getNumLoopTri", ctypes.c_void_p),
-
-    # int (*getNumVerts)(DerivedMesh *dm);
-    ("getNumVerts", ctypes.c_void_p),
-    # int (*getNumEdges)(DerivedMesh *dm);
-    ("getNumEdges", ctypes.c_void_p),
-    # int (*getNumTessFaces)(DerivedMesh *dm);
-    ("getNumTessFaces", ctypes.c_void_p),
-    # int (*getNumLoops)(DerivedMesh *dm);
-    ("getNumLoops", ctypes.c_void_p),
-    # int (*getNumPolys)(DerivedMesh *dm);
-    ("getNumPolys", ctypes.c_void_p),
-
-    # void (*getVert)(DerivedMesh *dm, int index, struct MVert *r_vert);
-    ("getVert", ctypes.c_void_p),
-    # void (*getEdge)(DerivedMesh *dm, int index, struct MEdge *r_edge);
-    ("getEdge", ctypes.c_void_p),
-    # void (*getTessFace)(DerivedMesh *dm, int index, struct MFace *r_face);
-    ("getTessFace", ctypes.c_void_p),
-
-    # struct MVert *(*getVertArray)(DerivedMesh * dm);
-    ("getVertArray", ctypes.c_void_p),
-    # struct MEdge *(*getEdgeArray)(DerivedMesh * dm);
-    ("getEdgeArray", ctypes.c_void_p),
-    # struct MFace *(*getTessFaceArray)(DerivedMesh * dm);
-    ("getTessFaceArray", ctypes.CFUNCTYPE(ctypes.POINTER(_MFace), ctypes.POINTER(_DerivedMesh))),
-    # struct MLoop *(*getLoopArray)(DerivedMesh * dm);
-    ("getLoopArray", ctypes.c_void_p),
-    # struct MPoly *(*getPolyArray)(DerivedMesh * dm);
-    ("getPolyArray", ctypes.c_void_p),
-
-    # ...
-]
-
-
-# <blender sources>\source\blender\makesdna\DNA_particle_types.h:50
-class _ParticleKey(ctypes.Structure):
-    _fields_ = [
-        # location
-        ("co", ctypes.c_float * 3),
-        # velocity
-        ("vel", ctypes.c_float * 3),
-        # rotation quaternion
-        ("rot", ctypes.c_float * 4),
-        # angular velocity
-        ("ave", ctypes.c_float * 3),
-        # when this key happens
-        ("time", ctypes.c_float)
-    ]
-
-
-# <blender sources>\source\blender\makesdna\DNA_particle_types.h:72
-class _ChildParticle(ctypes.Structure):
-    _fields_ = [
-        # num is face index on the final derived mesh
-        ("num", ctypes.c_int),
-        ("parent", ctypes.c_int),
-        # nearest particles to the child, used for the interpolation
-        ("pa", ctypes.c_int * 4),
-        # interpolation weights for the above particles
-        ("w", ctypes.c_float * 4),
-        # face vertex weights and offset
-        ("fuv", ctypes.c_float * 4),
-        ("foffset", ctypes.c_float),
-        ("rt", ctypes.c_float)
-    ]
-
-
-# <blender sources>\source\blender\makesdna\DNA_particle_types.h:96
-class _ParticleData(ctypes.Structure):
-    _fields_ = [
-        ("state", _ParticleKey),
-        ("prev_state", _ParticleKey),
-        ("hair", ctypes.c_void_p),
-        ("keys", ctypes.POINTER(_ParticleKey)),
-        ("boid", ctypes.c_void_p),
-        ("totkey", ctypes.c_int),
-        ("time", ctypes.c_float),
-        ("lifetime", ctypes.c_float),
-        ("dietime", ctypes.c_float),
-        ("num", ctypes.c_int),
-        ("num_dmcache", ctypes.c_int),
-        ("fuv", ctypes.c_float * 4),
-        ("foffset", ctypes.c_float),
-        ("size", ctypes.c_float),
-        ("sphdensity", ctypes.c_float),
-        ("pad", ctypes.c_int),
-        ("hair_index", ctypes.c_int),
-        ("flag", ctypes.c_short),
-        ("alive", ctypes.c_short)
-    ]
-
-
 # <blender sources>\source\blender\blenkernel\BKE_particle.h:121
 class _ParticleCacheKey(ctypes.Structure):
     _fields_ = [
@@ -280,11 +59,6 @@ class _ParticleCacheKey(ctypes.Structure):
     ]
 
 
-# <blender sources>\source\blender\blenkernel\BKE_particle.h:464
-_DMCACHE_NOTFOUND = -1
-_DMCACHE_ISCHILD = -2
-
-
 # <blender sources>\source\blender\makesdna\DNA_particle_types.h:264
 class _ParticleSystem(ctypes.Structure):
     pass
@@ -295,9 +69,9 @@ _ParticleSystem._fields_ = [
     # particle settings
     ("part", ctypes.c_void_p),
     # (parent) particles
-    ("particles", ctypes.POINTER(_ParticleData)),
+    ("particles", ctypes.c_void_p),
     # child particles
-    ("child", ctypes.POINTER(_ChildParticle)),
+    ("child", ctypes.c_void_p),
     # particle editmode (runtime)
     ("edit", ctypes.c_void_p),
     # free callback
@@ -351,37 +125,6 @@ _ParticleSystem._fields_ = [
     # temporary storage during render
     ("renderdata", ctypes.c_void_p)
 ]
-
-
-# <blender sources>\source\blender\makesdna\DNA_modifier_types.h:102
-class _ModifierData(ctypes.Structure):
-    pass
-
-_ModifierData._fields_ = [
-    ("next", ctypes.POINTER(_ModifierData)),
-    ("prev", ctypes.POINTER(_ModifierData)),
-    ("type", ctypes.c_int),
-    ("mode", ctypes.c_int),
-    ("stackindex", ctypes.c_int),
-    ("pad", ctypes.c_int),
-    ("name", ctypes.c_char * 64),
-    ("scene", ctypes.c_void_p),
-    ("error", ctypes.c_char_p)
-]
-
-
-# <blender sources>\source\blender\makesdna\DNA_modifier_types.h:704
-class _ParticleSystemModifierData(ctypes.Structure):
-    _fields_ = [
-        ("modifier", _ModifierData),
-        ("psys", ctypes.POINTER(_ParticleSystem)),
-        ("dm", ctypes.POINTER(_DerivedMesh)),
-        ("totdmvert", ctypes.c_int),
-        ("totdmedge", ctypes.c_int),
-        ("totdmface", ctypes.c_int),
-        ("flag", ctypes.c_short),
-        ("pad", ctypes.c_short)
-    ]
 
 
 def _CleanNames(prefix, count):
@@ -701,7 +444,7 @@ def _export(data, scene, camera, xres, yres, session=None):
             continue
 
         particle_systems = [
-            (m, m.particle_system ) for m in ob.modifiers
+            (m, m.particle_system) for m in ob.modifiers
             if m.type == 'PARTICLE_SYSTEM' and m.show_render
         ]
         if particle_systems:
@@ -715,9 +458,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                     if pss.type == 'HAIR' and pss.render_type == 'PATH':
                         pc = time.perf_counter()
 
-                        _mod = _ParticleSystemModifierData.from_address(mod.as_pointer())
-                        #_ps = _ParticleSystem.from_address(ps.as_pointer())
-                        _ps = _mod.psys.contents
+                        _ps = _ParticleSystem.from_address(ps.as_pointer())
 
                         np = len(ps.particles)
                         nch = len(ps.child_particles)
@@ -731,8 +472,9 @@ def _export(data, scene, camera, xres, yres, session=None):
                             points = arnold.AiArrayAllocate(tot * steps, 1, arnold.AI_TYPE_POINT)
                             p = ctypes.cast(ctypes.c_void_p(points.contents.data),
                                             ctypes.POINTER(ctypes.c_float * 3))
+                            _cache = _ps.pathcache
                             for i in range(np):
-                                c = _ps.pathcache[i]
+                                c = _cache[i]
                                 for j in range(steps):
                                     p[n] = c[j].co
                                     n += 1
@@ -743,8 +485,9 @@ def _export(data, scene, camera, xres, yres, session=None):
                                             ctypes.POINTER(ctypes.c_float * 3))
                         else:
                             continue
+                        _cache = _ps.childcache
                         for i in range(nch):
-                            c = _ps.childcache[i]
+                            c = _cache[i]
                             for j in range(steps):
                                 p[n] = c[j].co
                                 n += 1
@@ -781,84 +524,31 @@ def _export(data, scene, camera, xres, yres, session=None):
                             if uv_no >= 0:
                                 pc = time.perf_counter()
 
+                                uv_on_emitter = ps.uv_on_emitter
                                 setFlt = arnold.AiArraySetFlt
-                                if 0:
-                                    if nch == 0 or pss.use_parent_particles:
-                                        tot = np + nch
-                                        uparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
-                                        vparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
-                                        for i, p in enumerate(ps.particles):
-                                            uv = ps.uv_on_emitter(mod, p, i, uv_no)
-                                            setFlt(uparam, i, uv.x)
-                                            setFlt(vparam, i, uv.y)
-                                        n = i + 1
-                                    else:
-                                        uparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
-                                        vparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
-                                        n = 0
-                                    if nch > 0:
-                                        j = np
-                                        r = nch // np
-                                        for p in ps.particles:
-                                            for i in range(r):
-                                                uv = ps.uv_on_emitter(mod, p, j, uv_no)
-                                                setFlt(uparam, n, uv.x)
-                                                setFlt(vparam, n, uv.y)
-                                                j += 1
-                                                n += 1
+                                if nch == 0 or pss.use_parent_particles:
+                                    tot = np + nch
+                                    uparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
+                                    vparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
+                                    for i, p in enumerate(ps.particles):
+                                        uv = uv_on_emitter(mod, p, i, uv_no)
+                                        setFlt(uparam, i, uv.x)
+                                        setFlt(vparam, i, uv.y)
+                                    n = i + 1
                                 else:
-                                    _dm = _mod.dm.contents
-                                    _fd = _dm.faceData
-                                    _ln = props.uvmap.encode()
-                                    for i in range(_fd.totlayer):
-                                        _layer = _fd.layers[i]
-                                        if _layer.type == _CD_MTFACE and _layer.name == _ln:
-                                            _tf = ctypes.cast(_layer.data, ctypes.POINTER(_MTFace))
-                                            _mf = _dm.getTessFaceArray(_dm)
-                                            if nch == 0 or pss.use_parent_particles:
-                                                tot = np + nch
-                                                uparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
-                                                vparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
-                                                _particles = _ps.particles
-                                                for i in range(_ps.totpart):
-                                                    p = _particles[i]
-                                                    num = p.num_dmcache
-                                                    if num in (_DMCACHE_NOTFOUND, _DMCACHE_ISCHILD):
-                                                        num = p.num
-                                                    fuv = p.fuv
-                                                    uv = _tf[num].uv
-                                                    u = fuv[0]*uv[0][0] + fuv[1]*uv[1][0] + fuv[2]*uv[2][0]
-                                                    v = fuv[0]*uv[0][1] + fuv[1]*uv[1][1] + fuv[2]*uv[2][1]
-                                                    if _mf[num].v4:
-                                                        u += fuv[3]*uv[3][0]
-                                                        v += fuv[3]*uv[3][1]
-                                                    setFlt(uparam, i, u)
-                                                    setFlt(vparam, i, v)
-                                                n = i + 1
-                                            else:
-                                                uparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
-                                                vparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
-                                                n = 0
-                                            if nch > 0:
-                                                _child = _ps.child
-                                                if pss.child_type == 'INTERPOLATED':
-                                                    for i in range(_ps.totchild):
-                                                        p = _child[i]
-                                                        num = p.num
-                                                        if num != _DMCACHE_NOTFOUND:
-                                                            fuv = p.fuv
-                                                            uv = _tf[num].uv
-                                                            u = fuv[0]*uv[0][0] + fuv[1]*uv[1][0] + fuv[2]*uv[2][0]
-                                                            v = fuv[0]*uv[0][1] + fuv[1]*uv[1][1] + fuv[2]*uv[2][1]
-                                                            if _mf[num].v4:
-                                                                u += fuv[3]*uv[3][0]
-                                                                v += fuv[3]*uv[3][1]
-                                                            setFlt(uparam, n, u)
-                                                            setFlt(vparam, n, v)
-                                                        n += 1
-                                                else:  # 'SIMPLE'
-                                                    for i in range(_ps.totchild):
-                                                        p = _particles[i]
+                                    uparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
+                                    vparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
+                                    n = 0
+                                if nch > 0:
+                                    j = np
+                                    r = nch // np
+                                    for p in ps.particles:
+                                        for i in range(r):
+                                            uv = uv_on_emitter(mod, p, j, uv_no)
+                                            setFlt(uparam, n, uv.x)
+                                            setFlt(vparam, n, uv.y)
+                                            j += 1
+                                            n += 1
 
                                 arnold.AiMsgInfo(b"    hair uvs (%f)", ctypes.c_double(time.perf_counter() - pc))
 
@@ -866,7 +556,6 @@ def _export(data, scene, camera, xres, yres, session=None):
                                 arnold.AiNodeDeclare(node, "vparamcoord", "uniform FLOAT")
                                 arnold.AiNodeSetArray(node, "uparamcoord", uparam)
                                 arnold.AiNodeSetArray(node, "vparamcoord", vparam)
-
                 finally:
                     ps.set_resolution(scene, ob, 'PREVIEW')
             if not use_render_emitter:
