@@ -361,6 +361,115 @@ def _AiPolymesh(mesh, shaders):
     return node
 
 
+def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
+    pc = time.perf_counter()
+    ps.set_resolution(scene, ob, 'RENDER')
+    try:
+        _ps = _ParticleSystem.from_address(ps.as_pointer())
+
+        np = len(ps.particles)
+        nch = len(ps.child_particles)
+        steps = 2 ** pss.render_step
+
+        n = 0
+        if nch == 0 or pss.use_parent_particles:
+            tot = np + nch
+            if tot <= 0:
+                return None
+
+            points = arnold.AiArrayAllocate(tot * steps, 1, arnold.AI_TYPE_POINT)
+            p = ctypes.cast(ctypes.c_void_p(points.contents.data),
+                            ctypes.POINTER(ctypes.c_float * 3))
+            _cache = _ps.pathcache
+            for i in range(np):
+                c = _cache[i]
+                for j in range(steps):
+                    p[n] = c[j].co
+                    n += 1
+        elif nch > 0:
+            tot = nch
+            points = arnold.AiArrayAllocate(tot * steps, 1, arnold.AI_TYPE_POINT)
+            p = ctypes.cast(ctypes.c_void_p(points.contents.data),
+                            ctypes.POINTER(ctypes.c_float * 3))
+        else:
+            return None
+
+        _cache = _ps.childcache
+        for i in range(nch):
+            c = _cache[i]
+            for j in range(steps):
+                p[n] = c[j].co
+                n += 1
+
+        props = pss.arnold.curves
+        radius = numpy.tile(
+            numpy.linspace(
+                props.radius_root, props.radius_tip, steps - 2, dtype=numpy.float32
+            ),
+            tot
+        )
+        radius = arnold.AiArrayConvert(tot * (steps - 2), 1, arnold.AI_TYPE_FLOAT,
+                                        ctypes.c_void_p(radius.ctypes.data))
+
+        arnold.AiMsgInfo(b"    hair [%dx%d] (%f)", ctypes.c_int(steps), ctypes.c_int(tot),
+                            ctypes.c_double(time.perf_counter() - pc))
+
+        node = arnold.AiNode("curves")
+        arnold.AiNodeSetUInt(node, "num_points", steps)
+        arnold.AiNodeSetArray(node, "points", points)
+        arnold.AiNodeSetArray(node, "radius", radius)
+        arnold.AiNodeSetStr(node, "basis", props.basis)
+        arnold.AiNodeSetStr(node, "mode", props.mode)
+        arnold.AiNodeSetFlt(node, "min_pixel_width", props.min_pixel_width)
+        # TODO: own properties (visibility, shadow, ...)
+        slots = ob.material_slots
+        m = pss.material
+        if 0 < m <= len(slots):
+            arnold.AiNodeSetPtr(node, "shader", shaders.get(slots[m - 1].material))
+
+        # TODO: work only if particle system emits particles from faces or volume
+        if props.uvmap:
+            uv_no = ob.data.uv_layers.find(props.uvmap)
+            if uv_no >= 0:
+                pc = time.perf_counter()
+
+                uv_on_emitter = ps.uv_on_emitter
+                setFlt = arnold.AiArraySetFlt
+                if nch == 0 or pss.use_parent_particles:
+                    tot = np + nch
+                    uparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
+                    vparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
+                    for i, p in enumerate(ps.particles):
+                        uv = uv_on_emitter(mod, p, i, uv_no)
+                        setFlt(uparam, i, uv.x)
+                        setFlt(vparam, i, uv.y)
+                    n = i + 1
+                else:
+                    uparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
+                    vparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
+                    n = 0
+                if nch > 0:
+                    j = np
+                    r = nch // np
+                    for p in ps.particles:
+                        for i in range(r):
+                            uv = uv_on_emitter(mod, p, j, uv_no)
+                            setFlt(uparam, n, uv.x)
+                            setFlt(vparam, n, uv.y)
+                            j += 1
+                            n += 1
+
+                arnold.AiMsgInfo(b"    hair uvs (%f)", ctypes.c_double(time.perf_counter() - pc))
+
+                arnold.AiNodeDeclare(node, "uparamcoord", "uniform FLOAT")
+                arnold.AiNodeDeclare(node, "vparamcoord", "uniform FLOAT")
+                arnold.AiNodeSetArray(node, "uparamcoord", uparam)
+                arnold.AiNodeSetArray(node, "vparamcoord", vparam)
+    finally:
+        ps.set_resolution(scene, ob, 'PREVIEW')
+    return node
+
+
 def _export_object_properties(ob, node):
     props = ob.arnold
     arnold.AiNodeSetByte(node, "visibility", props.visibility)
@@ -443,131 +552,37 @@ def _export(data, scene, camera, xres, yres, session=None):
             arnold.AiMsgInfo(b"    skip (duplicator)")
             continue
 
-        particle_systems = [
-            (m, m.particle_system) for m in ob.modifiers
-            if m.type == 'PARTICLE_SYSTEM' and m.show_render
-        ]
-        if particle_systems:
-            use_render_emitter = False
-            for mod, ps in particle_systems:
-                ps.set_resolution(scene, ob, 'RENDER')
-                try:
+        if ob.type in _CT:
+            name = None
+
+            particle_systems = [
+                (m, m.particle_system) for m in ob.modifiers
+                if m.type == 'PARTICLE_SYSTEM' and m.show_render
+            ]
+            if particle_systems:
+                use_render_emitter = False
+                for mod, ps in particle_systems:
                     pss = ps.settings
                     if pss.use_render_emitter:
                         use_render_emitter = True
                     if pss.type == 'HAIR' and pss.render_type == 'PATH':
-                        pc = time.perf_counter()
+                        node = _AiCurvesPS(scene, ob, mod, ps, pss, shaders)
+                        if node:
+                            if name is None:
+                                name = _Name(ob.name)
+                            arnold.AiNodeSetStr(node, "name", "%s&PS:%s" % (name, _RN.sub("_", ps.name)))
+                if not use_render_emitter:
+                    continue
 
-                        _ps = _ParticleSystem.from_address(ps.as_pointer())
+            if name is None:
+                name = _Name(ob.name)
 
-                        np = len(ps.particles)
-                        nch = len(ps.child_particles)
-                        steps = 2 ** pss.render_step
-
-                        n = 0
-                        if nch == 0 or pss.use_parent_particles:
-                            tot = np + nch
-                            if tot <= 0:
-                                continue
-                            points = arnold.AiArrayAllocate(tot * steps, 1, arnold.AI_TYPE_POINT)
-                            p = ctypes.cast(ctypes.c_void_p(points.contents.data),
-                                            ctypes.POINTER(ctypes.c_float * 3))
-                            _cache = _ps.pathcache
-                            for i in range(np):
-                                c = _cache[i]
-                                for j in range(steps):
-                                    p[n] = c[j].co
-                                    n += 1
-                        elif nch > 0:
-                            tot = nch
-                            points = arnold.AiArrayAllocate(tot * steps, 1, arnold.AI_TYPE_POINT)
-                            p = ctypes.cast(ctypes.c_void_p(points.contents.data),
-                                            ctypes.POINTER(ctypes.c_float * 3))
-                        else:
-                            continue
-                        _cache = _ps.childcache
-                        for i in range(nch):
-                            c = _cache[i]
-                            for j in range(steps):
-                                p[n] = c[j].co
-                                n += 1
-
-                        props = pss.arnold.curves
-                        radius = numpy.tile(
-                            numpy.linspace(
-                                props.radius_root, props.radius_tip, steps - 2, dtype=numpy.float32
-                            ),
-                            tot
-                        )
-                        radius = arnold.AiArrayConvert(tot * (steps - 2), 1, arnold.AI_TYPE_FLOAT,
-                                                       ctypes.c_void_p(radius.ctypes.data))
-
-                        arnold.AiMsgInfo(b"    hair [%dx%d] (%f)", ctypes.c_int(steps), ctypes.c_int(tot),
-                                         ctypes.c_double(time.perf_counter() - pc))
-
-                        node = arnold.AiNode("curves")
-                        arnold.AiNodeSetUInt(node, "num_points", steps)
-                        arnold.AiNodeSetArray(node, "points", points)
-                        arnold.AiNodeSetArray(node, "radius", radius)
-                        arnold.AiNodeSetStr(node, "basis", props.basis)
-                        arnold.AiNodeSetStr(node, "mode", props.mode)
-                        arnold.AiNodeSetFlt(node, "min_pixel_width", props.min_pixel_width)
-                        # TODO: own properties (visibility, shadow, ...)
-                        slots = ob.material_slots
-                        m = pss.material
-                        if 0 < m <= len(slots):
-                            arnold.AiNodeSetPtr(node, "shader", shaders.get(slots[m - 1].material))
-
-                        # TODO: work only if particle system emits particles from faces or volume
-                        if props.uvmap:
-                            uv_no = ob.data.uv_layers.find(props.uvmap)
-                            if uv_no >= 0:
-                                pc = time.perf_counter()
-
-                                uv_on_emitter = ps.uv_on_emitter
-                                setFlt = arnold.AiArraySetFlt
-                                if nch == 0 or pss.use_parent_particles:
-                                    tot = np + nch
-                                    uparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
-                                    vparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
-                                    for i, p in enumerate(ps.particles):
-                                        uv = uv_on_emitter(mod, p, i, uv_no)
-                                        setFlt(uparam, i, uv.x)
-                                        setFlt(vparam, i, uv.y)
-                                    n = i + 1
-                                else:
-                                    uparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
-                                    vparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
-                                    n = 0
-                                if nch > 0:
-                                    j = np
-                                    r = nch // np
-                                    for p in ps.particles:
-                                        for i in range(r):
-                                            uv = uv_on_emitter(mod, p, j, uv_no)
-                                            setFlt(uparam, n, uv.x)
-                                            setFlt(vparam, n, uv.y)
-                                            j += 1
-                                            n += 1
-
-                                arnold.AiMsgInfo(b"    hair uvs (%f)", ctypes.c_double(time.perf_counter() - pc))
-
-                                arnold.AiNodeDeclare(node, "uparamcoord", "uniform FLOAT")
-                                arnold.AiNodeDeclare(node, "vparamcoord", "uniform FLOAT")
-                                arnold.AiNodeSetArray(node, "uparamcoord", uparam)
-                                arnold.AiNodeSetArray(node, "vparamcoord", vparam)
-                finally:
-                    ps.set_resolution(scene, ob, 'PREVIEW')
-            if not use_render_emitter:
-                continue
-
-        if ob.type in _CT:
             modified = ob.is_modified(scene, 'RENDER')
             if not modified:
                 inode = inodes.get(ob.data)
                 if inode is not None:
                     node = arnold.AiNode("ginstance")
-                    arnold.AiNodeSetStr(node, "name", _Name(ob.name))
+                    arnold.AiNodeSetStr(node, "name", name)
                     arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
                     arnold.AiNodeSetBool(node, "inherit_xform", False)
                     arnold.AiNodeSetPtr(node, "node", inode)
@@ -577,7 +592,7 @@ def _export(data, scene, camera, xres, yres, session=None):
 
             with _Mesh(ob) as mesh:
                 node = _AiPolymesh(mesh, shaders)
-                arnold.AiNodeSetStr(node, "name", _Name(ob.name))
+                arnold.AiNodeSetStr(node, "name", name)
                 arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
                 _export_object_properties(ob, node)
                 if not modified:
