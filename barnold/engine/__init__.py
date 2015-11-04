@@ -60,6 +60,19 @@ class _MFace(ctypes.Structure):
     ]
 
 
+# <blender sources>\source\blender\makesdna\DNA_meshdata_types.h:257
+class _MTFace(ctypes.Structure):
+    _fields_ = [
+        ("uv", ctypes.c_float * 2 * 4),
+        ("tpage", ctypes.c_void_p),
+        ("flag", ctypes.c_char),
+        ("transp", ctypes.c_char),
+        ("mode", ctypes.c_short),
+        ("tile", ctypes.c_short),
+        ("unwrap", ctypes.c_short)
+    ]
+
+
 # <blender sources>\source\blender\makesdna\DNA_customdata_types.h:42
 class _CustomDataLayer(ctypes.Structure):
     _fields_ = [
@@ -230,6 +243,31 @@ class _ChildParticle(ctypes.Structure):
     ]
 
 
+# <blender sources>\source\blender\makesdna\DNA_particle_types.h:96
+class _ParticleData(ctypes.Structure):
+    _fields_ = [
+        ("state", _ParticleKey),
+        ("prev_state", _ParticleKey),
+        ("hair", ctypes.c_void_p),
+        ("keys", ctypes.POINTER(_ParticleKey)),
+        ("boid", ctypes.c_void_p),
+        ("totkey", ctypes.c_int),
+        ("time", ctypes.c_float),
+        ("lifetime", ctypes.c_float),
+        ("dietime", ctypes.c_float),
+        ("num", ctypes.c_int),
+        ("num_dmcache", ctypes.c_int),
+        ("fuv", ctypes.c_float * 4),
+        ("foffset", ctypes.c_float),
+        ("size", ctypes.c_float),
+        ("sphdensity", ctypes.c_float),
+        ("pad", ctypes.c_int),
+        ("hair_index", ctypes.c_int),
+        ("flag", ctypes.c_short),
+        ("alive", ctypes.c_short)
+    ]
+
+
 # <blender sources>\source\blender\blenkernel\BKE_particle.h:121
 class _ParticleCacheKey(ctypes.Structure):
     _fields_ = [
@@ -242,6 +280,11 @@ class _ParticleCacheKey(ctypes.Structure):
     ]
 
 
+# <blender sources>\source\blender\blenkernel\BKE_particle.h:464
+_DMCACHE_NOTFOUND = -1
+_DMCACHE_ISCHILD = -2
+
+
 # <blender sources>\source\blender\makesdna\DNA_particle_types.h:264
 class _ParticleSystem(ctypes.Structure):
     pass
@@ -252,9 +295,9 @@ _ParticleSystem._fields_ = [
     # particle settings
     ("part", ctypes.c_void_p),
     # (parent) particles
-    ("particles", ctypes.c_void_p),
+    ("particles", ctypes.POINTER(_ParticleData)),
     # child particles
-    ("child", ctypes.c_void_p),
+    ("child", ctypes.POINTER(_ChildParticle)),
     # particle editmode (runtime)
     ("edit", ctypes.c_void_p),
     # free callback
@@ -732,40 +775,90 @@ def _export(data, scene, camera, xres, yres, session=None):
                         if 0 < m <= len(slots):
                             arnold.AiNodeSetPtr(node, "shader", shaders.get(slots[m - 1].material))
 
+                        # TODO: work only if particle system emits particles from faces or volume
                         if props.uvmap:
                             uv_no = ob.data.uv_layers.find(props.uvmap)
                             if uv_no >= 0:
                                 pc = time.perf_counter()
 
-                                if nch == 0 or pss.use_parent_particles:
-                                    tot = np + nch
-                                    uparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
-                                    vparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
-                                    for i, p in enumerate(ps.particles):
-                                        uv = ps.uv_on_emitter(mod, p, i, uv_no)
-                                        arnold.AiArraySetFlt(uparam, i, uv.x)
-                                        arnold.AiArraySetFlt(vparam, i, uv.y)
-                                    n = i + 1
+                                setFlt = arnold.AiArraySetFlt
+                                if 0:
+                                    if nch == 0 or pss.use_parent_particles:
+                                        tot = np + nch
+                                        uparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
+                                        vparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
+                                        for i, p in enumerate(ps.particles):
+                                            uv = ps.uv_on_emitter(mod, p, i, uv_no)
+                                            setFlt(uparam, i, uv.x)
+                                            setFlt(vparam, i, uv.y)
+                                        n = i + 1
+                                    else:
+                                        uparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
+                                        vparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
+                                        n = 0
+                                    if nch > 0:
+                                        j = np
+                                        r = nch // np
+                                        for p in ps.particles:
+                                            for i in range(r):
+                                                uv = ps.uv_on_emitter(mod, p, j, uv_no)
+                                                setFlt(uparam, n, uv.x)
+                                                setFlt(vparam, n, uv.y)
+                                                j += 1
+                                                n += 1
                                 else:
-                                    uparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
-                                    vparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
-                                    n = 0
-                                if nch > 0:
-                                    j = np
-                                    r = nch // np
-                                    for p in ps.particles:
-                                        for i in range(r):
-                                            uv = ps.uv_on_emitter(mod, p, j, uv_no)
-                                            arnold.AiArraySetFlt(uparam, n, uv.x)
-                                            arnold.AiArraySetFlt(vparam, n, uv.y)
-                                            j += 1
-                                            n += 1
-
-                                #_dm = _mod.dm.contents
-                                #_fd = _dm.faceData
-                                #for i in range(_fd.totlayer):
-                                #    _layer = _fd.layers[i]
-                                #    print(_layer.name, _layer.type, _layer.data)
+                                    _dm = _mod.dm.contents
+                                    _fd = _dm.faceData
+                                    _ln = props.uvmap.encode()
+                                    for i in range(_fd.totlayer):
+                                        _layer = _fd.layers[i]
+                                        if _layer.type == _CD_MTFACE and _layer.name == _ln:
+                                            _tf = ctypes.cast(_layer.data, ctypes.POINTER(_MTFace))
+                                            _mf = _dm.getTessFaceArray(_dm)
+                                            if nch == 0 or pss.use_parent_particles:
+                                                tot = np + nch
+                                                uparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
+                                                vparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
+                                                _particles = _ps.particles
+                                                for i in range(_ps.totpart):
+                                                    p = _particles[i]
+                                                    num = p.num_dmcache
+                                                    if num in (_DMCACHE_NOTFOUND, _DMCACHE_ISCHILD):
+                                                        num = p.num
+                                                    fuv = p.fuv
+                                                    uv = _tf[num].uv
+                                                    u = fuv[0]*uv[0][0] + fuv[1]*uv[1][0] + fuv[2]*uv[2][0]
+                                                    v = fuv[0]*uv[0][1] + fuv[1]*uv[1][1] + fuv[2]*uv[2][1]
+                                                    if _mf[num].v4:
+                                                        u += fuv[3]*uv[3][0]
+                                                        v += fuv[3]*uv[3][1]
+                                                    setFlt(uparam, i, u)
+                                                    setFlt(vparam, i, v)
+                                                n = i + 1
+                                            else:
+                                                uparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
+                                                vparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
+                                                n = 0
+                                            if nch > 0:
+                                                _child = _ps.child
+                                                if pss.child_type == 'INTERPOLATED':
+                                                    for i in range(_ps.totchild):
+                                                        p = _child[i]
+                                                        num = p.num
+                                                        if num != _DMCACHE_NOTFOUND:
+                                                            fuv = p.fuv
+                                                            uv = _tf[num].uv
+                                                            u = fuv[0]*uv[0][0] + fuv[1]*uv[1][0] + fuv[2]*uv[2][0]
+                                                            v = fuv[0]*uv[0][1] + fuv[1]*uv[1][1] + fuv[2]*uv[2][1]
+                                                            if _mf[num].v4:
+                                                                u += fuv[3]*uv[3][0]
+                                                                v += fuv[3]*uv[3][1]
+                                                            setFlt(uparam, n, u)
+                                                            setFlt(vparam, n, v)
+                                                        n += 1
+                                                else:  # 'SIMPLE'
+                                                    for i in range(_ps.totchild):
+                                                        p = _particles[i]
 
                                 arnold.AiMsgInfo(b"    hair uvs (%f)", ctypes.c_double(time.perf_counter() - pc))
 
