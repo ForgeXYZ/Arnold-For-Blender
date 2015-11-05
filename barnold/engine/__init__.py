@@ -357,7 +357,7 @@ def _AiPolymesh(mesh, shaders):
             else:
                 arnold.AiNodeSetPtr(node, "shader", t[1][0])
 
-    arnold.AiMsgInfo(b"    node (%f)", ctypes.c_double(time.perf_counter() - pc))
+    arnold.AiMsgDebug(b"    node (%f)", ctypes.c_double(time.perf_counter() - pc))
     return node
 
 
@@ -365,53 +365,114 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
     pc = time.perf_counter()
     ps.set_resolution(scene, ob, 'RENDER')
     try:
-        _ps = _ParticleSystem.from_address(ps.as_pointer())
-
         np = len(ps.particles)
         nch = len(ps.child_particles)
-        steps = 2 ** pss.render_step
 
-        n = 0
         if nch == 0 or pss.use_parent_particles:
             tot = np + nch
             if tot <= 0:
                 return None
+            use_parent_particles = True
+        elif nch > 0:
+            tot = nch
+            use_parent_particles = False
+        else:
+            return None
 
+        _ps = _ParticleSystem.from_address(ps.as_pointer())
+        steps = 2 ** pss.render_step + 1
+        props = pss.arnold.curves
+        n = 0
+
+        if props.basis == 'bezier':
+            #nsteps = steps * 3 - 2
+
+            p = numpy.ndarray([tot * steps, 3], dtype=numpy.float32)
+            if use_parent_particles:
+                _cache = _ps.pathcache
+                for i in range(np):
+                    c = _cache[i]
+                    for j in range(steps):
+                        p[n] = c[j].co
+                        n += 1
+
+            #_cache = _ps.childcache
+            #for i in range(nch):
+            #    c = _cache[i]
+            #    k = n
+            #    for j in range(steps):
+            #        p[n] = c[j].co
+            #        n += 3
+            #    n -= 2
+            #    p[k + 1:n:3] = p[k + 3:n:3]
+            #    p[k + 2:n:3] = p[k:n - 3:3]
+
+            points = arnold.AiArrayConvert(tot * steps, 1, arnold.AI_TYPE_POINT,
+                                           ctypes.c_void_p(p.ctypes.data))
+            radius = arnold.AiArray(1, 1, arnold.AI_TYPE_FLOAT, ctypes.c_double(0.1))
+            steps -= 1
+        elif props.basis in ('b-spline', 'catmull-rom'):
+            p = numpy.ndarray([tot * (steps + 4), 3], dtype=numpy.float32)
+            if use_parent_particles:
+                _cache = _ps.pathcache
+                for i in range(np):
+                    c = _cache[i]
+                    p[n:n + 2] = c[0].co
+                    n += 2
+                    for j in range(steps):
+                        p[n] = c[j].co
+                        n += 1
+                    p[n:n + 2] = p[n - 1]
+                    n += 2
+            _cache = _ps.childcache
+            for i in range(nch):
+                c = _cache[i]
+                p[n:n + 2] = c[0].co
+                n += 2
+                for j in range(steps):
+                    p[n] = c[j].co
+                    n += 1
+                p[n: n + 2] = p[n - 1]
+                n += 2
+            points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(p.ctypes.data))
+
+            a = numpy.ndarray(steps + 2, dtype=numpy.float32)
+            a[1:-1] = numpy.linspace(props.radius_root, props.radius_tip, steps, dtype=numpy.float32)
+            a[0] = 0
+            a[-1] = 0
+            a = numpy.tile(a, tot)
+            radius = arnold.AiArrayConvert(tot * (steps + 2), 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(a.ctypes.data))
+
+            steps += 4
+        elif props.basis == 'linear':
             points = arnold.AiArrayAllocate(tot * steps, 1, arnold.AI_TYPE_POINT)
             p = ctypes.cast(ctypes.c_void_p(points.contents.data),
                             ctypes.POINTER(ctypes.c_float * 3))
-            _cache = _ps.pathcache
-            for i in range(np):
+            if use_parent_particles:
+                _cache = _ps.pathcache
+                for i in range(np):
+                    c = _cache[i]
+                    for j in range(steps):
+                        p[n] = c[j].co
+                        n += 1
+            _cache = _ps.childcache
+            for i in range(nch):
                 c = _cache[i]
                 for j in range(steps):
                     p[n] = c[j].co
                     n += 1
-        elif nch > 0:
-            tot = nch
-            points = arnold.AiArrayAllocate(tot * steps, 1, arnold.AI_TYPE_POINT)
-            p = ctypes.cast(ctypes.c_void_p(points.contents.data),
-                            ctypes.POINTER(ctypes.c_float * 3))
+
+            a = numpy.tile(
+                numpy.linspace(
+                    props.radius_root, props.radius_tip, steps, dtype=numpy.float32
+                ),
+                tot
+            )
+            radius = arnold.AiArrayConvert(tot * steps, 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(a.ctypes.data))
         else:
             return None
 
-        _cache = _ps.childcache
-        for i in range(nch):
-            c = _cache[i]
-            for j in range(steps):
-                p[n] = c[j].co
-                n += 1
-
-        props = pss.arnold.curves
-        radius = numpy.tile(
-            numpy.linspace(
-                props.radius_root, props.radius_tip, steps - 2, dtype=numpy.float32
-            ),
-            tot
-        )
-        radius = arnold.AiArrayConvert(tot * (steps - 2), 1, arnold.AI_TYPE_FLOAT,
-                                        ctypes.c_void_p(radius.ctypes.data))
-
-        arnold.AiMsgInfo(b"    hair [%dx%d] (%f)", ctypes.c_int(steps), ctypes.c_int(tot),
+        arnold.AiMsgDebug(b"    hair [%dx%d] (%f)", ctypes.c_int(steps), ctypes.c_int(tot),
                             ctypes.c_double(time.perf_counter() - pc))
 
         node = arnold.AiNode("curves")
@@ -459,7 +520,7 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
                             j += 1
                             n += 1
 
-                arnold.AiMsgInfo(b"    hair uvs (%f)", ctypes.c_double(time.perf_counter() - pc))
+                arnold.AiMsgDebug(b"    hair uvs (%f)", ctypes.c_double(time.perf_counter() - pc))
 
                 arnold.AiNodeDeclare(node, "uparamcoord", "uniform FLOAT")
                 arnold.AiNodeDeclare(node, "vparamcoord", "uniform FLOAT")
@@ -499,7 +560,7 @@ def _export(data, scene, camera, xres, yres, session=None):
         mesh = ob.to_mesh(scene, True, 'RENDER', False)
         try:
             mesh.calc_normals_split()
-            arnold.AiMsgInfo(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
+            arnold.AiMsgDebug(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
             yield mesh
         finally:
             data.meshes.remove(mesh)
@@ -526,30 +587,30 @@ def _export(data, scene, camera, xres, yres, session=None):
     plugins_path = os.path.normpath(os.path.join(os.path.dirname(__file__), os.path.pardir, "bin"))
     arnold.AiLoadPlugins(plugins_path)
 
-    arnold.AiMsgInfo(b"")
-    arnold.AiMsgInfo(b"BARNOLD: >>>")
+    arnold.AiMsgDebug(b"")
+    arnold.AiMsgDebug(b"BARNOLD: >>>")
 
     ##############################
     ## objects
     for ob in scene.objects:
-        arnold.AiMsgInfo(b"[%S] '%S'", ob.type, ob.name)
+        arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
 
         if ob.hide_render or not in_layers(ob):
-            arnold.AiMsgInfo(b"    skip (hidden)")
+            arnold.AiMsgDebug(b"    skip (hidden)")
             continue
 
         if duplicator_parent is not False:
             if duplicator_parent == ob.parent:
                 duplicator_parent = False
             else:
-                arnold.AiMsgInfo(b"    skip (duplicator child)")
+                arnold.AiMsgDebug(b"    skip (duplicator child)")
                 continue
 
         if ob.is_duplicator:
             duplicators.append(ob)
             if ob.dupli_type in ('VERTS', 'FACES'):
                 duplicator_parent = ob.parent
-            arnold.AiMsgInfo(b"    skip (duplicator)")
+            arnold.AiMsgDebug(b"    skip (duplicator)")
             continue
 
         if ob.type in _CT:
@@ -587,7 +648,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                     arnold.AiNodeSetBool(node, "inherit_xform", False)
                     arnold.AiNodeSetPtr(node, "node", inode)
                     _export_object_properties(ob, node)
-                    arnold.AiMsgInfo(b"    instance (%S)", ob.data.name)
+                    arnold.AiMsgDebug(b"    instance (%S)", ob.data.name)
                     continue
 
             with _Mesh(ob) as mesh:
@@ -608,11 +669,11 @@ def _export(data, scene, camera, xres, yres, session=None):
                 node = arnold.AiNode("point_light")
                 arnold.AiNodeSetFlt(node, "radius", light.radius)
                 arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
-                arnold.AiMsgInfo(b"    point_light")
+                arnold.AiMsgDebug(b"    point_light")
             elif lamp.type == 'SUN':
                 node = arnold.AiNode("distant_light")
                 arnold.AiNodeSetFlt(node, "angle", light.angle)
-                arnold.AiMsgInfo(b"    distant_light")
+                arnold.AiMsgDebug(b"    distant_light")
             elif lamp.type == 'SPOT':
                 node = arnold.AiNode("spot_light")
                 arnold.AiNodeSetFlt(node, "radius", light.radius)
@@ -621,12 +682,12 @@ def _export(data, scene, camera, xres, yres, session=None):
                 arnold.AiNodeSetFlt(node, "penumbra_angle", light.penumbra_angle)
                 arnold.AiNodeSetFlt(node, "aspect_ratio", light.aspect_ratio)
                 arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
-                arnold.AiMsgInfo(b"    spot_light")
+                arnold.AiMsgDebug(b"    spot_light")
             elif lamp.type == 'HEMI':
                 node = arnold.AiNode("skydome_light")
                 arnold.AiNodeSetInt(node, "resolution", light.resolution)
                 arnold.AiNodeSetStr(node, "format", light.format)
-                arnold.AiMsgInfo(b"    skydome_light")
+                arnold.AiMsgDebug(b"    skydome_light")
             elif lamp.type == 'AREA':
                 node = arnold.AiNode(light.type)
                 if light.type == 'cylinder_light':
@@ -658,7 +719,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                     if light.mesh:
                         mesh_lights.append((node, light.mesh))
             else:
-                arnold.AiMsgInfo(b"    skip (unsupported)")
+                arnold.AiMsgDebug(b"    skip (unsupported)")
                 continue
 
             name = _Name(ob.name)
@@ -703,14 +764,14 @@ def _export(data, scene, camera, xres, yres, session=None):
             arnold.AiNodeSetInt(node, "volume_samples", light.volume_samples)
             arnold.AiNodeSetFlt(node, "volume", light.volume)
         else:
-            arnold.AiMsgInfo(b"    skip (unsupported)")
+            arnold.AiMsgDebug(b"    skip (unsupported)")
 
     ##############################
     ## duplicators
     for duplicator in duplicators:
         i = 0
         pc = time.perf_counter()
-        arnold.AiMsgInfo(b"[DUPLI:%S:%S] '%S'", duplicator.type,
+        arnold.AiMsgDebug(b"[DUPLI:%S:%S] '%S'", duplicator.type,
                          duplicator.dupli_type, duplicator.name)
         arnold.AiMsgTab(4)
         duplicator.dupli_list_create(scene, 'RENDER')
@@ -720,7 +781,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                 if not ob.hide_render and ob.dupli_type not in ('VERTS', 'FACES') and ob.type in _CT:
                     onode = nodes.get(ob)
                     if onode is None:
-                        arnold.AiMsgInfo(b"[%S] '%S'", ob.type, ob.name)
+                        arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
                         with _Mesh(ob) as mesh:
                             node = _AiPolymesh(mesh, shaders)
                             arnold.AiNodeSetStr(node, "name", _Name(ob.name))
@@ -734,7 +795,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                         arnold.AiNodeSetPtr(node, "node", onode)
                         i += 1
                     _export_object_properties(ob, node)
-            arnold.AiMsgInfo(b"instances %d (%f)", ctypes.c_int(i),
+            arnold.AiMsgDebug(b"instances %d (%f)", ctypes.c_int(i),
                              ctypes.c_double(time.perf_counter() - pc))
         finally:
             arnold.AiMsgTab(-4)
@@ -750,7 +811,7 @@ def _export(data, scene, camera, xres, yres, session=None):
         if node is None:
             if ob.type not in _CT:
                 continue
-            arnold.AiMsgInfo(b"[%S] '%S'", ob.type, ob.name)
+            arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
             with _Mesh(ob) as mesh:
                 node = _AiPolymesh(mesh, shaders)
                 arnold.AiNodeSetStr(node, "name", _Name(ob.name))
@@ -959,7 +1020,7 @@ def _export(data, scene, camera, xres, yres, session=None):
             AA_samples = isl
     arnold.AiNodeSetInt(options, "AA_samples", AA_samples)
 
-    arnold.AiMsgInfo(b"BARNOLD: <<<")
+    arnold.AiMsgDebug(b"BARNOLD: <<<")
 
 
 def export_ass(data, scene, camera, xres, yres, filepath, open_procs, binary):
