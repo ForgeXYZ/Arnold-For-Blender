@@ -1554,6 +1554,12 @@ class ArnoldCurves(PropertyGroup):
         name="Root Radius",
         default=0.001
     )
+    bezier_scale = FloatProperty(
+        name="Scale",
+        min=0, max=1,
+        default=0.5,
+        subtype='FACTOR'
+    )
     basis = EnumProperty(
         name="Basis",
         items=[

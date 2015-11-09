@@ -747,6 +747,8 @@ class ArnoldCurvesPanel(ParticleButtonsPanel, Panel):
         col.prop(curves, "radius_tip")
         col.prop(curves, "radius_root")
         col.prop(curves, "basis")
+        if curves.basis == 'bezier':
+            col.prop(curves, "bezier_scale")
         col.prop(curves, "mode")
         col.prop(curves, "min_pixel_width")
         col.prop_search(curves, "uvmap", context.object.data, "uv_textures")
