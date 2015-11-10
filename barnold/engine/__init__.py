@@ -36,6 +36,11 @@ _CT = ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT')  # convertible types
 _MR = Matrix.Rotation(math.radians(90.0), 4, 'X')
 _SQRT2 = math.sqrt(2)
 
+from numpy import ndarray as _NDARRAY
+from numpy.linalg import norm as _NORM
+
+_S = (..., numpy.newaxis)
+
 
 # <blender sources>\source\blender\makesdna\DNA_listBase.h:59
 class _ListBase(ctypes.Structure):
@@ -361,12 +366,24 @@ def _AiPolymesh(mesh, shaders):
     return node
 
 
-from numpy import ndarray as _NDARRAY
-from numpy.linalg import norm as _NORM
-
-_S = (..., numpy.newaxis)
-
 def _BezierInterpolate(pts, n, cache, npts, steps, scale):
+    """
+        pts:
+            numpy.ndarray([x, y, 3], dtype='f')
+            array for bezier interpolated control points
+        n:
+            int
+            position in pts array
+        cache:
+            ctypes.POINTER(_ParticleCacheKey)
+            points cache
+        npts:
+            int
+            points number in cache.
+        scale:
+            float
+            interpolation scale factor
+    """
     for i in range(npts):
         c = cache[i]
 
@@ -379,12 +396,11 @@ def _BezierInterpolate(pts, n, cache, npts, steps, scale):
         t *= scale / _NORM(t, axis=1)[_S]  # tangents
         m = _NORM(a[1:] - a[:-1], axis=1)[_S]  # magnitudes
 
-        p = pts[n]
-        p[::3] = a
-        p[1] = a[0] + (a[1] - a[0]) * scale
-        p[-2] = a[-1] - (a[-1] - a[-2]) * scale
-        p[2:-3:3] = s - t * m[:-1]
-        p[4::3] = s + t * m[1:]
+        pts[n, ::3] = a
+        pts[n, 1] = a[0] + (a[1] - a[0]) * scale
+        pts[n, -2] = a[-1] - (a[-1] - a[-2]) * scale
+        pts[n, 2:-3:3] = s - t * m[:-1]
+        pts[n, 4::3] = s + t * m[1:]
         n += 1
     return n
 
@@ -418,32 +434,7 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
             p = numpy.ndarray([tot, nsteps, 3], dtype=numpy.float32)
             if use_parent_particles:
                 n = _BezierInterpolate(p, n, _ps.pathcache, np, steps, scale)
-
-                #_cache = _ps.pathcache
-                #for i in range(np):
-                #    c = _cache[i]
-
-                #    a = numpy.ndarray([steps, 3], dtype='f')
-                #    for j in range(steps):
-                #        a[j] = c[j].co
-
-                #    s = a[1:-1]
-                #    t = a[2:] - a[:-2]
-                #    t *= scale / NORM(t, axis=1)[S]  # tangents
-                #    m = NORM(a[1:] - a[:-1], axis=1)[S]  # magnitudes
-
-                #    _p = p[i]
-                #    _p[::3] = a
-                #    _p[1] = a[0] + (a[1] - a[0]) * scale
-                #    _p[-2] = a[-1] - (a[-1] - a[-2]) * scale
-                #    _p[2:-3:3] = s - t * m[:-1]
-                #    _p[4::3] = s + t * m[1:]
-
             _BezierInterpolate(p, n, _ps.childcache, nch, steps, scale)
-            #_cache = _ps.childcache
-            #for i in range(nch):
-            #    c = _cache[i]
-
             a = numpy.tile(
                 numpy.linspace(
                     props.radius_root, props.radius_tip, steps, dtype=numpy.float32
@@ -477,14 +468,13 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
                 p[n: n + 2] = p[n - 1]
                 n += 2
             points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(p.ctypes.data))
-
             a = numpy.ndarray(steps + 2, dtype=numpy.float32)
             a[1:-1] = numpy.linspace(props.radius_root, props.radius_tip, steps, dtype=numpy.float32)
             a[0] = 0
             a[-1] = 0
             a = numpy.tile(a, tot)
-            radius = arnold.AiArrayConvert(tot * (steps + 2), 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(a.ctypes.data))
-
+            radius = arnold.AiArrayConvert(tot * (steps + 2), 1, arnold.AI_TYPE_FLOAT,
+                                           ctypes.c_void_p(a.ctypes.data))
             steps += 4
         elif props.basis == 'linear':
             points = arnold.AiArrayAllocate(tot * steps, 1, arnold.AI_TYPE_POINT)
@@ -503,7 +493,6 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
                 for j in range(steps):
                     p[n] = c[j].co
                     n += 1
-
             a = numpy.tile(
                 numpy.linspace(
                     props.radius_root, props.radius_tip, steps, dtype=numpy.float32
