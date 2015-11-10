@@ -361,6 +361,34 @@ def _AiPolymesh(mesh, shaders):
     return node
 
 
+from numpy import ndarray as _NDARRAY
+from numpy.linalg import norm as _NORM
+
+_S = (..., numpy.newaxis)
+
+def _BezierInterpolate(pts, n, cache, npts, steps, scale):
+    for i in range(npts):
+        c = cache[i]
+
+        a = _NDARRAY([steps, 3], dtype='f')
+        for j in range(steps):
+            a[j] = c[j].co
+
+        s = a[1:-1]
+        t = a[2:] - a[:-2]
+        t *= scale / _NORM(t, axis=1)[_S]  # tangents
+        m = _NORM(a[1:] - a[:-1], axis=1)[_S]  # magnitudes
+
+        p = pts[n]
+        p[::3] = a
+        p[1] = a[0] + (a[1] - a[0]) * scale
+        p[-2] = a[-1] - (a[-1] - a[-2]) * scale
+        p[2:-3:3] = s - t * m[:-1]
+        p[4::3] = s + t * m[1:]
+        n += 1
+    return n
+
+
 def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
     pc = time.perf_counter()
     ps.set_resolution(scene, ob, 'RENDER')
@@ -386,70 +414,35 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
 
         if props.basis == 'bezier':
             scale = props.bezier_scale
-            norm = numpy.linalg.norm
-            #p = numpy.ndarray([tot, steps * 3 - 2, 3], dtype=numpy.float32)
-            p = numpy.ndarray([tot * (steps * 3 - 2), 3], dtype=numpy.float32)
+            nsteps = steps * 3 - 2
+            p = numpy.ndarray([tot, nsteps, 3], dtype=numpy.float32)
             if use_parent_particles:
-                _cache = _ps.pathcache
-                for i in range(np):
-                    c = _cache[i]
+                n = _BezierInterpolate(p, n, _ps.pathcache, np, steps, scale)
 
-                    a = numpy.asarray([c[j].co for j in range(steps)], dtype=numpy.float32)
-                    
-                    #t = a[2:] - a[:-2]
-                    #t *= scale / norm(t, axis=1)[..., numpy.newaxis]
-                    #m = norm(a[1:] - a[:-1], axis=1)[..., numpy.newaxis]
-                    #s = a[1:-1]
+                #_cache = _ps.pathcache
+                #for i in range(np):
+                #    c = _cache[i]
 
-                    #p[i, ::3] = a
-                    #p[i, 1] = a[0] + (a[1] - a[0]) * scale
-                    #p[i, 2:-3:3] = s - t * m[:-1]
-                    #p[i, 4::3] = s + t * m[1:]
-                    #p[i, -2] = a[-1] - (a[-1] - a[-2]) * scale
+                #    a = numpy.ndarray([steps, 3], dtype='f')
+                #    for j in range(steps):
+                #        a[j] = c[j].co
 
-                    p0 = a[0]
-                    p1 = a[1]
-                    p[n] = p0
-                    n += 1
-                    p[n] = p0 + (p1 - p0) * scale
-                    n += 1
+                #    s = a[1:-1]
+                #    t = a[2:] - a[:-2]
+                #    t *= scale / NORM(t, axis=1)[S]  # tangents
+                #    m = NORM(a[1:] - a[:-1], axis=1)[S]  # magnitudes
 
-                    n1 = norm(p1 - p0)
-                    for j in range(2, steps):
-                        p2 = a[j]
+                #    _p = p[i]
+                #    _p[::3] = a
+                #    _p[1] = a[0] + (a[1] - a[0]) * scale
+                #    _p[-2] = a[-1] - (a[-1] - a[-2]) * scale
+                #    _p[2:-3:3] = s - t * m[:-1]
+                #    _p[4::3] = s + t * m[1:]
 
-                        t = p2 - p0
-                        t *= scale / norm(t)
-
-                        n2 = norm(p2 - p1)
-
-                        p[n] = p1 - t * n1
-                        n += 1
-                        p[n] = p1
-                        n += 1
-                        p[n] = p1 + t * n2
-                        n += 1
-
-                        p0 = p1
-                        p1 = p2
-                        n1 = n2
-
-                    p[n] = p1 - (p1 - p0) * scale
-                    n += 1
-                    p[n] = p1
-                    n += 1
-
-            print(p)
+            _BezierInterpolate(p, n, _ps.childcache, nch, steps, scale)
             #_cache = _ps.childcache
             #for i in range(nch):
             #    c = _cache[i]
-            #    k = n
-            #    for j in range(steps):
-            #        p[n] = c[j].co
-            #        n += 3
-            #    n -= 2
-            #    p[k + 1:n:3] = p[k + 3:n:3]
-            #    p[k + 2:n:3] = p[k:n - 3:3]
 
             a = numpy.tile(
                 numpy.linspace(
@@ -458,10 +451,8 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
                 tot
             )
             radius = arnold.AiArrayConvert(tot * steps, 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(a.ctypes.data))
-
-            steps = steps * 3 - 2
-            points = arnold.AiArrayConvert(tot * steps, 1, arnold.AI_TYPE_POINT,
-                                           ctypes.c_void_p(p.ctypes.data))
+            points = arnold.AiArrayConvert(tot * nsteps, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(p.ctypes.data))
+            steps = nsteps
         elif props.basis in ('b-spline', 'catmull-rom'):
             p = numpy.ndarray([tot * (steps + 4), 3], dtype=numpy.float32)
             if use_parent_particles:
