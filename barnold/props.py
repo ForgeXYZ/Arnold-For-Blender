@@ -418,16 +418,8 @@ class ArnoldOptions(PropertyGroup):
     #shadow_terminator_fix
     #shadows_obey_light_linking
     #skip_background_atmosphere
-    sss_bssrdf_samples = IntProperty(
-        name="SSS",
-        default=0
-    )
     sss_use_autobump = BoolProperty(
         name="Use Autobump in SSS"
-    )
-    volume_indirect_samples = IntProperty(
-        name="Volume indirect",
-        default=2
     )
     #reference_time
     #CCW_points
@@ -482,13 +474,21 @@ class ArnoldOptions(PropertyGroup):
         name="Diffuse",
         default=2
     )
-    #GI_single_scatter_samples
     GI_glossy_samples = IntProperty(
         name="Glossy",
         default=2
     )
     GI_refraction_samples = IntProperty(
         name="Refraction",
+        default=2
+    )
+    GI_sss_samples = IntProperty(
+        name="SSS",
+        default=0
+    )
+    #GI_single_scatter_samples
+    GI_volume_samples = IntProperty(
+        name="Volume indirect",
         default=2
     )
     #GI_falloff_start_dist

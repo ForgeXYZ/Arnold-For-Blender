@@ -913,9 +913,9 @@ def _export(data, scene, camera, xres, yres, session=None):
     arnold.AiNodeSetFlt(options, "texture_glossy_blur", opts.texture_glossy_blur)
     arnold.AiNodeSetFlt(options, "texture_diffuse_blur", opts.texture_diffuse_blur)
     arnold.AiNodeSetFlt(options, "low_light_threshold", opts.low_light_threshold)
-    arnold.AiNodeSetInt(options, "sss_bssrdf_samples", opts.sss_bssrdf_samples)
+    arnold.AiNodeSetInt(options, "GI_sss_samples", opts.GI_sss_samples)
     arnold.AiNodeSetBool(options, "sss_use_autobump", opts.sss_use_autobump)
-    arnold.AiNodeSetInt(options, "volume_indirect_samples", opts.volume_indirect_samples)
+    arnold.AiNodeSetInt(options, "GI_volume_samples", opts.GI_volume_samples)
     arnold.AiNodeSetInt(options, "max_subdivisions", opts.max_subdivisions)
     arnold.AiNodeSetStr(options, "procedural_searchpath", opts.procedural_searchpath)
     arnold.AiNodeSetStr(options, "shader_searchpath", opts.shader_searchpath)
@@ -1273,9 +1273,9 @@ def view_update(engine, context):
                 'texture_glossy_blur': ('FLOAT', opts.texture_glossy_blur),
                 'texture_diffuse_blur': ('FLOAT', opts.texture_diffuse_blur),
                 'low_light_threshold': ('FLOAT', opts.low_light_threshold),
-                'sss_bssrdf_samples': ('INT', opts.sss_bssrdf_samples),
+                'GI_sss_samples': ('INT', opts.GI_sss_samples),
                 'sss_use_autobump': ('BOOL', opts.sss_use_autobump),
-                'volume_indirect_samples': ('INT', opts.volume_indirect_samples),
+                'GI_volume_samples': ('INT', opts.GI_volume_samples),
                 'max_subdivisions': ('INT', opts.max_subdivisions),
                 'procedural_searchpath': ('STRING', opts.procedural_searchpath),
                 'shader_searchpath': ('STRING', opts.shader_searchpath),
