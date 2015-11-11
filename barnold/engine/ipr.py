@@ -140,13 +140,15 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
             #print("+++ _callback:", x, y, width, height, ctypes.cast(buffer, ctypes.c_void_p))
             if buffer:
                 try:
-                    if not new_data.poll():
+                    if new_data.poll():
+                        arnold.AiRenderInterrupt()
+                    else:
                         #print("+++ _callback: tile", x, y, width, height)
                         _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
                         a = numpy.ctypeslib.as_array(_buffer, shape=(height, width, 4))
                         rect[y : y + height, x : x + width] = a
                         redraw_event.set()
-                        return
+                    return
                 finally:
                     arnold.AiFree(buffer)
             elif not new_data.poll():
