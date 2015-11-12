@@ -32,7 +32,7 @@ from .ipr import ipr as _IPR
 _IPR = _IPR()
 
 _RN = re.compile("[^-0-9A-Za-z_]")  # regex to cleanup names
-_CT = ('MESH', 'CURVE', 'SURFACE', 'META', 'FONT')  # convertible types
+_CT = {'MESH', 'CURVE', 'SURFACE', 'META', 'FONT'}  # convertible types
 _MR = Matrix.Rotation(math.radians(90.0), 4, 'X')
 _SQRT2 = math.sqrt(2)
 
@@ -406,6 +406,7 @@ def _BezierInterpolate(pts, n, cache, npts, steps, scale):
 
 
 def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
+    """Create arnold curve node from particle system"""
     pc = time.perf_counter()
     ps.set_resolution(scene, ob, 'RENDER')
     try:
@@ -444,7 +445,7 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
             radius = arnold.AiArrayConvert(tot * steps, 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(a.ctypes.data))
             points = arnold.AiArrayConvert(tot * nsteps, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(p.ctypes.data))
             steps = nsteps
-        elif props.basis in ('b-spline', 'catmull-rom'):
+        elif props.basis in {'b-spline', 'catmull-rom'}:
             p = numpy.ndarray([tot * (steps + 4), 3], dtype=numpy.float32)
             if use_parent_particles:
                 _cache = _ps.pathcache
@@ -562,6 +563,37 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
     return node
 
 
+def _AiPointsPS(ob, ps, pss, shaders):
+    pc = time.perf_counter()
+
+    n = 0
+    tc = pss.trail_count  # TODO: can be implemented?
+    a = _NDARRAY([len(ps.particles) * tc, 3], dtype=numpy.float32)
+    r = _NDARRAY(len(ps.particles) * tc, dtype=numpy.float32)
+    for p in ps.particles:
+        if p.alive_state == 'ALIVE':
+            a[n] = p.location
+            r[n] = p.size
+            n += 1
+
+    points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(a.ctypes.data))
+    radius = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(r.ctypes.data))
+
+    arnold.AiMsgDebug(b"    points [%d] (%f)", ctypes.c_int(n), ctypes.c_double(time.perf_counter() - pc))
+
+    if n > 0:
+        node = arnold.AiNode("points")
+        arnold.AiNodeSetArray(node, "points", points)
+        arnold.AiNodeSetFlt(node, "radius", 0.1)
+        # TODO: own properties (visibility, shadow, ...)
+        slots = ob.material_slots
+        m = pss.material
+        if 0 < m <= len(slots):
+            arnold.AiNodeSetPtr(node, "shader", shaders.get(slots[m - 1].material))
+        return node
+    return None
+
+
 def _export_object_properties(ob, node):
     props = ob.arnold
     arnold.AiNodeSetByte(node, "visibility", props.visibility)
@@ -639,7 +671,7 @@ def _export(data, scene, camera, xres, yres, session=None):
 
         if ob.is_duplicator:
             duplicators.append(ob)
-            if ob.dupli_type in ('VERTS', 'FACES'):
+            if ob.dupli_type in {'VERTS', 'FACES'}:
                 duplicator_parent = ob.parent
             arnold.AiMsgDebug(b"    skip (duplicator)")
             continue
@@ -657,12 +689,15 @@ def _export(data, scene, camera, xres, yres, session=None):
                     pss = ps.settings
                     if pss.use_render_emitter:
                         use_render_emitter = True
+                    node = None
                     if pss.type == 'HAIR' and pss.render_type == 'PATH':
                         node = _AiCurvesPS(scene, ob, mod, ps, pss, shaders)
-                        if node:
-                            if name is None:
-                                name = _Name(ob.name)
-                            arnold.AiNodeSetStr(node, "name", "%s&PS:%s" % (name, _RN.sub("_", ps.name)))
+                    elif pss.type == 'EMITTER' and pss.render_type in {'HALO', 'PATH'}:
+                        node = _AiPointsPS(ob, ps, pss, shaders)
+                    if node is not None:
+                        if name is None:
+                            name = _Name(ob.name)
+                        arnold.AiNodeSetStr(node, "name", "%s&PS:%s" % (name, _RN.sub("_", ps.name)))
                 if not use_render_emitter:
                     continue
 
@@ -809,7 +844,7 @@ def _export(data, scene, camera, xres, yres, session=None):
         try:
             for d in duplicator.dupli_list:
                 ob = d.object
-                if not ob.hide_render and ob.dupli_type not in ('VERTS', 'FACES') and ob.type in _CT:
+                if not ob.hide_render and ob.dupli_type not in {'VERTS', 'FACES'} and ob.type in _CT:
                     onode = nodes.get(ob)
                     if onode is None:
                         arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
@@ -1009,11 +1044,11 @@ def _export(data, scene, camera, xres, yres, session=None):
         arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_bh_width)
     elif sft == 'sinc_filter':
         arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_sinc_width)
-    elif sft in ('cone_filter',
+    elif sft in {'cone_filter',
                  'cook_filter',
                  'disk_filter',
                  'gaussian_filter',
-                 'triangle_filter'):
+                 'triangle_filter'}:
         arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
     elif sft == 'farthest_filter':
         arnold.AiNodeSetStr(filter, "domain", opts.sample_filter_domain)
@@ -1179,14 +1214,14 @@ def view_update(engine, context):
                                 continue
                         if not input.hide_value:
                             v = input.default_value
-                            if input.bl_idname in ("NodeSocketColor",
-                                                   "NodeSocketVector",
-                                                   "NodeSocketVectorXYZ",
-                                                   "ArnoldNodeSocketColor"):
+                            if input.bl_idname in {'NodeSocketColor',
+                                                   'NodeSocketVector',
+                                                   'NodeSocketVectorXYZ',
+                                                   'ArnoldNodeSocketColor'}:
                                 v = v[:]
                             params[input.identifier] = (input.bl_idname, v)
                     for n, (t, v) in node.ai_properties.items():
-                        if t in ('RGB', 'RGBA', 'VECTOR'):
+                        if t in {'RGB', 'RGBA', 'VECTOR'}:
                             v = v[:]
                         params[n] = (t, v)
                     anode = (node.ai_name, params)
