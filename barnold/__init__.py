@@ -20,7 +20,6 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
     bl_idname = "ARNOLD_RENDER"
     bl_label = "Arnold Render"
 
-    bl_use_shading_nodes = True  # use cycles ui in node editor
     bl_use_shading_nodes_custom = False
 
     _CLASSES = []  # classes for (un)register
@@ -46,7 +45,7 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
             #"MATERIAL_PT_preview",
             "MATERIAL_PT_custom_props",
         ), False)),
-        #("properties_texture", None),
+        ("properties_texture", None),
         #("properties_texture", ((
         #    "TEXTURE_PT_context_texture",
         #    "TEXTURE_PT_preview",

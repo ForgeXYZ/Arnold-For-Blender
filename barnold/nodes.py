@@ -6,7 +6,7 @@ __email__ = "nildar@users.sourceforge.net"
 import collections
 
 import bpy
-from bpy.types import NodeSocket, Node
+from bpy.types import NodeTree, NodeSocket, Node
 from bpy.props import (
     IntProperty,
     BoolProperty,
@@ -17,6 +17,7 @@ from bpy.props import (
     PointerProperty
 )
 from mathutils import Matrix, Euler
+from bl_ui.space_node import NODE_HT_header, NODE_MT_editor_menus
 import nodeitems_utils
 
 from . import ArnoldRenderEngine
@@ -47,6 +48,99 @@ def _draw_property(layout, data, identifier, links):
     sub.prop(data, identifier)
     op = row.operator("barnold.node_socket_add", text="", icon=icon)
     op.identifier = identifier
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldWorldNodeTree(NodeTree):
+    bl_idname = 'ARNOLD_WORLD_NODETREE'
+    bl_label = "Arnold World"
+    bl_icon = 'WORLD'
+
+    _draw_header = None
+
+    @classmethod
+    def poll(cls, context):
+        return ArnoldRenderEngine.is_active(context)
+
+    @classmethod
+    def get_from_context(cls, context):
+        scene = context.scene
+        if scene:
+            world = scene.world
+            if world:
+                return (world.node_tree, world, world)
+        return (None, None, None)
+
+    @classmethod
+    def register(cls):
+        # HACK: show own header ui for node editor for world nodes
+        if cls._draw_header is None:
+            def draw(self, context):
+                if ArnoldRenderEngine.is_active(context):
+                    snode = context.space_data
+                    if snode.tree_type == 'ARNOLD_WORLD_NODETREE':
+                        ###################################
+                        # copy from space_node.py:36
+                        layout = self.layout
+
+                        scene = context.scene
+                        snode_id = snode.id
+                        toolsettings = context.tool_settings
+
+                        row = layout.row(align=True)
+                        row.template_header()
+
+                        NODE_MT_editor_menus.draw_collapsible(context, layout)
+
+                        layout.prop(snode, "tree_type", text="", expand=True)
+                        # end copy
+                        ###################################
+
+                        ###################################
+                        # copy from space_node.py:72
+                        row = layout.row()
+                        row.enabled = not snode.pin
+                        row.template_ID(scene, "world", new="world.new")
+                        if snode_id:
+                            row.prop(snode_id, "use_nodes")
+                        # end copy
+                        ###################################
+
+                        ###################################
+                        # copy from space_node.py:113
+                        layout.prop(snode, "pin", text="")
+                        layout.operator("node.tree_path_parent", text="", icon='FILE_PARENT')
+
+                        layout.separator()
+
+                        # Auto-offset nodes (called "insert_offset" in code)
+                        layout.prop(snode, "use_insert_offset", text="")
+
+                        # Snap
+                        row = layout.row(align=True)
+                        row.prop(toolsettings, "use_snap", text="")
+                        row.prop(toolsettings, "snap_node_element", icon_only=True)
+                        if toolsettings.snap_node_element != 'GRID':
+                            row.prop(toolsettings, "snap_target", text="")
+
+                        row = layout.row(align=True)
+                        row.operator("node.clipboard_copy", text="", icon='COPYDOWN')
+                        row.operator("node.clipboard_paste", text="", icon='PASTEDOWN')
+
+                        layout.template_running_jobs()
+                        # end copy
+                        ###################################
+                        return
+                cls._draw_header(self, context)
+
+            cls._draw_header = NODE_HT_header.draw
+            NODE_HT_header.draw = draw
+
+    @classmethod
+    def unregister_draw_cb(cls):
+        if cls._draw_header is not None:
+            NODE_HT_header.draw = cls._draw_header
+            cls._draw_header = None
 
 
 @ArnoldRenderEngine.register_class
@@ -1725,24 +1819,24 @@ class ArnoldNodeMixRGB(ArnoldNode):
 
 
 class ArnoldNodeCategory(nodeitems_utils.NodeCategory):
-    _shader_type = {'OBJECT', 'WORLD'}
-
     @classmethod
     def poll(cls, context):
         return (
             ArnoldRenderEngine.is_active(context) and
-            context.space_data.tree_type == 'ShaderNodeTree' and
-            context.space_data.shader_type in cls._shader_type
+            context.space_data.tree_type == 'ShaderNodeTree'
         )
 
 
 class ArnoldWorldNodeCategory(ArnoldNodeCategory):
-    _shader_type = {'WORLD'}
+    @classmethod
+    def poll(cls, context):
+        return (
+            ArnoldRenderEngine.is_active(context) and
+            context.space_data.tree_type == 'ARNOLD_WORLD_NODETREE'
+        )
 
 
 class ArnoldObjectNodeCategory(ArnoldNodeCategory):
-    _shader_type = {'OBJECT'}
-
     @classmethod
     def poll(cls, context):
         return (
@@ -1752,8 +1846,6 @@ class ArnoldObjectNodeCategory(ArnoldNodeCategory):
 
 
 class ArnoldLightNodeCategory(ArnoldNodeCategory):
-    _shader_type = {'OBJECT'}
-
     @classmethod
     def poll(cls, context):
         return (
@@ -1764,7 +1856,7 @@ class ArnoldLightNodeCategory(ArnoldNodeCategory):
 
 def register():
     from nodeitems_builtins import (
-        ShaderNewNodeCategory,
+        #ShaderNewNodeCategory,
         ShaderOldNodeCategory,
         node_group_items
     )
@@ -1779,7 +1871,7 @@ def register():
             )
         return _fn
 
-    ShaderNewNodeCategory.poll = _poll(ShaderNewNodeCategory.poll)
+    #ShaderNewNodeCategory.poll = _poll(ShaderNewNodeCategory.poll)
     ShaderOldNodeCategory.poll = _poll(ShaderOldNodeCategory.poll)
 
     node_categories = [

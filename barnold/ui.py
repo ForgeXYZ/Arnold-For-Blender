@@ -687,7 +687,8 @@ class ArnoldTexturePanel(TextureButtonsPanel, Panel):
 
     @classmethod
     def poll(cls, context):
-        return context.scene.render.engine in cls.COMPAT_ENGINES
+        # TODO:
+        return False # context.scene.render.engine in cls.COMPAT_ENGINES
 
     def draw(self, context):
         layout = self.layout
