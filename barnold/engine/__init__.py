@@ -132,6 +132,54 @@ _ParticleSystem._fields_ = [
 ]
 
 
+# <blender sources>\source\blender\makesdna\DNA_object_force.h:159
+class _PTCacheMem(ctypes.Structure):
+    pass
+
+_PTCacheMem._fields_ = [
+    ("next", ctypes.POINTER(_PTCacheMem)),
+    ("prev", ctypes.POINTER(_PTCacheMem)),
+    ("frame", ctypes.c_uint),
+    ("totpoint", ctypes.c_uint),
+    ("data_types", ctypes.c_uint),
+    ("flag", ctypes.c_uint),
+    ("data", ctypes.c_void_p * 8),
+    ("cur", ctypes.c_void_p * 8),
+    ("extradata", _ListBase)
+]
+
+
+# <blender sources>\source\blender\makesdna\DNA_object_force.h:170
+class _PointCache(ctypes.Structure):
+    pass
+
+_PointCache._fields_ = [
+    ("next", ctypes.POINTER(_PointCache)),
+    ("prev", ctypes.POINTER(_PointCache)),
+    ("flag", ctypes.c_int),
+    ("step", ctypes.c_int),
+    ("simframe", ctypes.c_int),
+    ("startframe", ctypes.c_int),
+    ("endframe", ctypes.c_int),
+    ("editframe", ctypes.c_int),
+    ("last_exact", ctypes.c_int),
+    ("last_valid", ctypes.c_int),
+    ("pad", ctypes.c_int),
+    ("totpoint", ctypes.c_int),
+    ("index", ctypes.c_int),
+    ("compression", ctypes.c_short),
+    ("rt", ctypes.c_short),
+    ("name", ctypes.c_char * 64),
+    ("prev_name", ctypes.c_char * 64),
+    ("info", ctypes.c_char * 64),
+    ("path", ctypes.c_char * 1024),
+    ("cached_frames", ctypes.c_char_p),
+    ("mem_cache", _ListBase),
+    ("edit", ctypes.c_void_p),
+    ("free_edit", ctypes.c_void_p)
+]
+
+
 def _CleanNames(prefix, count):
     def fn(name):
         return "%s%d::%s" % (prefix, next(count), _RN.sub("_", name))
@@ -563,28 +611,52 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
     return node
 
 
-def _AiPointsPS(ob, ps, pss, shaders):
+def _AiPointsPS(ob, ps, pss, frame_current, shaders):
     pc = time.perf_counter()
 
-    n = 0
-    tc = pss.trail_count  # TODO: can be implemented?
-    a = _NDARRAY([len(ps.particles) * tc, 3], dtype=numpy.float32)
-    r = _NDARRAY(len(ps.particles) * tc, dtype=numpy.float32)
-    for p in ps.particles:
-        if p.alive_state == 'ALIVE':
-            a[n] = p.location
-            r[n] = p.size
-            n += 1
+    tc = pss.trail_count
+    a = _NDARRAY([len(ps.particles) * tc * 100, 3], dtype=numpy.float32)
+    #r = _NDARRAY(len(ps.particles) * tc, dtype=numpy.float32)
+    
+    def from_cache():
+        n = 0
+        frame = max(0, frame_current - tc)
+        _cache = _PointCache.from_address(ps.point_cache.as_pointer())
+        _mem = ctypes.cast(_cache.mem_cache.first, ctypes.POINTER(_PTCacheMem))
+        while _mem:
+            _mem = _mem.contents
+            print(_mem.frame, _mem.totpoint)
+            if 1 or frame < _mem.frame:
+                if _mem.frame > frame_current:
+                    break
+                if _mem.totpoint > 0 and _mem.data[0]:
+                    totpoint = _mem.totpoint
+                    idxs = ctypes.cast(_mem.data[0], ctypes.POINTER(ctypes.c_int))
+                    cos = ctypes.cast(_mem.data[1], ctypes.POINTER(ctypes.c_float * 3))
+                    for i in range(totpoint):
+                        a[n] = cos[idxs[i]]
+                        n += 1
+            _mem = _mem.next
+        return n
+
+    # first try export from the point cache
+    n = from_cache()
+    if n == 0:
+        for p in ps.particles:
+            if p.alive_state == 'ALIVE':
+                a[n] = p.location
+                #r[n] = p.size
+                n += 1
 
     points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(a.ctypes.data))
-    radius = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(r.ctypes.data))
+    #radius = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(r.ctypes.data))
 
     arnold.AiMsgDebug(b"    points [%d] (%f)", ctypes.c_int(n), ctypes.c_double(time.perf_counter() - pc))
 
     if n > 0:
         node = arnold.AiNode("points")
         arnold.AiNodeSetArray(node, "points", points)
-        arnold.AiNodeSetFlt(node, "radius", 0.1)
+        arnold.AiNodeSetFlt(node, "radius", pss.particle_size)
         # TODO: own properties (visibility, shadow, ...)
         slots = ob.material_slots
         m = pss.material
@@ -693,7 +765,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                     if pss.type == 'HAIR' and pss.render_type == 'PATH':
                         node = _AiCurvesPS(scene, ob, mod, ps, pss, shaders)
                     elif pss.type == 'EMITTER' and pss.render_type in {'HALO', 'PATH'}:
-                        node = _AiPointsPS(ob, ps, pss, shaders)
+                        node = _AiPointsPS(ob, ps, pss, scene.frame_current, shaders)
                     if node is not None:
                         if name is None:
                             name = _Name(ob.name)
