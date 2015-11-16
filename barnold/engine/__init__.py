@@ -27,9 +27,10 @@ from ..nodes import (
     ArnoldNodeWorldOutput,
     ArnoldNodeLightOutput
 )
-from .ipr import ipr as _IPR
+from . import blen_low as _BL
+from . import ipr as _IPR
 
-_IPR = _IPR()
+_IPR = _IPR.ipr()
 
 _RN = re.compile("[^-0-9A-Za-z_]")  # regex to cleanup names
 _CT = {'MESH', 'CURVE', 'SURFACE', 'META', 'FONT'}  # convertible types
@@ -614,39 +615,48 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
 def _AiPointsPS(ob, ps, pss, frame_current, shaders):
     pc = time.perf_counter()
 
-    tc = pss.trail_count
-    a = _NDARRAY([len(ps.particles) * tc * 100, 3], dtype=numpy.float32)
-    #r = _NDARRAY(len(ps.particles) * tc, dtype=numpy.float32)
+    if 1:
+        a = _BL.psys_get_points(ps, pss, frame_current)
+        if a is None:
+            return None
+        n = len(a)
+        if not n:
+            return None
+    else:
+        pass
+        tc = pss.trail_count
+        a = _NDARRAY([len(ps.particles) * tc * 100, 3], dtype=numpy.float32)
+        #r = _NDARRAY(len(ps.particles) * tc, dtype=numpy.float32)
     
-    def from_cache():
-        n = 0
-        frame = max(0, frame_current - tc)
-        _cache = _PointCache.from_address(ps.point_cache.as_pointer())
-        _mem = ctypes.cast(_cache.mem_cache.first, ctypes.POINTER(_PTCacheMem))
-        while _mem:
-            _mem = _mem.contents
-            print(_mem.frame, _mem.totpoint)
-            if 1 or frame < _mem.frame:
-                if _mem.frame > frame_current:
-                    break
-                if _mem.totpoint > 0 and _mem.data[0]:
-                    totpoint = _mem.totpoint
-                    idxs = ctypes.cast(_mem.data[0], ctypes.POINTER(ctypes.c_int))
-                    cos = ctypes.cast(_mem.data[1], ctypes.POINTER(ctypes.c_float * 3))
-                    for i in range(totpoint):
-                        a[n] = cos[idxs[i]]
-                        n += 1
-            _mem = _mem.next
-        return n
+        def from_cache():
+            n = 0
+            frame = max(0, frame_current - tc)
+            _cache = _PointCache.from_address(ps.point_cache.as_pointer())
+            _mem = ctypes.cast(_cache.mem_cache.first, ctypes.POINTER(_PTCacheMem))
+            while _mem:
+                _mem = _mem.contents
+                print(_mem.frame, _mem.totpoint)
+                if 1 or frame < _mem.frame:
+                    if _mem.frame > frame_current:
+                        break
+                    if _mem.totpoint > 0 and _mem.data[0]:
+                        totpoint = _mem.totpoint
+                        idxs = ctypes.cast(_mem.data[0], ctypes.POINTER(ctypes.c_int))
+                        cos = ctypes.cast(_mem.data[1], ctypes.POINTER(ctypes.c_float * 3))
+                        for i in range(totpoint):
+                            a[n] = cos[idxs[i]]
+                            n += 1
+                _mem = _mem.next
+            return n
 
-    # first try export from the point cache
-    n = from_cache()
-    if n == 0:
-        for p in ps.particles:
-            if p.alive_state == 'ALIVE':
-                a[n] = p.location
-                #r[n] = p.size
-                n += 1
+        # first try export from the point cache
+        n = from_cache()
+        if n == 0:
+            for p in ps.particles:
+                if p.alive_state == 'ALIVE':
+                    a[n] = p.location
+                    #r[n] = p.size
+                    n += 1
 
     points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(a.ctypes.data))
     #radius = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(r.ctypes.data))
