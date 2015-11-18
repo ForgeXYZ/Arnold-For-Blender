@@ -25,7 +25,7 @@
     <PtvsTargetsFile>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets</PtvsTargetsFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="engine\blen_low.py" />
+    <Compile Include="engine\bla.py" />
     <Compile Include="engine\ipr.py" />
     <Compile Include="engine\__init__.py" />
     <Compile Include="nodes.py" />
