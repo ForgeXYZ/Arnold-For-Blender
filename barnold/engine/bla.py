@@ -2,10 +2,17 @@
 
 __author__ = "Ildar Nikolaev"
 __email__ = "nildar@users.sourceforge.net"
+__doc__ = "blender low level data access module"
 
 import ctypes
-import numpy
 import itertools
+
+import numpy
+from numpy import ndarray as _NDARRAY
+from numpy.linalg import norm as _NORM
+
+_S = (..., numpy.newaxis)
+
 
 # <...>\source\blender\blenlib\intern\noise.c:160
 hash = [
@@ -50,6 +57,7 @@ PSYS_FRAND_COUNT = 1024
 PSYS_FRAND_SEED_OFFSET = []
 PSYS_FRAND_SEED_MULTIPLIER = []
 PSYS_FRAND_BASE = []
+
 
 class RNG():
     def __init__(self, x):
@@ -105,7 +113,7 @@ def psys_frand(pss, seed):
     return PSYS_FRAND_BASE[(offset * seed * multiplier) % PSYS_FRAND_COUNT]
 
 
-# <blender sources>\source\blender\makesdna\DNA_listBase.h:59
+# <...>\source\blender\makesdna\DNA_listBase.h:59
 class _ListBase(ctypes.Structure):
     pass
 
@@ -115,7 +123,7 @@ _ListBase._fields_ = [
 ]
 
 
-# <blender sources>\source\blender\blenkernel\BKE_particle.h:121
+# <...>\source\blender\blenkernel\BKE_particle.h:121
 class _ParticleCacheKey(ctypes.Structure):
     _fields_ = [
         ("co", ctypes.c_float * 3),
@@ -127,7 +135,7 @@ class _ParticleCacheKey(ctypes.Structure):
     ]
 
 
-# <blender sources>\source\blender\makesdna\DNA_particle_types.h:264
+# <...>\source\blender\makesdna\DNA_particle_types.h:264
 class _ParticleSystem(ctypes.Structure):
     pass
 
@@ -195,7 +203,7 @@ _ParticleSystem._fields_ = [
 ]
 
 
-# <blender sources>\source\blender\makesdna\DNA_object_force.h:159
+# <...>\source\blender\makesdna\DNA_object_force.h:159
 class _PTCacheMem(ctypes.Structure):
     pass
 
@@ -212,7 +220,7 @@ _PTCacheMem._fields_ = [
 ]
 
 
-# <blender sources>\source\blender\makesdna\DNA_object_force.h:170
+# <...>\source\blender\makesdna\DNA_object_force.h:170
 class _PointCache(ctypes.Structure):
     pass
 
@@ -243,6 +251,122 @@ _PointCache._fields_ = [
 ]
 
 
+def _BezierInterpolate(pts, n, cache, npts, steps, scale):
+    """Interpolate points cache to bezier curve
+        pts:
+            numpy.ndarray([x, y, 3], dtype='f')
+            array for bezier interpolated control points
+        n:
+            int
+            position in pts array
+        cache:
+            ctypes.POINTER(_ParticleCacheKey)
+            points cache
+        npts:
+            int
+            points number in cache.
+        scale:
+            float
+            interpolation scale factor
+    """
+    for i in range(npts):
+        c = cache[i]
+
+        a = _NDARRAY([steps, 3], dtype='f')
+        for j in range(steps):
+            a[j] = c[j].co
+
+        s = a[1:-1]
+        t = a[2:] - a[:-2]
+        t *= scale / _NORM(t, axis=1)[_S]  # tangents
+        m = _NORM(a[1:] - a[:-1], axis=1)[_S]  # magnitudes
+
+        pts[n, ::3] = a
+        pts[n, 1] = a[0] + (a[1] - a[0]) * scale
+        pts[n, -2] = a[-1] - (a[-1] - a[-2]) * scale
+        pts[n, 2:-3:3] = s - t * m[:-1]
+        pts[n, 4::3] = s + t * m[1:]
+        n += 1
+    return n
+
+
+def psys_get_curves(ps, steps, use_parent_particles, props):
+    nch = len(ps.child_particles)
+    if nch == 0 or use_parent_particles:
+        np = len(ps.particles)
+        tot = np + nch
+        if tot <= 0:
+            return None
+        use_parent_particles = True
+    elif nch > 0:
+        tot = nch
+        use_parent_particles = False
+    else:
+        return None
+
+    _ps = _ParticleSystem.from_address(ps.as_pointer())
+    n = 0
+
+    if props.basis == 'bezier':
+        nsteps = steps * 3 - 2
+        points = _NDARRAY([tot, nsteps, 3], dtype=numpy.float32)
+        scale = props.bezier_scale
+        if use_parent_particles:
+            n = _BezierInterpolate(points, n, _ps.pathcache, np, steps, scale)
+        _BezierInterpolate(points, n, _ps.childcache, nch, steps, scale)
+        radius = numpy.linspace(props.radius_root, props.radius_tip, steps, dtype=numpy.float32)
+        return (points.reshape(-1, 3), radius.repeat(tot), nsteps)
+
+    if props.basis in {'b-spline', 'catmull-rom'}:
+        points = _NDARRAY([tot * (steps + 4), 3], dtype=numpy.float32)
+        if use_parent_particles:
+            _cache = _ps.pathcache
+            for i in range(np):
+                c = _cache[i]
+                points[n:n + 2] = c[0].co
+                n += 2
+                for j in range(steps):
+                    points[n] = c[j].co
+                    n += 1
+                points[n:n + 2] = points[n - 1]
+                n += 2
+        _cache = _ps.childcache
+        for i in range(nch):
+            c = _cache[i]
+            points[n:n + 2] = c[0].co
+            n += 2
+            for j in range(steps):
+                points[n] = c[j].co
+                n += 1
+            points[n: n + 2] = points[n - 1]
+            n += 2
+        radius = numpy.ndarray(steps + 2, dtype=numpy.float32)
+        radius[1:-1] = numpy.linspace(props.radius_root, props.radius_tip, steps, dtype=numpy.float32)
+        radius[0] = 0
+        radius[-1] = 0
+        return (points, radius.repeat(tot), steps + 4)
+
+    if props.basis == 'linear':
+        points = _NDARRAY([tot * steps, 3], dtype=numpy.float32)
+        if use_parent_particles:
+            _cache = _ps.pathcache
+            for i in range(np):
+                c = _cache[i]
+                for j in range(steps):
+                    points[n] = c[j].co
+                    n += 1
+        _cache = _ps.childcache
+        for i in range(nch):
+            c = _cache[i]
+            for j in range(steps):
+                points[n] = c[j].co
+                n += 1
+        radius = numpy.linspace(props.radius_root, props.radius_tip, steps, dtype=numpy.float32)
+        return (points, radius.repeat(tot), steps)
+
+    return None
+
+
 def psys_get_points(ps, pss, frame_current):
     nch = len(ps.child_particles)
     trail_count = pss.trail_count
@@ -251,75 +375,116 @@ def psys_get_points(ps, pss, frame_current):
             path_end = pss.path_end
             randlength = pss.length_random
             use_absolute_path_time = pss.use_absolute_path_time
+            time_tweak = pss.time_tweak
+
+            length = path_end
+            if use_absolute_path_time:
+                _ct = frame_current - length
+            tc = trail_count if trail_count else 1.0
+
+            cast = ctypes.cast
+            p_uint = ctypes.POINTER(ctypes.c_uint)
+            p_float3 = ctypes.POINTER(ctypes.c_float * 3)
 
             _cache = _PointCache.from_address(ps.point_cache.as_pointer())
             _mem = ctypes.cast(_cache.mem_cache.first, ctypes.POINTER(_PTCacheMem))
 
-            for i, p in enumerate(ps.particles):
-                pa_birthtime = p.birth_time
-                pa_dietime = p.die_time
-                pa_time = (frame_current - pa_birthtime) / p.lifetime
+            for a, pa in enumerate(ps.particles):
+                # <...>\source\blender\editors\space_view3d\drawobject.c:5354
+                pa_birthtime = pa.birth_time
+                pa_dietime = pa.die_time
+                pa_time = (frame_current - pa_birthtime) / pa.lifetime
 
                 if randlength > 0:
-                    r_length = psys_frand(pss, i + 22)
+                    r_length = psys_frand(pss, a + 22)
                     tc = trail_count * (1.0 - randlength * r_length)
+                    if not tc:
+                        tc = 1.0
                     length = path_end * (1.0 - randlength * r_length)
-                else:
-                    tc = trail_count
-                    length = path_end
-                ct = (frame_current if use_absolute_path_time else pa_time) - length
-                dt = length / (tc if tc else 1.0)
+                if not use_absolute_path_time:
+                    _ct = pa_time - length
 
-                for j in range(trail_count):
-                    ct += dt
+                # <...>\source\blender\editors\space_view3d\drawobject.c:5404
+                for j in range(1, trail_count + 1):
+                    ct = _ct + (j / tc) * length
                     if use_absolute_path_time:
-                        if ct < pa_birthtime or ct > pa_dietime:
+                        if pa_birthtime > ct or ct > pa_dietime:
                             continue
                         t = ct
-                    elif ct < 0 or ct > 1:
+                    elif 0 > ct or ct > 1:
                         continue
                     else:
                         t = pa_birthtime + ct * (pa_dietime - pa_birthtime)
 
-                    print(t)
-
                     prev = None
-                    pt = None
                     while _mem:
+                        # <...>\source\blender\blenkernel\intern\particle.c:839
                         cur = _mem.contents
-                        if cur.frame >= t:
-                            totpoint = cur.totpoint
+                        cf = cur.frame
+                        if t <= cf:
+                            tp = cur.totpoint
+                            data = cur.data
+                            if tp > 0 and data[0]:
+                                idxs = cast(data[0], p_uint)
+                                locs = cast(data[1], p_float3)
 
-                            print(cur.frame, totpoint)
+                                if prev is not None:
+                                    vels = cast(data[2], p_float3)
 
-                            if totpoint > 0 and cur.data[0]:
-                                idxs = ctypes.cast(cur.data[0], ctypes.POINTER(ctypes.c_int))
-                                locs = ctypes.cast(cur.data[1], ctypes.POINTER(ctypes.c_float * 3))
-                                for k in range(totpoint):
-                                    co = locs[idxs[k]]
-                                    if prev is not None:
-                                        idxs = ctypes.cast(prev.data[0], ctypes.POINTER(ctypes.c_int))
-                                        locs = ctypes.cast(prev.data[1], ctypes.POINTER(ctypes.c_float * 3))
-                                        pco = locs[idx[k]]
-                                        dfra = t - pt
-                                        co = pco
+                                    data = prev.data
+                                    pidxs = cast(data[0], p_uint)
+                                    plocs = cast(data[1], p_float3)
+                                    pvels = cast(data[2], p_float3)
+                                    ptp = prev.totpoint
+
+                                for k in range(tp):
+                                    i = idxs[k]
+                                    co = locs[i]
+                                    if prev is not None and k < ptp:
+                                        ve = vels[i]
+
+                                        i = pidxs[k]
+                                        pco = plocs[i]
+                                        pve = pvels[i]
+
+                                        # <...>\source\blender\blenkernel\intern\particle.c:1118
+                                        pf = prev.frame
+                                        dfra = cf - pf
+                                        kt = (t - pf) / dfra
+
+                                        # <...>\source\blender\blenkernel\intern\particle.c:1123
+                                        invdt = dfra * 0.04 * time_tweak
+                                        v0 = ve[0] * invdt
+                                        v1 = ve[1] * invdt
+                                        v2 = ve[2] * invdt
+                                        pv0 = pve[0] * invdt
+                                        pv1 = pve[1] * invdt
+                                        pv2 = pve[2] * invdt
+
+                                        # <...>\source\blender\blenlib\intern\math_geom.c:3283
+                                        t2 = kt * kt
+                                        t3 = t2 * kt
+                                        c0 = pco[0] - co[0]
+                                        c1 = pco[1] - co[1]
+                                        c2 = pco[2] - co[2]
+                                        a0 = pv0 + v0 + 2 * c0
+                                        a1 = pv1 + v1 + 2 * c1
+                                        a2 = pv2 + v2 + 2 * c2
+                                        b0 = -2 * pv0 - v0 - 3 * c0
+                                        b1 = -2 * pv1 - v1 - 3 * c1
+                                        b2 = -2 * pv2 - v2 - 3 * c2
+                                        co = [
+                                            a0 * t3 + b0 * t2 + pv0 * kt + pco[0],
+                                            a1 * t3 + b1 * t2 + pv1 * kt + pco[1],
+                                            a2 * t3 + b2 * t2 + pv2 * kt + pco[2]
+                                        ]
                                     yield co
                             break
                         prev = cur
-                        pt = t
-                        #if 1 or frame < _mem.frame:
-                        #    if _mem.frame > frame_current:
-                        #        break
-                        #    if _mem.totpoint > 0 and _mem.data[0]:
-                        #        totpoint = _mem.totpoint
-                        #        idxs = ctypes.cast(_mem.data[0], ctypes.POINTER(ctypes.c_int))
-                        #        cos = ctypes.cast(_mem.data[1], ctypes.POINTER(ctypes.c_float * 3))
-                        #        for i in range(totpoint):
-                        #            a[n] = cos[idxs[i]]
-                        #            n += 1
                         _mem = cur.next
         it = _it()
     elif nch > 0:
+        # TODO: child particles
         return None
     else:
         it = (p.location for p in ps.particles if p.alive_state == 'ALIVE')

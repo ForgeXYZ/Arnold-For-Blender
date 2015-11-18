@@ -27,7 +27,7 @@ from ..nodes import (
     ArnoldNodeWorldOutput,
     ArnoldNodeLightOutput
 )
-from . import blen_low as _BL
+from . import bla as _BLA
 from . import ipr as _IPR
 
 _IPR = _IPR.ipr()
@@ -36,149 +36,6 @@ _RN = re.compile("[^-0-9A-Za-z_]")  # regex to cleanup names
 _CT = {'MESH', 'CURVE', 'SURFACE', 'META', 'FONT'}  # convertible types
 _MR = Matrix.Rotation(math.radians(90.0), 4, 'X')
 _SQRT2 = math.sqrt(2)
-
-from numpy import ndarray as _NDARRAY
-from numpy.linalg import norm as _NORM
-
-_S = (..., numpy.newaxis)
-
-
-# <blender sources>\source\blender\makesdna\DNA_listBase.h:59
-class _ListBase(ctypes.Structure):
-    pass
-
-_ListBase._fields_ = [
-    ("first", ctypes.POINTER(_ListBase)),
-    ("last", ctypes.POINTER(_ListBase))
-]
-
-
-# <blender sources>\source\blender\blenkernel\BKE_particle.h:121
-class _ParticleCacheKey(ctypes.Structure):
-    _fields_ = [
-        ("co", ctypes.c_float * 3),
-        ("vel", ctypes.c_float * 3),
-        ("rot", ctypes.c_float * 4),
-        ("col", ctypes.c_float * 3),
-        ("time", ctypes.c_float),
-        ("segments", ctypes.c_int),
-    ]
-
-
-# <blender sources>\source\blender\makesdna\DNA_particle_types.h:264
-class _ParticleSystem(ctypes.Structure):
-    pass
-
-_ParticleSystem._fields_ = [
-    ("next", ctypes.POINTER(_ParticleSystem)),
-    ("prev", ctypes.POINTER(_ParticleSystem)),
-    # particle settings
-    ("part", ctypes.c_void_p),
-    # (parent) particles
-    ("particles", ctypes.c_void_p),
-    # child particles
-    ("child", ctypes.c_void_p),
-    # particle editmode (runtime)
-    ("edit", ctypes.c_void_p),
-    # free callback
-    ("free_edit", ctypes.c_void_p),
-    # path cache (runtime)
-    ("pathcache", ctypes.POINTER(ctypes.POINTER(_ParticleCacheKey))),
-    # child cache (runtime)
-    ("childcache", ctypes.POINTER(ctypes.POINTER(_ParticleCacheKey))),
-    # buffers for the above
-    ("pathcachebufs", _ListBase),
-    ("childcachebufs", _ListBase),
-    # cloth simulation for hair
-    ("clmd", ctypes.c_void_p),
-    # input/output for cloth simulation
-    ("hair_in_dm", ctypes.c_void_p),
-    ("hair_out_dm", ctypes.c_void_p),
-    #
-    ("target_ob", ctypes.c_void_p),
-    # run-time only lattice deformation data
-    ("lattice_deform_data", ctypes.c_void_p),
-    # particles from global space -> parent space
-    ("parent", ctypes.c_void_p),
-    # used for keyed and boid physics
-    ("targets", _ListBase),
-    # particle system name, MAX_NAME
-    ("name", ctypes.c_char * 64),
-    # used for duplicators
-    ("imat", ctypes.c_float * 4 * 4),
-    #
-    ("cfra", ctypes.c_float),
-    ("tree_frame", ctypes.c_float),
-    ("bvhtree_frame", ctypes.c_float),
-    ("seed", ctypes.c_int),
-    ("child_seed", ctypes.c_int),
-    ("flag", ctypes.c_int),
-    ("totpart", ctypes.c_int),
-    ("totunexist", ctypes.c_int),
-    ("totchild", ctypes.c_int),
-    ("totcached", ctypes.c_int),
-    ("totchildcache", ctypes.c_int),
-    ("recalc", ctypes.c_short),
-    ("target_psys", ctypes.c_short),
-    ("totkeyed", ctypes.c_short),
-    ("bakespace", ctypes.c_short),
-    # billboard uv name, MAX_CUSTOMDATA_LAYER_NAME
-    ("bb_uvname", ctypes.c_char * 64 * 3),
-    # vertex groups, 0==disable, 1==starting index
-    ("vgroup", ctypes.c_short * 12),
-    ("vg_neg", ctypes.c_short),
-    ("rt3", ctypes.c_short),
-    # temporary storage during render
-    ("renderdata", ctypes.c_void_p)
-]
-
-
-# <blender sources>\source\blender\makesdna\DNA_object_force.h:159
-class _PTCacheMem(ctypes.Structure):
-    pass
-
-_PTCacheMem._fields_ = [
-    ("next", ctypes.POINTER(_PTCacheMem)),
-    ("prev", ctypes.POINTER(_PTCacheMem)),
-    ("frame", ctypes.c_uint),
-    ("totpoint", ctypes.c_uint),
-    ("data_types", ctypes.c_uint),
-    ("flag", ctypes.c_uint),
-    ("data", ctypes.c_void_p * 8),
-    ("cur", ctypes.c_void_p * 8),
-    ("extradata", _ListBase)
-]
-
-
-# <blender sources>\source\blender\makesdna\DNA_object_force.h:170
-class _PointCache(ctypes.Structure):
-    pass
-
-_PointCache._fields_ = [
-    ("next", ctypes.POINTER(_PointCache)),
-    ("prev", ctypes.POINTER(_PointCache)),
-    ("flag", ctypes.c_int),
-    ("step", ctypes.c_int),
-    ("simframe", ctypes.c_int),
-    ("startframe", ctypes.c_int),
-    ("endframe", ctypes.c_int),
-    ("editframe", ctypes.c_int),
-    ("last_exact", ctypes.c_int),
-    ("last_valid", ctypes.c_int),
-    ("pad", ctypes.c_int),
-    ("totpoint", ctypes.c_int),
-    ("index", ctypes.c_int),
-    ("compression", ctypes.c_short),
-    ("rt", ctypes.c_short),
-    ("name", ctypes.c_char * 64),
-    ("prev_name", ctypes.c_char * 64),
-    ("info", ctypes.c_char * 64),
-    ("path", ctypes.c_char * 1024),
-    ("cached_frames", ctypes.c_char_p),
-    ("mem_cache", _ListBase),
-    ("edit", ctypes.c_void_p),
-    ("free_edit", ctypes.c_void_p)
-]
 
 
 def _CleanNames(prefix, count):
@@ -415,146 +272,22 @@ def _AiPolymesh(mesh, shaders):
     return node
 
 
-def _BezierInterpolate(pts, n, cache, npts, steps, scale):
-    """
-        pts:
-            numpy.ndarray([x, y, 3], dtype='f')
-            array for bezier interpolated control points
-        n:
-            int
-            position in pts array
-        cache:
-            ctypes.POINTER(_ParticleCacheKey)
-            points cache
-        npts:
-            int
-            points number in cache.
-        scale:
-            float
-            interpolation scale factor
-    """
-    for i in range(npts):
-        c = cache[i]
-
-        a = _NDARRAY([steps, 3], dtype='f')
-        for j in range(steps):
-            a[j] = c[j].co
-
-        s = a[1:-1]
-        t = a[2:] - a[:-2]
-        t *= scale / _NORM(t, axis=1)[_S]  # tangents
-        m = _NORM(a[1:] - a[:-1], axis=1)[_S]  # magnitudes
-
-        pts[n, ::3] = a
-        pts[n, 1] = a[0] + (a[1] - a[0]) * scale
-        pts[n, -2] = a[-1] - (a[-1] - a[-2]) * scale
-        pts[n, 2:-3:3] = s - t * m[:-1]
-        pts[n, 4::3] = s + t * m[1:]
-        n += 1
-    return n
-
-
 def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
-    """Create arnold curve node from particle system"""
+    """Create arnold curves node from a particle system"""
     pc = time.perf_counter()
+
     ps.set_resolution(scene, ob, 'RENDER')
     try:
-        np = len(ps.particles)
-        nch = len(ps.child_particles)
-
-        if nch == 0 or pss.use_parent_particles:
-            tot = np + nch
-            if tot <= 0:
-                return None
-            use_parent_particles = True
-        elif nch > 0:
-            tot = nch
-            use_parent_particles = False
-        else:
-            return None
-
-        _ps = _ParticleSystem.from_address(ps.as_pointer())
-        steps = 2 ** pss.render_step + 1
         props = pss.arnold.curves
-        n = 0
-
-        if props.basis == 'bezier':
-            scale = props.bezier_scale
-            nsteps = steps * 3 - 2
-            p = numpy.ndarray([tot, nsteps, 3], dtype=numpy.float32)
-            if use_parent_particles:
-                n = _BezierInterpolate(p, n, _ps.pathcache, np, steps, scale)
-            _BezierInterpolate(p, n, _ps.childcache, nch, steps, scale)
-            a = numpy.tile(
-                numpy.linspace(
-                    props.radius_root, props.radius_tip, steps, dtype=numpy.float32
-                ),
-                tot
-            )
-            radius = arnold.AiArrayConvert(tot * steps, 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(a.ctypes.data))
-            points = arnold.AiArrayConvert(tot * nsteps, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(p.ctypes.data))
-            steps = nsteps
-        elif props.basis in {'b-spline', 'catmull-rom'}:
-            p = numpy.ndarray([tot * (steps + 4), 3], dtype=numpy.float32)
-            if use_parent_particles:
-                _cache = _ps.pathcache
-                for i in range(np):
-                    c = _cache[i]
-                    p[n:n + 2] = c[0].co
-                    n += 2
-                    for j in range(steps):
-                        p[n] = c[j].co
-                        n += 1
-                    p[n:n + 2] = p[n - 1]
-                    n += 2
-            _cache = _ps.childcache
-            for i in range(nch):
-                c = _cache[i]
-                p[n:n + 2] = c[0].co
-                n += 2
-                for j in range(steps):
-                    p[n] = c[j].co
-                    n += 1
-                p[n: n + 2] = p[n - 1]
-                n += 2
-            points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(p.ctypes.data))
-            a = numpy.ndarray(steps + 2, dtype=numpy.float32)
-            a[1:-1] = numpy.linspace(props.radius_root, props.radius_tip, steps, dtype=numpy.float32)
-            a[0] = 0
-            a[-1] = 0
-            a = numpy.tile(a, tot)
-            radius = arnold.AiArrayConvert(tot * (steps + 2), 1, arnold.AI_TYPE_FLOAT,
-                                           ctypes.c_void_p(a.ctypes.data))
-            steps += 4
-        elif props.basis == 'linear':
-            points = arnold.AiArrayAllocate(tot * steps, 1, arnold.AI_TYPE_POINT)
-            p = ctypes.cast(ctypes.c_void_p(points.contents.data),
-                            ctypes.POINTER(ctypes.c_float * 3))
-            if use_parent_particles:
-                _cache = _ps.pathcache
-                for i in range(np):
-                    c = _cache[i]
-                    for j in range(steps):
-                        p[n] = c[j].co
-                        n += 1
-            _cache = _ps.childcache
-            for i in range(nch):
-                c = _cache[i]
-                for j in range(steps):
-                    p[n] = c[j].co
-                    n += 1
-            a = numpy.tile(
-                numpy.linspace(
-                    props.radius_root, props.radius_tip, steps, dtype=numpy.float32
-                ),
-                tot
-            )
-            radius = arnold.AiArrayConvert(tot * steps, 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(a.ctypes.data))
-        else:
+        steps = 2 ** pss.render_step + 1
+        curves = _BLA.psys_get_curves(ps, steps, pss.use_parent_particles, props)
+        if curves is None:
             return None
+        p, r, steps = curves
+        points = arnold.AiArrayConvert(len(p), 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(p.ctypes.data))
+        radius = arnold.AiArrayConvert(len(r), 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(r.ctypes.data))
 
-        arnold.AiMsgDebug(b"    hair [%dx%d] (%f)", ctypes.c_int(steps), ctypes.c_int(tot),
-                            ctypes.c_double(time.perf_counter() - pc))
+        arnold.AiMsgDebug(b"    hair [%d] (%f)", ctypes.c_int(len(p)), ctypes.c_double(time.perf_counter() - pc))
 
         node = arnold.AiNode("curves")
         arnold.AiNodeSetUInt(node, "num_points", steps)
@@ -575,16 +308,19 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
             if uv_no >= 0:
                 pc = time.perf_counter()
 
-                uv_on_emitter = ps.uv_on_emitter
                 setFlt = arnold.AiArraySetFlt
+                uv_on_emitter = ps.uv_on_emitter
+
+                np = len(ps.particles)
+                nch = len(ps.child_particles)
                 if nch == 0 or pss.use_parent_particles:
                     tot = np + nch
                     uparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
                     vparam = arnold.AiArrayAllocate(tot, 1, arnold.AI_TYPE_FLOAT)
                     for i, p in enumerate(ps.particles):
-                        uv = uv_on_emitter(mod, p, i, uv_no)
-                        setFlt(uparam, i, uv.x)
-                        setFlt(vparam, i, uv.y)
+                        u, v = uv_on_emitter(mod, p, i, uv_no)
+                        setFlt(uparam, i, u)
+                        setFlt(vparam, i, v)
                     n = i + 1
                 else:
                     uparam = arnold.AiArrayAllocate(nch, 1, arnold.AI_TYPE_FLOAT)
@@ -595,9 +331,9 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
                     r = nch // np
                     for p in ps.particles:
                         for i in range(r):
-                            uv = uv_on_emitter(mod, p, j, uv_no)
-                            setFlt(uparam, n, uv.x)
-                            setFlt(vparam, n, uv.y)
+                            u, v = uv_on_emitter(mod, p, j, uv_no)
+                            setFlt(uparam, n, u)
+                            setFlt(vparam, n, v)
                             j += 1
                             n += 1
 
@@ -613,66 +349,26 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
 
 
 def _AiPointsPS(ob, ps, pss, frame_current, shaders):
+    """Create arnold points node from a particle system"""
     pc = time.perf_counter()
 
-    if 1:
-        a = _BL.psys_get_points(ps, pss, frame_current)
-        if a is None:
-            return None
+    a = _BLA.psys_get_points(ps, pss, frame_current)
+    if a is not None:
         n = len(a)
-        if not n:
-            return None
-    else:
-        pass
-        tc = pss.trail_count
-        a = _NDARRAY([len(ps.particles) * tc * 100, 3], dtype=numpy.float32)
-        #r = _NDARRAY(len(ps.particles) * tc, dtype=numpy.float32)
-    
-        def from_cache():
-            n = 0
-            frame = max(0, frame_current - tc)
-            _cache = _PointCache.from_address(ps.point_cache.as_pointer())
-            _mem = ctypes.cast(_cache.mem_cache.first, ctypes.POINTER(_PTCacheMem))
-            while _mem:
-                _mem = _mem.contents
-                print(_mem.frame, _mem.totpoint)
-                if 1 or frame < _mem.frame:
-                    if _mem.frame > frame_current:
-                        break
-                    if _mem.totpoint > 0 and _mem.data[0]:
-                        totpoint = _mem.totpoint
-                        idxs = ctypes.cast(_mem.data[0], ctypes.POINTER(ctypes.c_int))
-                        cos = ctypes.cast(_mem.data[1], ctypes.POINTER(ctypes.c_float * 3))
-                        for i in range(totpoint):
-                            a[n] = cos[idxs[i]]
-                            n += 1
-                _mem = _mem.next
-            return n
+        if n > 0:
+            points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(a.ctypes.data))
 
-        # first try export from the point cache
-        n = from_cache()
-        if n == 0:
-            for p in ps.particles:
-                if p.alive_state == 'ALIVE':
-                    a[n] = p.location
-                    #r[n] = p.size
-                    n += 1
+            arnold.AiMsgDebug(b"    points [%d] (%f)", ctypes.c_int(n), ctypes.c_double(time.perf_counter() - pc))
 
-    points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(a.ctypes.data))
-    #radius = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(r.ctypes.data))
-
-    arnold.AiMsgDebug(b"    points [%d] (%f)", ctypes.c_int(n), ctypes.c_double(time.perf_counter() - pc))
-
-    if n > 0:
-        node = arnold.AiNode("points")
-        arnold.AiNodeSetArray(node, "points", points)
-        arnold.AiNodeSetFlt(node, "radius", pss.particle_size)
-        # TODO: own properties (visibility, shadow, ...)
-        slots = ob.material_slots
-        m = pss.material
-        if 0 < m <= len(slots):
-            arnold.AiNodeSetPtr(node, "shader", shaders.get(slots[m - 1].material))
-        return node
+            node = arnold.AiNode("points")
+            arnold.AiNodeSetArray(node, "points", points)
+            arnold.AiNodeSetFlt(node, "radius", pss.particle_size)
+            # TODO: own properties (visibility, shadow, ...)
+            slots = ob.material_slots
+            m = pss.material
+            if 0 < m <= len(slots):
+                arnold.AiNodeSetPtr(node, "shader", shaders.get(slots[m - 1].material))
+            return node
     return None
 
 
