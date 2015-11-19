@@ -135,6 +135,23 @@ class _ParticleCacheKey(ctypes.Structure):
     ]
 
 
+# <...>\source\blender\makesdna\DNA_particle_types.h:72
+class _ChildParticle(ctypes.Structure):
+    _fields_ = [
+        # num is face index on the final derived mesh
+        ("num", ctypes.c_int),
+        ("parent", ctypes.c_int),
+        # nearest particles to the child, used for the interpolation
+        ("pa", ctypes.c_int * 4),
+        # interpolation weights for the above particles
+        ("w", ctypes.c_float * 4),
+        # face vertex weights and offset
+        ("fuv", ctypes.c_float * 4),
+        ("foffset", ctypes.c_float),
+        ("rt", ctypes.c_float)
+    ]
+
+
 # <...>\source\blender\makesdna\DNA_particle_types.h:264
 class _ParticleSystem(ctypes.Structure):
     pass
@@ -389,6 +406,37 @@ def psys_get_points(ps, pss, frame_current):
             _cache = _PointCache.from_address(ps.point_cache.as_pointer())
             _mem = ctypes.cast(_cache.mem_cache.first, ctypes.POINTER(_PTCacheMem))
 
+            #def parts():
+            #    i = 0
+            #    particles = ps.particles
+            #    if nch == 0 or pss.use_parent_particles:
+            #        for p in particles:
+            #            # <...>\source\blender\editors\space_view3d\drawobject.c:5354
+            #            bt = p.birth_time
+            #            yield (i, bt, p.die_time, (frame_current - bt) / p.lifetime)
+            #            i += 1
+            #    PART_CHILD_FACES = (pss.child_type == 'INTERPOLATED')
+            #    for c, p in enumerate(ps.child_particles):
+            #        cpa = _ChildParticle.from_address(p.as_pointer())
+            #        # <...>\source\blender\blenkernel\intern\particle.c:3561
+            #        if PART_CHILD_FACES:
+            #            bt = 0.0
+            #            cpaw = cpa.w
+            #            for w, n in enumerate(cpa.pa):
+            #                if n < 0:
+            #                    break
+            #                bt += cpaw[w] * particles[n].birth_time
+            #            lt = pss.lifetime
+            #            if randlength > 0:
+            #                lt *= 1.0 - randlength * psys_frand(pss, c + 25)
+            #        else:
+            #            p = particles[cpa.parent]
+            #            bt = p.birth_time
+            #            lt = p.lifetime
+            #        yield (i, bt, bt + lt, (frame_current - bt) / lt)
+            #        i += 1
+
+            #for a, pa_birthtime, pa_dietime, pa_time in parts():
             for a, pa in enumerate(ps.particles):
                 # <...>\source\blender\editors\space_view3d\drawobject.c:5354
                 pa_birthtime = pa.birth_time

@@ -348,27 +348,30 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
     return node
 
 
-def _AiPointsPS(ob, ps, pss, frame_current, shaders):
+def _AiPointsPS(scene, ob, ps, pss, frame_current, shaders):
     """Create arnold points node from a particle system"""
     pc = time.perf_counter()
+    ps.set_resolution(scene, ob, 'RENDER')
+    try:
+        a = _BLA.psys_get_points(ps, pss, frame_current)
+        if a is not None:
+            n = len(a)
+            if n > 0:
+                points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(a.ctypes.data))
 
-    a = _BLA.psys_get_points(ps, pss, frame_current)
-    if a is not None:
-        n = len(a)
-        if n > 0:
-            points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(a.ctypes.data))
+                arnold.AiMsgDebug(b"    points [%d] (%f)", ctypes.c_int(n), ctypes.c_double(time.perf_counter() - pc))
 
-            arnold.AiMsgDebug(b"    points [%d] (%f)", ctypes.c_int(n), ctypes.c_double(time.perf_counter() - pc))
-
-            node = arnold.AiNode("points")
-            arnold.AiNodeSetArray(node, "points", points)
-            arnold.AiNodeSetFlt(node, "radius", pss.particle_size)
-            # TODO: own properties (visibility, shadow, ...)
-            slots = ob.material_slots
-            m = pss.material
-            if 0 < m <= len(slots):
-                arnold.AiNodeSetPtr(node, "shader", shaders.get(slots[m - 1].material))
-            return node
+                node = arnold.AiNode("points")
+                arnold.AiNodeSetArray(node, "points", points)
+                arnold.AiNodeSetFlt(node, "radius", pss.particle_size)
+                # TODO: own properties (visibility, shadow, ...)
+                slots = ob.material_slots
+                m = pss.material
+                if 0 < m <= len(slots):
+                    arnold.AiNodeSetPtr(node, "shader", shaders.get(slots[m - 1].material))
+                return node
+    finally:
+        ps.set_resolution(scene, ob, 'PREVIEW')
     return None
 
 
@@ -471,7 +474,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                     if pss.type == 'HAIR' and pss.render_type == 'PATH':
                         node = _AiCurvesPS(scene, ob, mod, ps, pss, shaders)
                     elif pss.type == 'EMITTER' and pss.render_type in {'HALO', 'PATH'}:
-                        node = _AiPointsPS(ob, ps, pss, scene.frame_current, shaders)
+                        node = _AiPointsPS(scene, ob, ps, pss, scene.frame_current, shaders)
                     if node is not None:
                         if name is None:
                             name = _Name(ob.name)
