@@ -353,17 +353,24 @@ def _AiPointsPS(scene, ob, ps, pss, frame_current, shaders):
     pc = time.perf_counter()
     ps.set_resolution(scene, ob, 'RENDER')
     try:
-        a = _BLA.psys_get_points(ps, pss, frame_current)
-        if a is not None:
-            n = len(a)
+        p = _BLA.psys_get_points(ps, pss, frame_current)
+        if p is not None:
+            n = len(p)
             if n > 0:
-                points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(a.ctypes.data))
+                points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(p.ctypes.data))
 
                 arnold.AiMsgDebug(b"    points [%d] (%f)", ctypes.c_int(n), ctypes.c_double(time.perf_counter() - pc))
 
                 node = arnold.AiNode("points")
                 arnold.AiNodeSetArray(node, "points", points)
                 arnold.AiNodeSetFlt(node, "radius", pss.particle_size)
+                props = pss.arnold.points
+                arnold.AiNodeSetStr(node, "mode", props.mode)
+                if props.mode == 'quad':
+                    arnold.AiNodeSetFlt(node, "aspect", props.aspect)
+                    arnold.AiNodeSetFlt(node, "rotation", props.rotation)
+                arnold.AiNodeSetFlt(node, "min_pixel_width", props.min_pixel_width)
+                arnold.AiNodeSetFlt(node, "step_size", props.step_size)
                 # TODO: own properties (visibility, shadow, ...)
                 slots = ob.material_slots
                 m = pss.material
@@ -473,7 +480,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                     node = None
                     if pss.type == 'HAIR' and pss.render_type == 'PATH':
                         node = _AiCurvesPS(scene, ob, mod, ps, pss, shaders)
-                    elif pss.type == 'EMITTER' and pss.render_type in {'HALO', 'PATH'}:
+                    elif pss.type == 'EMITTER' and pss.render_type in {'HALO', 'LINE', 'PATH'}:
                         node = _AiPointsPS(scene, ob, ps, pss, scene.frame_current, shaders)
                     if node is not None:
                         if name is None:

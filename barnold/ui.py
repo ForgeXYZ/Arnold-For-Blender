@@ -753,3 +753,34 @@ class ArnoldCurvesPanel(ParticleButtonsPanel, Panel):
         col.prop(curves, "mode")
         col.prop(curves, "min_pixel_width")
         col.prop_search(curves, "uvmap", context.object.data, "uv_textures")
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldPointsPanel(ParticleButtonsPanel, Panel):
+    COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
+    bl_label = "Arnold Points"
+
+    @classmethod
+    def poll(cls, context):
+        if super().poll(context):
+            pss = context.particle_system.settings
+            return (
+                pss.type == 'EMITTER' and
+                pss.render_type in {'HALO', 'LINE', 'PATH'}
+            )
+        return False
+
+    def draw(self, context):
+        layout = self.layout
+
+        ps = context.particle_system
+        pss = ps.settings
+        points = pss.arnold.points
+
+        col = layout.column()
+        col.prop(points, "mode")
+        if points.mode == 'quad':
+            col.prop(points, "aspect")
+            col.prop(points, "rotation")
+        col.prop(points, "min_pixel_width")
+        col.prop(points, "step_size")

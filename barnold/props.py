@@ -1590,8 +1590,37 @@ class ArnoldCurves(PropertyGroup):
 
 
 @ArnoldRenderEngine.register_class
+class ArnoldPoints(PropertyGroup):
+    mode = EnumProperty(
+        name="Mode",
+        items=[
+            ('disk', "Disk", "Disk"),
+            ('sphere', "Sphere", "Sphere"),
+            ('quad', "Quad", "Quad")
+        ],
+        default='disk'
+    )
+    aspect = FloatProperty(
+        name="Aspect",
+        default=1.0
+    )
+    rotation = FloatProperty(
+        name="Rotation"
+    )
+    min_pixel_width = FloatProperty(
+        name="Min. Pixel Width",
+        min=0,
+        subtype='UNSIGNED'
+    )
+    step_size = FloatProperty(
+        name="Step Size"
+    )
+
+
+@ArnoldRenderEngine.register_class
 class ArnoldParticleSystem(PropertyGroup):
     curves = PointerProperty(type=ArnoldCurves)
+    points = PointerProperty(type=ArnoldPoints)
 
     @classmethod
     def register(cls):
