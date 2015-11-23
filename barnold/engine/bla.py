@@ -332,7 +332,7 @@ def psys_get_curves(ps, steps, use_parent_particles, props):
             n = _BezierInterpolate(points, n, _ps.pathcache, np, steps, scale)
         _BezierInterpolate(points, n, _ps.childcache, nch, steps, scale)
         radius = numpy.linspace(props.radius_root, props.radius_tip, steps, dtype=numpy.float32)
-        return (points.reshape(-1, 3), radius.repeat(tot), nsteps)
+        return (points.reshape(-1, 3), numpy.tile(radius, tot), nsteps)
 
     if props.basis in {'b-spline', 'catmull-rom'}:
         points = _NDARRAY([tot * (steps + 4), 3], dtype=numpy.float32)
@@ -361,7 +361,7 @@ def psys_get_curves(ps, steps, use_parent_particles, props):
         radius[1:-1] = numpy.linspace(props.radius_root, props.radius_tip, steps, dtype=numpy.float32)
         radius[0] = 0
         radius[-1] = 0
-        return (points, radius.repeat(tot), steps + 4)
+        return (points, numpy.tile(radius, tot), steps + 4)
 
     if props.basis == 'linear':
         points = _NDARRAY([tot * steps, 3], dtype=numpy.float32)
@@ -379,7 +379,7 @@ def psys_get_curves(ps, steps, use_parent_particles, props):
                 points[n] = c[j].co
                 n += 1
         radius = numpy.linspace(props.radius_root, props.radius_tip, steps, dtype=numpy.float32)
-        return (points, radius.repeat(tot), steps)
+        return (points, numpy.tile(radius, tot), steps)
 
     return None
 

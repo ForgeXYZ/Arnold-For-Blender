@@ -409,12 +409,15 @@ def _export(data, scene, camera, xres, yres, session=None):
     def _Mesh(ob):
         pc = time.perf_counter()
         mesh = ob.to_mesh(scene, True, 'RENDER', False)
-        try:
-            mesh.calc_normals_split()
-            arnold.AiMsgDebug(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
-            yield mesh
-        finally:
-            data.meshes.remove(mesh)
+        if mesh is not None:
+            try:
+                mesh.calc_normals_split()
+                arnold.AiMsgDebug(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
+                yield mesh
+            finally:
+                data.meshes.remove(mesh)
+        else:
+            yield None
 
     _Name = _CleanNames("O", itertools.count())
 
@@ -434,12 +437,10 @@ def _export(data, scene, camera, xres, yres, session=None):
     opts = scene.arnold
     arnold.AiMsgSetConsoleFlags(opts.get("console_log_flags", 0))
     arnold.AiMsgSetMaxWarnings(opts.max_warnings)
+    arnold.AiMsgDebug(b"BARNOLD: >>>")
 
     plugins_path = os.path.normpath(os.path.join(os.path.dirname(__file__), os.path.pardir, "bin"))
     arnold.AiLoadPlugins(plugins_path)
-
-    arnold.AiMsgDebug(b"")
-    arnold.AiMsgDebug(b"BARNOLD: >>>")
 
     ##############################
     ## objects
@@ -506,15 +507,16 @@ def _export(data, scene, camera, xres, yres, session=None):
                     continue
 
             with _Mesh(ob) as mesh:
-                node = _AiPolymesh(mesh, shaders)
-                arnold.AiNodeSetStr(node, "name", name)
-                arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
-                _export_object_properties(ob, node)
-                if not modified:
-                    # cache unmodified shapes for instancing
-                    inodes[ob.data] = node
-                # cache for duplicators
-                nodes[ob] = node
+                if mesh is not None:
+                    node = _AiPolymesh(mesh, shaders)
+                    arnold.AiNodeSetStr(node, "name", name)
+                    arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
+                    _export_object_properties(ob, node)
+                    if not modified:
+                        # cache unmodified shapes for instancing
+                        inodes[ob.data] = node
+                    # cache for duplicators
+                    nodes[ob] = node
         elif ob.type == 'LAMP':
             lamp = ob.data
             light = lamp.arnold
@@ -637,10 +639,11 @@ def _export(data, scene, camera, xres, yres, session=None):
                     if onode is None:
                         arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
                         with _Mesh(ob) as mesh:
-                            node = _AiPolymesh(mesh, shaders)
-                            arnold.AiNodeSetStr(node, "name", _Name(ob.name))
-                            arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix))
-                            nodes[ob] = node
+                            if mesh is not None:
+                                node = _AiPolymesh(mesh, shaders)
+                                arnold.AiNodeSetStr(node, "name", _Name(ob.name))
+                                arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix))
+                                nodes[ob] = node
                     else:
                         node = arnold.AiNode("ginstance")
                         arnold.AiNodeSetStr(node, "name", _Name(ob.name))
@@ -667,10 +670,11 @@ def _export(data, scene, camera, xres, yres, session=None):
                 continue
             arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
             with _Mesh(ob) as mesh:
-                node = _AiPolymesh(mesh, shaders)
-                arnold.AiNodeSetStr(node, "name", _Name(ob.name))
-                arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
-                nodes[ob] = node
+                if mesh is not None:
+                    node = _AiPolymesh(mesh, shaders)
+                    arnold.AiNodeSetStr(node, "name", _Name(ob.name))
+                    arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
+                    nodes[ob] = node
         arnold.AiNodeSetPtr(light_node, "mesh", node)
 
     render = scene.render
@@ -982,13 +986,16 @@ def view_update(engine, context):
             def _to_mesh(ob):
                 pc = time.perf_counter()
                 mesh = ob.to_mesh(scene, True, 'PREVIEW', False)
-                try:
-                    mesh.calc_normals_split()
-                    print("    to_mesh (%f)" % (time.perf_counter() - pc))
-                    yield mesh
-                finally:
-                    # it force call view_update
-                    blend_data.meshes.remove(mesh)
+                if mesh is not None:
+                    try:
+                        mesh.calc_normals_split()
+                        print("    to_mesh (%f)" % (time.perf_counter() - pc))
+                        yield mesh
+                    finally:
+                        # it force call view_update
+                        blend_data.meshes.remove(mesh)
+                else:
+                    yield None
 
             def _AiNode(node, prefix):
                 anode = _nodes.get(node)
@@ -1020,23 +1027,24 @@ def view_update(engine, context):
             for ob in scene.objects:
                 if ob.is_visible(scene) and ob.type in _CT:
                     with _to_mesh(ob) as mesh:
-                        verts = mesh.vertices
-                        polygons = mesh.polygons
-                        loops = mesh.loops
-                        vlist = numpy.ndarray(len(verts) * 3, dtype=numpy.float32)
-                        verts.foreach_get("co", vlist)
-                        nsides = numpy.ndarray(len(polygons), dtype=numpy.uint32)
-                        polygons.foreach_get("loop_total", nsides)
-                        vidxs = numpy.ndarray(len(loops), dtype=numpy.uint32)
-                        polygons.foreach_get("vertices", vidxs)
-                        nodes.append(('polymesh', {
-                            'name': ('STRING', "O::" + ob.name),
-                            'matrix': ('MATRIX', numpy.reshape(ob.matrix_world.transposed(), -1)),
-                            'vlist': ('ARRAY', (arnold.AI_TYPE_POINT, vlist)),
-                            'nsides': ('ARRAY', (arnold.AI_TYPE_UINT, nsides)),
-                            'vidxs': ('ARRAY', (arnold.AI_TYPE_UINT, vidxs)),
-                            #'smoothing': ('BOOL', True),
-                        }))
+                        if mesh is not None:
+                            verts = mesh.vertices
+                            polygons = mesh.polygons
+                            loops = mesh.loops
+                            vlist = numpy.ndarray(len(verts) * 3, dtype=numpy.float32)
+                            verts.foreach_get("co", vlist)
+                            nsides = numpy.ndarray(len(polygons), dtype=numpy.uint32)
+                            polygons.foreach_get("loop_total", nsides)
+                            vidxs = numpy.ndarray(len(loops), dtype=numpy.uint32)
+                            polygons.foreach_get("vertices", vidxs)
+                            nodes.append(('polymesh', {
+                                'name': ('STRING', "O::" + ob.name),
+                                'matrix': ('MATRIX', numpy.reshape(ob.matrix_world.transposed(), -1)),
+                                'vlist': ('ARRAY', (arnold.AI_TYPE_POINT, vlist)),
+                                'nsides': ('ARRAY', (arnold.AI_TYPE_UINT, nsides)),
+                                'vidxs': ('ARRAY', (arnold.AI_TYPE_UINT, vidxs)),
+                                #'smoothing': ('BOOL', True),
+                            }))
 
             #####################################
             ## camera
