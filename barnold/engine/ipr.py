@@ -81,7 +81,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
         'BYTE': lambda n, p, v: arnold.AiNodeSetByte(n, p, v),
         'INT': lambda n, p, v: arnold.AiNodeSetInt(n, p, v),
         'FLOAT': lambda n, p, v: arnold.AiNodeSetFlt(n, p, v),
-        'VECTOR2': lambda n, p, v: arnold.AiNodeSetVector2(n, p, *v),
+        'VECTOR2': lambda n, p, v: arnold.AiNodeSetVec2(n, p, *v),
         'RGB': lambda n, p, v: arnold.AiNodeSetRGB(n, p, *v),
         'RGBA': lambda n, p, v: arnold.AiNodeSetRGBA(n, p, *v),
         'VECTOR': lambda n, p, v: arnold.AiNodeSetVec(n, p, *v),
