@@ -19,7 +19,8 @@ import bpy
 import bgl
 from mathutils import Matrix, Vector, geometry
 
-from . import arnold
+sys.path.append(r"C:\Users\tyler\Downloads\blender-2.79-4461be1-win64-vc14\blender-2.79.0-git.4461be1-windows64\2.79\scripts\modules\Arnold-5.1.1.0-windows\python")
+import arnold
 
 from ..nodes import (
     ArnoldNode,
@@ -53,7 +54,7 @@ _AiNodeSet = {
     "NodeSocketFloat": lambda n, i, v: arnold.AiNodeSetFlt(n, i, v),
     "NodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGBA(n, i, *v),
     "NodeSocketVector": lambda n, i, v: arnold.AiNodeSetVec(n, i, *v),
-    "NodeSocketVectorXYZ": lambda n, i, v: arnold.AiNodeSetPnt(n, i, *v),
+    "NodeSocketVectorXYZ": lambda n, i, v: arnold.AiNodeSetVec(n, i, *v),
     "NodeSocketString": lambda n, i, v: arnold.AiNodeSetStr(n, i, v),
     "ArnoldNodeSocketColor": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v),
     "ArnoldNodeSocketByte": lambda n, i, v: arnold.AiNodeSetByte(n, i, v),
@@ -63,7 +64,7 @@ _AiNodeSet = {
     "BYTE": lambda n, i, v: arnold.AiNodeSetByte(n, i, v),
     "INT": lambda n, i, v: arnold.AiNodeSetInt(n, i, v),
     "FLOAT": lambda n, i, v: arnold.AiNodeSetFlt(n, i, v),
-    "POINT2": lambda n, i, v: arnold.AiNodeSetPnt2(n, i, *v),
+    "VECTOR2": lambda n, i, v: arnold.AiNodeSetVec2(n, i, *v),
     "RGB": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v),
     "RGBA": lambda n, i, v: arnold.AiNodeSetRGBA(n, i, *v),
     "VECTOR": lambda n, i, v: arnold.AiNodeSetVec(n, i, *v),
@@ -201,7 +202,7 @@ def _AiPolymesh(mesh, shaders):
     # vertices
     a = numpy.ndarray(nverts * 3, dtype=numpy.float32)
     verts.foreach_get("co", a)
-    vlist = arnold.AiArrayConvert(nverts, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(a.ctypes.data))
+    vlist = arnold.AiArrayConvert(nverts, 1, arnold.AI_TYPE_VECTOR, ctypes.c_void_p(a.ctypes.data))
     # normals
     a = numpy.ndarray(nloops * 3, dtype=numpy.float32)
     loops.foreach_get("normal", a)
@@ -236,7 +237,7 @@ def _AiPolymesh(mesh, shaders):
             uvidxs = arnold.AiArrayConvert(nuvs, 1, arnold.AI_TYPE_UINT, ctypes.c_void_p(a.ctypes.data))
             a = numpy.ndarray(nuvs * 2, dtype=numpy.float32)
             uvd.foreach_get("uv", a)
-            uvlist = arnold.AiArrayConvert(nuvs, 1, arnold.AI_TYPE_POINT2, ctypes.c_void_p(a.ctypes.data))
+            uvlist = arnold.AiArrayConvert(nuvs, 1, arnold.AI_TYPE_VECTOR2, ctypes.c_void_p(a.ctypes.data))
             arnold.AiNodeSetArray(node, "uvidxs", uvidxs)
             arnold.AiNodeSetArray(node, "uvlist", uvlist)
             break
@@ -284,7 +285,7 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
         if curves is None:
             return None
         p, r, steps = curves
-        points = arnold.AiArrayConvert(len(p), 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(p.ctypes.data))
+        points = arnold.AiArrayConvert(len(p), 1, arnold.AI_TYPE_VECTOR, ctypes.c_void_p(p.ctypes.data))
         radius = arnold.AiArrayConvert(len(r), 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(r.ctypes.data))
 
         arnold.AiMsgDebug(b"    hair [%d] (%f)", ctypes.c_int(len(p)), ctypes.c_double(time.perf_counter() - pc))
@@ -357,7 +358,7 @@ def _AiPointsPS(scene, ob, ps, pss, frame_current, shaders):
         if p is not None:
             n = len(p)
             if n > 0:
-                points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_POINT, ctypes.c_void_p(p.ctypes.data))
+                points = arnold.AiArrayConvert(n, 1, arnold.AI_TYPE_VECTOR, ctypes.c_void_p(p.ctypes.data))
 
                 arnold.AiMsgDebug(b"    points [%d] (%f)", ctypes.c_int(n), ctypes.c_double(time.perf_counter() - pc))
 
@@ -521,7 +522,7 @@ def _export(data, scene, camera, xres, yres, session=None):
             lamp = ob.data
             light = lamp.arnold
             matrix = ob.matrix_world.copy()
-            if lamp.type == 'POINT':
+            if lamp.type == 'VECTOR':
                 node = arnold.AiNode("point_light")
                 arnold.AiNodeSetFlt(node, "radius", light.radius)
                 arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
@@ -547,9 +548,9 @@ def _export(data, scene, camera, xres, yres, session=None):
             elif lamp.type == 'AREA':
                 node = arnold.AiNode(light.type)
                 if light.type == 'cylinder_light':
-                    top = arnold.AiArray(1, 1, arnold.AI_TYPE_POINT, arnold.AtPoint(0, lamp.size_y / 2, 0))
+                    top = arnold.AiArray(1, 1, arnold.AI_TYPE_VECTOR, arnold.AtPoint(0, lamp.size_y / 2, 0))
                     arnold.AiNodeSetArray(node, "top", top)
-                    bottom = arnold.AiArray(1, 1, arnold.AI_TYPE_POINT, arnold.AtPoint(0, -lamp.size_y / 2, 0))
+                    bottom = arnold.AiArray(1, 1, arnold.AI_TYPE_VECTOR, arnold.AtPoint(0, -lamp.size_y / 2, 0))
                     arnold.AiNodeSetArray(node, "bottom", bottom)
                     arnold.AiNodeSetFlt(node, "radius", lamp.size / 2)
                     arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
@@ -559,11 +560,11 @@ def _export(data, scene, camera, xres, yres, session=None):
                 elif light.type == 'quad_light':
                     x = lamp.size / 2
                     y = lamp.size_y / 2 if lamp.shape == 'RECTANGLE' else x
-                    verts = arnold.AiArrayAllocate(4, 1, arnold.AI_TYPE_POINT)
-                    arnold.AiArraySetPnt(verts, 0, arnold.AtPoint(-x, -y, 0))
-                    arnold.AiArraySetPnt(verts, 1, arnold.AtPoint(-x, y, 0))
-                    arnold.AiArraySetPnt(verts, 2, arnold.AtPoint(x, y, 0))
-                    arnold.AiArraySetPnt(verts, 3, arnold.AtPoint(x, -y, 0))
+                    verts = arnold.AiArrayAllocate(4, 1, arnold.AI_TYPE_VECTOR)
+                    arnold.AiArraySetVec(verts, 0, arnold.AtPoint(-x, -y, 0))
+                    arnold.AiArraySetVec(verts, 1, arnold.AtPoint(-x, y, 0))
+                    arnold.AiArraySetVec(verts, 2, arnold.AtPoint(x, y, 0))
+                    arnold.AiArraySetVec(verts, 3, arnold.AtPoint(x, -y, 0))
                     arnold.AiNodeSetArray(node, "vertices", verts)
                     arnold.AiNodeSetInt(node, "resolution", light.quad_resolution)
                     arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
@@ -804,11 +805,11 @@ def _export(data, scene, camera, xres, yres, session=None):
         arnold.AiNodeSetFlt(node, "rolling_shutter_duration", cp.rolling_shutter_duration)
         # TODO: camera shift
         if session is not None:
-            arnold.AiNodeSetPnt2(node, "screen_window_min", -1, 1)
-            arnold.AiNodeSetPnt2(node, "screen_window_max", 1, -1)
+            arnold.AiNodeSetVec2(node, "screen_window_min", -1, 1)
+            arnold.AiNodeSetVec2(node, "screen_window_max", 1, -1)
         arnold.AiNodeSetFlt(node, "exposure", cp.exposure)
         arnold.AiNodeSetPtr(options, "camera", node)
-    
+
     ##############################
     ## world
     world = scene.world
@@ -1040,7 +1041,7 @@ def view_update(engine, context):
                             nodes.append(('polymesh', {
                                 'name': ('STRING', "O::" + ob.name),
                                 'matrix': ('MATRIX', numpy.reshape(ob.matrix_world.transposed(), -1)),
-                                'vlist': ('ARRAY', (arnold.AI_TYPE_POINT, vlist)),
+                                'vlist': ('ARRAY', (arnold.AI_TYPE_VECTOR, vlist)),
                                 'nsides': ('ARRAY', (arnold.AI_TYPE_UINT, nsides)),
                                 'vidxs': ('ARRAY', (arnold.AI_TYPE_UINT, vidxs)),
                                 #'smoothing': ('BOOL', True),
@@ -1252,8 +1253,8 @@ def _view_update_camera(aspect, v3d, rv3d, camera):
     shift_y = cdata.shift_y
     shx = 2 * z * (2 * offset_x + shift_x)
     shy = 2 * z * (2 * offset_y + shift_y * aspect)
-    camera['screen_window_min'] = ('POINT2', (-1 + shx, -1 + shy))
-    camera['screen_window_max'] = ('POINT2', (1 + shx, 1 + shy))
+    camera['screen_window_min'] = ('VECTOR2', (-1 + shx, -1 + shy))
+    camera['screen_window_max'] = ('VECTOR2', (1 + shx, 1 + shy))
 
     return (zoom, fit, sensor, lens, offset_x, offset_y, shift_x, shift_y)
 
@@ -1261,6 +1262,6 @@ def _view_update_camera(aspect, v3d, rv3d, camera):
 def _view_update_persp(v3d, camera):
     lens = v3d.lens
     camera['fov'] = ('FLOAT', math.degrees(2 * math.atan(64.0 / (2 * lens))))
-    camera['screen_window_min'] = ('POINT2', (-1, -1))
-    camera['screen_window_max'] = ('POINT2', (1, 1))
+    camera['screen_window_min'] = ('VECTOR2', (-1, -1))
+    camera['screen_window_max'] = ('VECTOR2', (1, 1))
     return (lens, )
