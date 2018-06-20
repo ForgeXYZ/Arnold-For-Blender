@@ -58,7 +58,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
     def _AiNodeSetArray(node, param, value):
         t, a = value
         _len = len(a)
-        if t == arnold.AI_TYPE_POINT:
+        if t == arnold.AI_TYPE_VECTOR:
             _len //= 3
         elif t == arnold.AI_TYPE_UINT:
             pass
@@ -81,7 +81,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
         'BYTE': lambda n, p, v: arnold.AiNodeSetByte(n, p, v),
         'INT': lambda n, p, v: arnold.AiNodeSetInt(n, p, v),
         'FLOAT': lambda n, p, v: arnold.AiNodeSetFlt(n, p, v),
-        'POINT2': lambda n, p, v: arnold.AiNodeSetPnt2(n, p, *v),
+        'VECTOR2': lambda n, p, v: arnold.AiNodeSetPnt2(n, p, *v),
         'RGB': lambda n, p, v: arnold.AiNodeSetRGB(n, p, *v),
         'RGBA': lambda n, p, v: arnold.AiNodeSetRGBA(n, p, *v),
         'VECTOR': lambda n, p, v: arnold.AiNodeSetVec(n, p, *v),
