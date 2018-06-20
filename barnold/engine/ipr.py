@@ -156,8 +156,8 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
             arnold.AiRenderAbort()
             #print("+++ _callback: abort")
 
-        cb = arnold.AtDisplayCallBack(_callback)
-        arnold.AiNodeSetPtr(driver, "callback", cb)
+        #cb = arnold.AtDisplayCallBack(_callback)
+        #arnold.AiNodeSetPtr(driver, "callback", cb)
 
         class _Dict(dict):
             def update(self, u):
