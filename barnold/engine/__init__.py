@@ -738,7 +738,7 @@ def _export(data, scene, camera, xres, yres, session=None):
     arnold.AiNodeSetInt(options, "texture_autotile", opts.texture_autotile)
     arnold.AiNodeSetBool(options, "texture_accept_untiled", opts.texture_accept_untiled)
     arnold.AiNodeSetBool(options, "texture_accept_unmipped", opts.texture_accept_unmipped)
-    arnold.AiNodeSetFlt(options, "texture_glossy_blur", opts.texture_glossy_blur)
+    arnold.AiNodeSetFlt(options, "texture_specular_blur", opts.texture_specular_blur)
     arnold.AiNodeSetFlt(options, "texture_diffuse_blur", opts.texture_diffuse_blur)
     arnold.AiNodeSetFlt(options, "low_light_threshold", opts.low_light_threshold)
     arnold.AiNodeSetInt(options, "GI_sss_samples", opts.GI_sss_samples)
@@ -746,19 +746,19 @@ def _export(data, scene, camera, xres, yres, session=None):
     arnold.AiNodeSetInt(options, "GI_volume_samples", opts.GI_volume_samples)
     arnold.AiNodeSetInt(options, "max_subdivisions", opts.max_subdivisions)
     arnold.AiNodeSetStr(options, "procedural_searchpath", opts.procedural_searchpath)
-    arnold.AiNodeSetStr(options, "shader_searchpath", opts.shader_searchpath)
+    arnold.AiNodeSetStr(options, "plugin_searchpath", opts.plugin_searchpath)
     arnold.AiNodeSetFlt(options, "texture_gamma", opts.texture_gamma)
     arnold.AiNodeSetFlt(options, "light_gamma", opts.light_gamma)
     arnold.AiNodeSetFlt(options, "shader_gamma", opts.shader_gamma)
     arnold.AiNodeSetInt(options, "GI_diffuse_depth", opts.GI_diffuse_depth)
-    arnold.AiNodeSetInt(options, "GI_glossy_depth", opts.GI_glossy_depth)
+    arnold.AiNodeSetInt(options, "GI_specular_depth", opts.GI_specular_depth)
     arnold.AiNodeSetInt(options, "GI_reflection_depth", opts.GI_reflection_depth)
-    arnold.AiNodeSetInt(options, "GI_refraction_depth", opts.GI_refraction_depth)
+    arnold.AiNodeSetInt(options, "GI_transmission_depth", opts.GI_transmission_depth)
     arnold.AiNodeSetInt(options, "GI_volume_depth", opts.GI_volume_depth)
     arnold.AiNodeSetInt(options, "GI_total_depth", opts.GI_total_depth)
     arnold.AiNodeSetInt(options, "GI_diffuse_samples", opts.GI_diffuse_samples)
-    arnold.AiNodeSetInt(options, "GI_glossy_samples", opts.GI_glossy_samples)
-    arnold.AiNodeSetInt(options, "GI_refraction_samples", opts.GI_refraction_samples)
+    arnold.AiNodeSetInt(options, "GI_specular_samples", opts.GI_specular_samples)
+    arnold.AiNodeSetInt(options, "GI_transmission_samples", opts.GI_transmission_samples)
 
     ##############################
     ## camera
@@ -852,7 +852,7 @@ def _export(data, scene, camera, xres, yres, session=None):
         arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
         arnold.AiNodeSetBool(filter, "scalar_mode", opts.sample_filter_scalar_mode)
 
-    display = arnold.AiNode("driver_display")
+    display = arnold.AiNode("driver_png")
     arnold.AiNodeSetStr(display, "name", "__driver")
     arnold.AiNodeSetFlt(display, "gamma", opts.display_gamma)
     arnold.AiNodeSetBool(display, "rgba_packing", False)
@@ -1102,7 +1102,7 @@ def view_update(engine, context):
                 'texture_autotile': ('INT', opts.texture_autotile),
                 'texture_accept_untiled': ('BOOL', opts.texture_accept_untiled),
                 'texture_accept_unmipped': ('BOOL', opts.texture_accept_unmipped),
-                'texture_glossy_blur': ('FLOAT', opts.texture_glossy_blur),
+                'texture_specular_blur': ('FLOAT', opts.texture_specular_blur),
                 'texture_diffuse_blur': ('FLOAT', opts.texture_diffuse_blur),
                 'low_light_threshold': ('FLOAT', opts.low_light_threshold),
                 'GI_sss_samples': ('INT', opts.GI_sss_samples),
@@ -1110,19 +1110,19 @@ def view_update(engine, context):
                 'GI_volume_samples': ('INT', opts.GI_volume_samples),
                 'max_subdivisions': ('INT', opts.max_subdivisions),
                 'procedural_searchpath': ('STRING', opts.procedural_searchpath),
-                'shader_searchpath': ('STRING', opts.shader_searchpath),
+                'plugin_searchpath': ('STRING', opts.plugin_searchpath),
                 'texture_gamma': ('FLOAT', opts.texture_gamma),
                 'light_gamma': ('FLOAT', opts.light_gamma),
                 'shader_gamma': ('FLOAT', opts.shader_gamma),
                 'GI_diffuse_depth': ('INT', opts.GI_diffuse_depth),
-                'GI_glossy_depth': ('INT', opts.GI_glossy_depth),
+                'GI_specular_depth': ('INT', opts.GI_specular_depth),
                 'GI_reflection_depth': ('INT', opts.GI_reflection_depth),
-                'GI_refraction_depth': ('INT', opts.GI_refraction_depth),
+                'GI_transmission_depth': ('INT', opts.GI_transmission_depth),
                 'GI_volume_depth': ('INT', opts.GI_volume_depth),
                 'GI_total_depth': ('INT', opts.GI_total_depth),
                 'GI_diffuse_samples': ('INT', opts.GI_diffuse_samples),
-                'GI_glossy_samples': ('INT', opts.GI_glossy_samples),
-                'GI_refraction_samples': ('INT', opts.GI_refraction_samples),
+                'GI_specular_samples': ('INT', opts.GI_specular_samples),
+                'GI_transmission_samples': ('INT', opts.GI_transmission_samples),
             }
 
             #####################################

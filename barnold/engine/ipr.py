@@ -118,7 +118,8 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
         ## Outputs
         filter = arnold.AiNode("gaussian_filter")
         arnold.AiNodeSetStr(filter, "name", "__filter")
-        driver = arnold.AiNode("driver_display")
+        driver = arnold.AiNode("driver_png")
+        #Previously... driver = arnold.AiNode("driver_display")
         arnold.AiNodeSetStr(driver, "name", "__driver")
         arnold.AiNodeSetBool(driver, "rgba_packing", False)
         outputs_aovs = (

@@ -397,7 +397,7 @@ class ArnoldOptions(PropertyGroup):
     )
     #texture_failure_retries
     #texture_conservative_lookups
-    texture_glossy_blur = FloatProperty(
+    texture_specular_blur = FloatProperty(
         name="Glossy Blur",
         default=0.015625
     )
@@ -431,7 +431,7 @@ class ArnoldOptions(PropertyGroup):
         name="Procedural",
         subtype='DIR_PATH'
     )
-    shader_searchpath = StringProperty(
+    plugin_searchpath = StringProperty(
         name="Shader",
         subtype='DIR_PATH'
     )
@@ -452,14 +452,14 @@ class ArnoldOptions(PropertyGroup):
     GI_diffuse_depth = IntProperty(
         name="Diffuse"
     )
-    GI_glossy_depth = IntProperty(
+    GI_specular_depth = IntProperty(
         name="Glossy"
     )
     GI_reflection_depth = IntProperty(
         name="Reflection",
         default=2
     )
-    GI_refraction_depth = IntProperty(
+    GI_transmission_depth = IntProperty(
         name="Refraction",
         default=2
     )
@@ -474,11 +474,11 @@ class ArnoldOptions(PropertyGroup):
         name="Diffuse",
         default=2
     )
-    GI_glossy_samples = IntProperty(
+    GI_specular_samples = IntProperty(
         name="Glossy",
         default=2
     )
-    GI_refraction_samples = IntProperty(
+    GI_transmission_samples = IntProperty(
         name="Refraction",
         default=2
     )
@@ -769,7 +769,7 @@ class ArnoldShape(PropertyGroup):
         name="Glossy",
         **_sidedness(1 << 5)
     )
- 
+
     @classmethod
     def register(cls):
         Object.arnold = PointerProperty(type=cls)

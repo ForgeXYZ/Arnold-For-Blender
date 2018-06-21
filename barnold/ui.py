@@ -74,8 +74,8 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
             col.label("Samples:", icon='SETTINGS')
             col.prop(opts, "AA_samples")
             col.prop(opts, "GI_diffuse_samples")
-            col.prop(opts, "GI_glossy_samples")
-            col.prop(opts, "GI_refraction_samples")
+            col.prop(opts, "GI_specular_samples")
+            col.prop(opts, "GI_transmission_samples")
             col.prop(opts, "GI_sss_samples")
             col.prop(opts, "GI_volume_samples")
             col.separator()
@@ -119,9 +119,9 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
             col = sublayout.column()
             col.prop(opts, "GI_total_depth")
             col.prop(opts, "GI_diffuse_depth")
-            col.prop(opts, "GI_glossy_depth")
+            col.prop(opts, "GI_specular_depth")
             col.prop(opts, "GI_reflection_depth")
-            col.prop(opts, "GI_refraction_depth")
+            col.prop(opts, "GI_transmission_depth")
             col.prop(opts, "GI_volume_depth")
             col.separator()
             col.label("Transparency:", icon='SETTINGS')
@@ -156,7 +156,7 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
             col.prop(opts, "texture_max_open_files")
             col.separator()
             col.prop(opts, "texture_diffuse_blur")
-            col.prop(opts, "texture_glossy_blur")
+            col.prop(opts, "texture_specular_blur")
 
 
 @ArnoldRenderEngine.register_class
@@ -198,7 +198,7 @@ class ArnoldRenderSystemPanel(RenderButtonsPanel, Panel):
         if sublayout:
             col = sublayout.column()
             col.prop(opts, "procedural_searchpath")
-            col.prop(opts, "shader_searchpath")
+            col.prop(opts, "plugin_searchpath")
             col.prop(opts, "texture_searchpath")
 
         sublayout = _subpanel(layout, "Licensing", opts.ui_licensing, opts_path, "ui_licensing", "scene")
