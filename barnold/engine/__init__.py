@@ -548,9 +548,9 @@ def _export(data, scene, camera, xres, yres, session=None):
             elif lamp.type == 'AREA':
                 node = arnold.AiNode(light.type)
                 if light.type == 'cylinder_light':
-                    top = arnold.AiArray(1, 1, arnold.AI_TYPE_VECTOR, arnold.AtPoint(0, lamp.size_y / 2, 0))
+                    top = arnold.AiArray(1, 1, arnold.AI_TYPE_VECTOR, arnold.AtVector(0, lamp.size_y / 2, 0))
                     arnold.AiNodeSetArray(node, "top", top)
-                    bottom = arnold.AiArray(1, 1, arnold.AI_TYPE_VECTOR, arnold.AtPoint(0, -lamp.size_y / 2, 0))
+                    bottom = arnold.AiArray(1, 1, arnold.AI_TYPE_VECTOR, arnold.AtVector(0, -lamp.size_y / 2, 0))
                     arnold.AiNodeSetArray(node, "bottom", bottom)
                     arnold.AiNodeSetFlt(node, "radius", lamp.size / 2)
                     arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
@@ -561,10 +561,10 @@ def _export(data, scene, camera, xres, yres, session=None):
                     x = lamp.size / 2
                     y = lamp.size_y / 2 if lamp.shape == 'RECTANGLE' else x
                     verts = arnold.AiArrayAllocate(4, 1, arnold.AI_TYPE_VECTOR)
-                    arnold.AiArraySetVec(verts, 0, arnold.AtPoint(-x, -y, 0))
-                    arnold.AiArraySetVec(verts, 1, arnold.AtPoint(-x, y, 0))
-                    arnold.AiArraySetVec(verts, 2, arnold.AtPoint(x, y, 0))
-                    arnold.AiArraySetVec(verts, 3, arnold.AtPoint(x, -y, 0))
+                    arnold.AiArraySetVec(verts, 0, arnold.AtVector(-x, -y, 0))
+                    arnold.AiArraySetVec(verts, 1, arnold.AtVector(-x, y, 0))
+                    arnold.AiArraySetVec(verts, 2, arnold.AtVector(x, y, 0))
+                    arnold.AiArraySetVec(verts, 3, arnold.AtVector(x, -y, 0))
                     arnold.AiNodeSetArray(node, "vertices", verts)
                     arnold.AiNodeSetInt(node, "resolution", light.quad_resolution)
                     arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
