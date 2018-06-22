@@ -350,8 +350,8 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         # Bounce Factor
         ("bounce_factor"            , ('FLOAT', "Bounce Factor", "ext_properties")),
         # Reflection
-        ("Kr_color"                 , ('RGB', "Reflection: Color", "ext_properties")),
-        ("Kr"                       , ('FLOAT', "Reflection: Scale", "ext_properties")),
+        ("transmission_color"                 , ('RGB', "Reflection: Color", "ext_properties")),
+        ("transmission"                       , ('FLOAT', "Reflection: Scale", "ext_properties")),
         ("Krn"                      , ('FLOAT', "Reflection: Refl. at Normal", "ext_properties")),
         ("reflection_exit_color"    , ('RGB', "Reflection: Exit Color", "ext_properties")),
         # Refraction
@@ -450,8 +450,8 @@ class ArnoldNodeStandardSurface(ArnoldNode):
                               "ext_properties", "ui_reflection", "node")
         if sublayout:
             col = sublayout.column()
-            _draw_property(col, properties, "Kr_color", links)
-            _draw_property(col, properties, "Kr", links)
+            _draw_property(col, properties, "transmission_color", links)
+            _draw_property(col, properties, "transmission", links)
             col.label("Fresnel:", icon='SETTINGS')
             box = col.box()
             box.prop(properties, "Fresnel")

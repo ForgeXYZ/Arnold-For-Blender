@@ -1090,13 +1090,13 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         subtype='FACTOR',
         min=0, max=1
     )
-    Kr = FloatProperty(
+    transmission = FloatProperty(
         name="Scale",
         description="The contribution from reflection rays.",
         subtype='FACTOR',
         min=0, max=1
     )
-    Kr_color = FloatVectorProperty(
+    transmission_color = FloatVectorProperty(
         name="Color",
         description="The color of the reflection ray at the current point.",
         subtype='COLOR',

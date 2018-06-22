@@ -583,8 +583,8 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                                       path_from_id, "ui_reflection", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.row().prop(standard_surface, "Kr_color")
-                    col.prop(standard_surface, "Kr")
+                    col.row().prop(standard_surface, "transmission_color")
+                    col.prop(standard_surface, "transmission")
                     col.label("Fresnel:", icon='SETTINGS')
                     box = col.box()
                     box.prop(standard_surface, "Fresnel")
