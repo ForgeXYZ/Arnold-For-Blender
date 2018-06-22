@@ -317,8 +317,8 @@ class ArnoldNodeLambert(ArnoldNode):
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("ArnoldNodeSocketColor", "Diffuse", "Kd_color")
-        self.inputs.new("NodeSocketFloat", "Weight", "Kd").default_value = 0.7
+        self.inputs.new("ArnoldNodeSocketColor", "Diffuse", "base_color")
+        self.inputs.new("NodeSocketFloat", "Weight", "base").default_value = 0.7
         self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
 
 
@@ -332,8 +332,8 @@ class ArnoldNodeStandardSurface(ArnoldNode):
 
     sockets = collections.OrderedDict([
         # Diffuse
-        ("Kd_color"                 , ('RGB', "Diffuse: Color", "")),
-        ("Kd"                       , ('FLOAT', "Diffuse: Scale", "")),
+        ("base_color"                 , ('RGB', "Diffuse: Color", "")),
+        ("base"                       , ('FLOAT', "Diffuse: Scale", "")),
         ("diffuse_roughness"        , ('FLOAT', "Diffuse: Roughness", "ext_properties")),
         ("Kb"                       , ('FLOAT', "Diffuse: BackLighting", "ext_properties")),
         ("direct_diffuse"           , ('FLOAT', "Diffuse: Direct Scale", "ext_properties")),
@@ -373,13 +373,13 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         ("emission"                 , ('FLOAT', "Emission: Scale", "ext_properties"))
     ])
 
-    Kd = FloatProperty(
+    base = FloatProperty(
         name="Scale",
         subtype='FACTOR',
         min=0, max=1,
         default=0.7
     )
-    Kd_color = FloatVectorProperty(
+    base_color = FloatVectorProperty(
         name="Color",
         subtype='COLOR',
         min=0, max=1,
@@ -402,8 +402,8 @@ class ArnoldNodeStandardSurface(ArnoldNode):
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.create_socket("Kd_color")
-        self.create_socket("Kd")
+        self.create_socket("base_color")
+        self.create_socket("base")
 
     def draw_buttons_ext(self, context, layout):
         inputs = self.inputs
@@ -416,8 +416,8 @@ class ArnoldNodeStandardSurface(ArnoldNode):
                               "ext_properties", "ui_diffuse", "node")
         if sublayout:
             col = sublayout.column()
-            _draw_property(col, self, "Kd_color", links)
-            _draw_property(col, self, "Kd", links)
+            _draw_property(col, self, "base_color", links)
+            _draw_property(col, self, "base", links)
             _draw_property(col, properties, "diffuse_roughness", links)
             col.prop(properties, "Fresnel_affect_diff")
             _draw_property(col, properties, "Kb", links)

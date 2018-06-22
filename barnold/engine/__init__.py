@@ -147,13 +147,13 @@ class Shaders:
         if mat.type == 'SURFACE':
             node = arnold.AiNode(shader.type)
             if shader.type == 'lambert':
-                arnold.AiNodeSetFlt(node, "Kd", mat.diffuse_intensity)
-                arnold.AiNodeSetRGB(node, "Kd_color", *mat.diffuse_color)
+                arnold.AiNodeSetFlt(node, "base", mat.diffuse_intensity)
+                arnold.AiNodeSetRGB(node, "base_color", *mat.diffuse_color)
                 arnold.AiNodeSetRGB(node, "opacity", *shader.lambert.opacity)
             elif shader.type == 'standard_surface':
                 standard_surface = shader.standard_surface
-                arnold.AiNodeSetFlt(node, "Kd", mat.diffuse_intensity)
-                arnold.AiNodeSetRGB(node, "Kd_color", *mat.diffuse_color)
+                arnold.AiNodeSetFlt(node, "base", mat.diffuse_intensity)
+                arnold.AiNodeSetRGB(node, "base_color", *mat.diffuse_color)
                 arnold.AiNodeSetFlt(node, "diffuse_roughness", standard_surface.diffuse_roughness)
                 arnold.AiNodeSetFlt(node, "Ks", mat.specular_intensity)
                 arnold.AiNodeSetRGB(node, "Ks_color", *mat.specular_color)

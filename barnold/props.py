@@ -1010,8 +1010,8 @@ class ArnoldLight(PropertyGroup):
 
 @ArnoldRenderEngine.register_class
 class ArnoldShaderLambert(PropertyGroup):
-    #Kd = Material.diffuse_intensity
-    #Kd_color = Material.diffuse_color
+    #base = Material.diffuse_intensity
+    #base_color = Material.diffuse_color
     opacity = FloatVectorProperty(
         name="Opacity",
         description="",
@@ -1046,8 +1046,8 @@ class ArnoldShaderStandardSurface(PropertyGroup):
     ui_caustics = BoolProperty(
         name="Coustics"
     )
-    #Kd = Material.diffuse_intensity
-    #Kd_color = Material.diffuse_color
+    #base = Material.diffuse_intensity
+    #base_color = Material.diffuse_color
     diffuse_roughness = FloatProperty(
         name="Roughness",
         description="The diffuse component follows an Oren-Nayar reflection"
