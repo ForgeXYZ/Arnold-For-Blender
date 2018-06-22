@@ -1058,8 +1058,8 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         subtype='FACTOR',
         min=0, max=1
     )
-    #Ks = Material.specular_intensity
-    #Ks_color = Material.specular_color
+    #specular = Material.specular_intensity
+    #specular_color = Material.specular_color
     specular_roughness = FloatProperty(
         name="Roughness",
         description="Controls the glossiness of the specular reflections."

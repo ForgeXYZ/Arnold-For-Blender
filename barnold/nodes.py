@@ -339,8 +339,8 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         ("direct_diffuse"           , ('FLOAT', "Diffuse: Direct Scale", "ext_properties")),
         ("indirect_diffuse"         , ('FLOAT', "Diffuse: Indirect Scale", "ext_properties")),
         # Specular
-        ("Ks_color"                 , ('RGB', "Specular: Color", "")),
-        ("Ks"                       , ('FLOAT', "Specular: Scale", "")),
+        ("specular_color"                 , ('RGB', "Specular: Color", "")),
+        ("specular"                       , ('FLOAT', "Specular: Scale", "")),
         ("specular_roughness"       , ('FLOAT', "Specular: Roughness", "ext_properties")),
         ("specular_anisotropy"      , ('FLOAT', "Specular: Anisotropy", "ext_properties")),
         ("specular_rotation"        , ('FLOAT', "Specular: Rotation", "ext_properties")),
@@ -385,12 +385,12 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         min=0, max=1,
         default=(1, 1, 1)
     )
-    Ks = FloatProperty(
+    specular = FloatProperty(
         name="Scale",
         subtype='FACTOR',
         min=0, max=1
     )
-    Ks_color = FloatVectorProperty(
+    specular_color = FloatVectorProperty(
         name="Color",
         subtype='COLOR',
         min=0, max=1,
@@ -429,8 +429,8 @@ class ArnoldNodeStandardSurface(ArnoldNode):
                               "ext_properties", "ui_specular", "node")
         if sublayout:
             col = sublayout.column()
-            _draw_property(col, self, "Ks_color", links)
-            _draw_property(col, self, "Ks", links)
+            _draw_property(col, self, "specular_color", links)
+            _draw_property(col, self, "specular", links)
             _draw_property(col, properties, "specular_roughness", links)
             _draw_property(col, properties, "specular_anisotropy", links)
             _draw_property(col, properties, "specular_rotation", links)
