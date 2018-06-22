@@ -2,6 +2,7 @@
 Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.79b
 
 ### Needs Fixing
+- Show bucket tiles during render from within Blender's Image Editor
 - Changing Standard Surface shader diffuse colors doesn't work, stuck on white, most likely due to `kr_color`
 - Node system for all Lambert, Standard Surface, Flat, and Hair shaders
 - IPR, currently just renders to a png, need a way for the IPR to work within Blender's viewport
