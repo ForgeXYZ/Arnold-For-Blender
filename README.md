@@ -1,6 +1,13 @@
 # Barnold (beta) Status: :yellow_heart: 
 Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.79
 
+### Needs Fixing
+- Standard Surface shaders diffuse colors don't work
+- Node system for all Lambert, Standard Surface, Flat, and Hair shaders
+- IPR, currently just renders to a png, need a way for the IPR to work within Blender's viewport
+- Renders are upside down, kind of weird...
+- Adding multipliers for Diffuse, Glossy, Transmission to Camera(AA) samples
+
 ### Installation
 - Ensure the Arnold 5.1 SDK is installed and environment variable is set
 - Add Arnold SDK directory to line 22 of `/barnold/engine/__init__.py`
