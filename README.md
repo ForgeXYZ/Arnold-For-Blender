@@ -2,6 +2,8 @@
 Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.79b
 
 ### Needs Fixing
+- Refraction needs to be replaced with Standard Surface's transmission
+- Emission needs to be configured to work properly with Standard Surface
 - Show bucket tiles during render from within Blender's Image Editor
 - Node system for all Lambert, Standard Surface, Flat, and Hair shaders
 - IPR, currently just renders to a png, need a way for the IPR to work within Blender's viewport
