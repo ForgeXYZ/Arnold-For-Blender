@@ -1,5 +1,5 @@
 # Barnold (beta) Status: :yellow_heart: 
-Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.79
+Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.79b
 
 ### Needs Fixing
 - Standard Surface shaders diffuse colors don't work
