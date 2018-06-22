@@ -1,4 +1,4 @@
-# Barnold (:construction:BETA:construction:) Status: :red_circle: 
+# Barnold (beta) Status: :yellow_heart: 
 Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.79
 
 ### Installation
