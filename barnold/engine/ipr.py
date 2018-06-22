@@ -158,7 +158,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
             #print("+++ _callback: abort")
 
         # cb = arnold.AtDisplayCallBack(_callback)
-        # Zarnold.AiNodeSetPtr(driver, "callback", cb)
+        # arnold.AiNodeSetPtr(driver, "callback", cb)
 
         class _Dict(dict):
             def update(self, u):
@@ -216,9 +216,9 @@ def _main():
     import bpy
     _mp.set_executable(bpy.app.binary_path_python)
 
-    #import logging
-    #logger = _mp.log_to_stderr()
-    #logger.setLevel(logging.INFO)
+    # import logging
+    # logger = _mp.log_to_stderr()
+    # logger.setLevel(logging.INFO)
 
     global _engine_, _data_, _width_, _height_, _mmap_size_, _mmap_
 

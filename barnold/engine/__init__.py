@@ -945,8 +945,8 @@ def render(engine, scene):
             engine.update_memory_stats(mem, peak)
 
         # display callback must be a variable
-        cb = arnold.AtDisplayCallBack(display_callback)
-        arnold.AiNodeSetPtr(session['display'], "callback", cb)
+        # cb = arnold.AtDisplayCallBack(display_callback)
+        # arnold.AiNodeSetPtr(session['display'], "callback", cb)
 
         res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
         if res == arnold.AI_SUCCESS:
