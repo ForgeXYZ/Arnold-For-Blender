@@ -324,9 +324,9 @@ class ArnoldOptions(PropertyGroup):
     ignore_shadows = BoolProperty(
         name="Ignore Shadows"
     )
-    ignore_direct_lighting = BoolProperty(
-        name="Ignore Direct Lighting"
-    )
+    # TODO: DELETE? ignore_direct_lighting = BoolProperty(
+    #     name="Ignore Direct Lighting"
+    # )
     ignore_subdivision = BoolProperty(
         name="Ignore Subdivision"
     )
@@ -349,23 +349,23 @@ class ArnoldOptions(PropertyGroup):
         name="Ignore SSS"
     )
     #enable_fast_opacity
-    auto_transparency_mode = EnumProperty(
-        name="Mode",
-        items=[
-            ('always', "Always", "Always"),
-            ('shadow-only', "Shadow Only", "Shadow Only"),
-            ('never', "Never", "Never")
-        ],
-        default='always'
-    )
+    # TODO: DELETE? auto_transparency_mode = EnumProperty(
+    #     name="Mode",
+    #     items=[
+    #         ('always', "Always", "Always"),
+    #         ('shadow-only', "Shadow Only", "Shadow Only"),
+    #         ('never', "Never", "Never")
+    #     ],
+    #     default='always'
+    # )
     auto_transparency_depth = IntProperty(
         name="Depth",
         default=10
     )
-    auto_transparency_threshold = FloatProperty(
-        name="Threshold",
-        default=0.99
-    )
+    # # TODO: DELETE? auto_transparency_threshold = FloatProperty(
+    #     name="Threshold",
+    #     default=0.99
+    # )
     texture_max_open_files = IntProperty(
         name="Max Open Files",
         default=0
@@ -437,28 +437,28 @@ class ArnoldOptions(PropertyGroup):
     )
     #preserve_scene_data
     #curved_motionblur
-    texture_gamma = FloatProperty(
-        name="Textures",
-        default=1
-    )
-    light_gamma = FloatProperty(
-        name="Lights",
-        default=1
-    )
-    shader_gamma = FloatProperty(
-        name="Shaders",
-        default=1
-    )
+    # TODO: DELETE? texture_gamma = FloatProperty(
+    #     name="Textures",
+    #     default=1
+    # )
+    # TODO: DELETE? light_gamma = FloatProperty(
+    #    name="Lights",
+    #    default=1
+    #)
+    # TODO: DELETE? shader_gamma = FloatProperty(
+    #    name="Shaders",
+    #    default=1
+    #)
     GI_diffuse_depth = IntProperty(
         name="Diffuse"
     )
     GI_specular_depth = IntProperty(
         name="Glossy"
     )
-    GI_reflection_depth = IntProperty(
-        name="Reflection",
-        default=2
-    )
+    # TODO: DELETE?  GI_reflection_depth = IntProperty(
+    #     name="Reflection",
+    #     default=2
+    # )
     GI_transmission_depth = IntProperty(
         name="Refraction",
         default=2
@@ -1023,7 +1023,7 @@ class ArnoldShaderLambert(PropertyGroup):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldShaderStandard(PropertyGroup):
+class ArnoldShaderStandardSurface(PropertyGroup):
     ui_diffuse = BoolProperty(
         name="Diffuse",
         default=True
@@ -1173,7 +1173,7 @@ class ArnoldShaderStandard(PropertyGroup):
         description="The index of refraction used. The default value of 1.0 is"
                     " the refractive index of a vacuum, i.e., an object with"
                     " IOR of 1.0 in empty space will not refract any rays. In"
-                    " simple terms, 1.0 means 'no refraction'. The Standard"
+                    " simple terms, 1.0 means 'no refraction'. The Standard Surface"
                     " shader assumes that any geometry has outward facing"
                     " normals, that objects are embedded in air (IOR 1.0) and"
                     " that there are no overlapping surfaces.",
@@ -1295,7 +1295,7 @@ class ArnoldShaderStandard(PropertyGroup):
         name="Glossy caustics",
         description="Arnold can produce 'soft' caustics from glossy surfaces"
                     " or large sources of indirect light. This switch in the"
-                    " standard shader specifies whether the diffuse GI rays"
+                    " standard surface shader specifies whether the diffuse GI rays"
                     " can 'see' glossy reflection rays (there are also"
                     " switches for mirror reflection and refraction rays)."
                     " By default only the direct and indirect diffuse rays"
@@ -1307,7 +1307,7 @@ class ArnoldShaderStandard(PropertyGroup):
         name="Reflective caustics",
         description="Arnold can produce 'soft' caustics from glossy surfaces"
                     " or large sources of indirect light. This switch in the"
-                    " standard shader specifies whether the diffuse GI rays"
+                    " standard surface shader specifies whether the diffuse GI rays"
                     " can 'see' mirror reflection rays (there are also"
                     " switches for glossy reflection and refraction rays)."
                     " By default only the direct and indirect diffuse rays"
@@ -1319,7 +1319,7 @@ class ArnoldShaderStandard(PropertyGroup):
         name="Refractive caustics",
         description="Arnold can produce 'soft' caustics from glossy surfaces"
                     " or large sources of indirect light. This switch in the"
-                    " standard shader specifies whether the diffuse GI rays"
+                    " standard surface shader specifies whether the diffuse GI rays"
                     " can 'see' refraction rays (there are also switches for"
                     " mirror and glossy reflection rays). By default only the"
                     " direct and indirect diffuse rays are seen by GI rays."
@@ -1521,7 +1521,7 @@ class ArnoldShader(PropertyGroup):
         name="Type",
         items=[
             ('lambert', "Lambert", "Lambert"),
-            ('standard', "Standard", "Standard"),
+            ('standard_surface', "StandardSurface", "StandardSurface"),
             ('utility', "Utility", "Utility"),
             ('flat', "Flat", "Flat"),
             ('hair', "Hair", "Hair")
@@ -1529,7 +1529,7 @@ class ArnoldShader(PropertyGroup):
         default='lambert'
     )
     lambert = PointerProperty(type=ArnoldShaderLambert)
-    standard = PointerProperty(type=ArnoldShaderStandard)
+    standard_surface = PointerProperty(type=ArnoldShaderStandardSurface)
     utility = PointerProperty(type=ArnoldShaderUtility)
     flat = PointerProperty(type=ArnoldShaderFlat)
     #hair = PointerProperty(type=ArnoldShaderHair)

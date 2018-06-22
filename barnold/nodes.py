@@ -323,12 +323,12 @@ class ArnoldNodeLambert(ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeStandard(ArnoldNode):
-    bl_label = "Standard"
+class ArnoldNodeStandardSurface(ArnoldNode):
+    bl_label = "StandardSurface"
     bl_icon = 'MATERIAL'
     bl_width_default = 200
 
-    ai_name = "standard"
+    ai_name = "standard_surface"
 
     sockets = collections.OrderedDict([
         # Diffuse
@@ -397,7 +397,7 @@ class ArnoldNodeStandard(ArnoldNode):
         default=(1, 1, 1)
     )
     ext_properties = PointerProperty(
-        type=props.ArnoldShaderStandard
+        type=props.ArnoldShaderStandardSurface
     )
 
     def init(self, context):
@@ -1090,7 +1090,7 @@ class ArnoldNodeSky(ArnoldNode):
         soft_min=-1, soft_max=1,
         default=(0, 0, 1)
     )
-    
+
     def _visibility(mask):
         def get(self):
             return self.visibility & mask
@@ -1891,7 +1891,7 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeOutput")
         ]),
         ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_SHADERS", "Shaders", items=[
-            nodeitems_utils.NodeItem("ArnoldNodeStandard"),
+            nodeitems_utils.NodeItem("ArnoldNodeStandardSurface"),
             nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),
             nodeitems_utils.NodeItem("ArnoldNodeHair"),

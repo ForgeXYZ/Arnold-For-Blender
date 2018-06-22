@@ -120,14 +120,14 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
             col.prop(opts, "GI_total_depth")
             col.prop(opts, "GI_diffuse_depth")
             col.prop(opts, "GI_specular_depth")
-            col.prop(opts, "GI_reflection_depth")
+            # TODO: DELETE? col.prop(opts, "GI_reflection_depth")
             col.prop(opts, "GI_transmission_depth")
             col.prop(opts, "GI_volume_depth")
             col.separator()
             col.label("Transparency:", icon='SETTINGS')
-            col.prop(opts, "auto_transparency_mode")
+            # TODO: DELETE? col.prop(opts, "auto_transparency_mode")
             col.prop(opts, "auto_transparency_depth")
-            col.prop(opts, "auto_transparency_threshold")
+            # TODO: DELETE? col.prop(opts, "auto_transparency_threshold")
 
         sublayout = _subpanel(layout, "Light", opts.ui_light, opts_path, "ui_light", "scene")
         if sublayout:
@@ -137,9 +137,9 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
         sublayout = _subpanel(layout, "Gamma Correction", opts.ui_gamma, opts_path, "ui_gamma", "scene")
         if sublayout:
             col = sublayout.column()
-            col.prop(opts, "texture_gamma")
-            col.prop(opts, "light_gamma")
-            col.prop(opts, "shader_gamma")
+            # TODO: DELETE? col.prop(opts, "texture_gamma")
+            # TODO: DELETE? col.prop(opts, "light_gamma")
+            # TODO: DELETE? col.prop(opts, "shader_gamma")
             col.separator()
             col.prop(opts, "display_gamma")
 
@@ -258,7 +258,7 @@ class ArnoldRenderOverridePanel(RenderButtonsPanel, Panel):
             col.prop(opts, "ignore_lights")
             col.prop(opts, "ignore_shadows")
             col.prop(opts, "ignore_shadows")
-            col.prop(opts, "ignore_direct_lighting")
+            #TODO: DELETE? col.prop(opts, "ignore_direct_lighting")
             col.prop(opts, "ignore_subdivision")
             col.prop(opts, "ignore_displacement")
             col.prop(opts, "ignore_bump")
@@ -540,105 +540,105 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                 col.row().prop(mat, "diffuse_color", text="Color")
                 col.prop(mat, "diffuse_intensity", text="Scale")
                 col.row().prop(lambert, "opacity")
-            elif shader_type == 'standard':
-                standard = shader.standard
-                path_from_id = standard.path_from_id()
+            elif shader_type == 'standard_surface':
+                standard_surface = shader.standard_surface
+                path_from_id = standard_surface.path_from_id()
 
                 # Diffuse
-                sublayout = _subpanel(layout, "Diffuse", standard.ui_diffuse,
+                sublayout = _subpanel(layout, "Diffuse", standard_surface.ui_diffuse,
                                       path_from_id, "ui_diffuse", "material")
                 if sublayout:
                     col = sublayout.column()
                     col.row().prop(mat, "diffuse_color", text="Color")
                     col.prop(mat, "diffuse_intensity", text="Scale")
-                    col.prop(standard, "diffuse_roughness")
-                    col.prop(standard, "Fresnel_affect_diff")
-                    col.prop(standard, "Kb")
-                    col.prop(standard, "direct_diffuse")
-                    col.prop(standard, "indirect_diffuse")
+                    col.prop(standard_surface, "diffuse_roughness")
+                    col.prop(standard_surface, "Fresnel_affect_diff")
+                    col.prop(standard_surface, "Kb")
+                    col.prop(standard_surface, "direct_diffuse")
+                    col.prop(standard_surface, "indirect_diffuse")
 
                 # Specular
-                sublayout = _subpanel(layout, "Specular", standard.ui_specular,
+                sublayout = _subpanel(layout, "Specular", standard_surface.ui_specular,
                                       path_from_id, "ui_specular", "material")
                 if sublayout:
                     col = sublayout.column()
                     col.row().prop(mat, "specular_color", text="Color")
                     col.prop(mat, "specular_intensity", text="Scale")
-                    col.prop(standard, "specular_roughness")
-                    col.prop(standard, "specular_anisotropy")
-                    col.prop(standard, "specular_rotation")
-                    col.prop(standard, "direct_specular")
-                    col.prop(standard, "indirect_specular")
+                    col.prop(standard_surface, "specular_roughness")
+                    col.prop(standard_surface, "specular_anisotropy")
+                    col.prop(standard_surface, "specular_rotation")
+                    col.prop(standard_surface, "direct_specular")
+                    col.prop(standard_surface, "indirect_specular")
                     col.label("Fresnel", icon='SETTINGS')
                     box = col.box()
-                    box.prop(standard, "specular_Fresnel")
+                    box.prop(standard_surface, "specular_Fresnel")
                     sub = box.row()
-                    sub.enabled = standard.specular_Fresnel
-                    sub.prop(standard, "Ksn")
+                    sub.enabled = standard_surface.specular_Fresnel
+                    sub.prop(standard_surface, "Ksn")
 
-                layout.prop(standard, "bounce_factor")
+                layout.prop(standard_surface, "bounce_factor")
 
                 # Reflection
-                sublayout = _subpanel(layout, "Reflection", standard.ui_reflection,
+                sublayout = _subpanel(layout, "Reflection", standard_surface.ui_reflection,
                                       path_from_id, "ui_reflection", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.row().prop(standard, "Kr_color")
-                    col.prop(standard, "Kr")
+                    col.row().prop(standard_surface, "Kr_color")
+                    col.prop(standard_surface, "Kr")
                     col.label("Fresnel:", icon='SETTINGS')
                     box = col.box()
-                    box.prop(standard, "Fresnel")
+                    box.prop(standard_surface, "Fresnel")
                     sub = box.row()
-                    sub.enabled = standard.Fresnel
-                    sub.prop(standard, "Krn")
+                    sub.enabled = standard_surface.Fresnel
+                    sub.prop(standard_surface, "Krn")
                     col.label("Exit Color:", icon='SETTINGS')
                     box = col.box()
-                    box.prop(standard, "reflection_exit_use_environment")
-                    box.row().prop(standard, "reflection_exit_color")
+                    box.prop(standard_surface, "reflection_exit_use_environment")
+                    box.row().prop(standard_surface, "reflection_exit_color")
 
                 # Refraction
-                sublayout = _subpanel(layout, "Refraction", standard.ui_refraction,
+                sublayout = _subpanel(layout, "Refraction", standard_surface.ui_refraction,
                                       path_from_id, "ui_refraction", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.row().prop(standard, "Kt_color")
-                    col.prop(standard, "Kt")
-                    col.prop(standard, "IOR")
-                    col.prop(standard, "dispersion_abbe")
-                    col.prop(standard, "Fresnel_use_IOR")
-                    col.prop(standard, "refraction_roughness")
-                    col.row().prop(standard, "transmittance")
+                    col.row().prop(standard_surface, "Kt_color")
+                    col.prop(standard_surface, "Kt")
+                    col.prop(standard_surface, "IOR")
+                    col.prop(standard_surface, "dispersion_abbe")
+                    col.prop(standard_surface, "Fresnel_use_IOR")
+                    col.prop(standard_surface, "refraction_roughness")
+                    col.row().prop(standard_surface, "transmittance")
                     col.label("Exit Color:", icon='SETTINGS')
                     box = col.box()
-                    box.prop(standard, "refraction_exit_use_environment")
-                    box.row().prop(standard, "refraction_exit_color")
-                    col.prop(standard, "enable_internal_reflections")
+                    box.prop(standard_surface, "refraction_exit_use_environment")
+                    box.row().prop(standard_surface, "refraction_exit_color")
+                    col.prop(standard_surface, "enable_internal_reflections")
 
-                layout.prop(standard, "opacity")
+                layout.prop(standard_surface, "opacity")
 
                 # Sub-Surface Scattering
-                sublayout = _subpanel(layout, "Sub-Surface Scattering", standard.ui_sss,
+                sublayout = _subpanel(layout, "Sub-Surface Scattering", standard_surface.ui_sss,
                                       path_from_id, "ui_sss", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.row().prop(standard, "Ksss_color")
-                    col.prop(standard, "Ksss")
-                    col.row().prop(standard, "sss_radius")
-                sublayout = _subpanel(layout, "Emission", standard.ui_emission,
+                    col.row().prop(standard_surface, "Ksss_color")
+                    col.prop(standard_surface, "Ksss")
+                    col.row().prop(standard_surface, "sss_radius")
+                sublayout = _subpanel(layout, "Emission", standard_surface.ui_emission,
                                       path_from_id, "ui_emission", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.row().prop(standard, "emission_color")
-                    col.prop(standard, "emission")
+                    col.row().prop(standard_surface, "emission_color")
+                    col.prop(standard_surface, "emission")
 
                 # Caustics
-                sublayout = _subpanel(layout, "Caustics", standard.ui_caustics,
+                sublayout = _subpanel(layout, "Caustics", standard_surface.ui_caustics,
                                       path_from_id, "ui_caustics", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.prop(standard, "enable_glossy_caustics")
-                    col.prop(standard, "enable_reflective_caustics")
-                    col.prop(standard, "enable_refractive_caustics")
+                    col.prop(standard_surface, "enable_glossy_caustics")
+                    col.prop(standard_surface, "enable_reflective_caustics")
+                    col.prop(standard_surface, "enable_refractive_caustics")
             elif shader_type == 'utility':
                 utility = shader.utility
                 col = layout.column()

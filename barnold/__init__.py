@@ -7,8 +7,8 @@ bl_info = {
     "name"          : "B-Arnold",
     "description"   : "Arnold Render integration",
     "author"        : "N.Ildar <nildar@users.sourceforge.net>",
-    "version"       : (0, 0, 1),
-    "blender"       : (2, 75, 0),
+    "version"       : (0, 0, 2),
+    "blender"       : (2, 79, 0),
     "location"      : "Info header, render engine menu",
     "category"      : "Render"
 }
