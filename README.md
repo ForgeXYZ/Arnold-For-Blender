@@ -2,6 +2,7 @@
 Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.79b
 
 ### Needs Fixing
+- Add metalness parameter to "Base" section of shader panel
 - Refraction needs to be replaced with Standard Surface's transmission
 - Emission needs to be configured to work properly with Standard Surface
 - Show bucket tiles during render from within Blender's Image Editor
