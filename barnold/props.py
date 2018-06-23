@@ -1102,6 +1102,19 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         subtype='COLOR',
         default=(1, 1, 1)
     )
+    # TODO: Add transmission_depth and transmission_scatter
+    # transmission_depth = FloatVectorProperty(
+    #     name="Depth",
+    #     description="Controls the depth into the volume at which the transmission color is realized.",
+    #     subtype='FACTOR',
+    #     min=0, max=10
+    # )
+    # transmission_scatter = FloatVectorProperty(
+    #     name="Scatter",
+    #     description="Controls the color of the volume, typically for thick or large bodies of liquid.",
+    #     subtype='COLOR',
+    #     default=(0, 0, 0)
+    # )
     reflection_exit_color = FloatVectorProperty(
         name="Color",
         description="The color returned when a ray has reached its maximum"
@@ -1147,7 +1160,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=(1, 1, 1)
     )
     refraction_roughness = FloatProperty(
-        name="Roughness",
+        name="Extra Roughness",
         description="Controls the blurriness of a refraction computed with an"
                     " 'isotropic microfacet BTDF'. The range goes from 0 (no"
                     " roughness) to 1.",
@@ -1181,7 +1194,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=1
     )
     dispersion_abbe = FloatProperty(
-        name="Abbe Number"
+        name="Dispersion Abbe"
     )
     Kb = FloatProperty(
         name="BackLighting",

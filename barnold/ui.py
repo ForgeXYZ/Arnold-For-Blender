@@ -549,8 +549,8 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                                       path_from_id, "ui_diffuse", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.prop(mat, "diffuse_intensity", text="Weight")
                     col.row().prop(mat, "diffuse_color", text="Color")
+                    col.prop(mat, "diffuse_intensity", text="Weight")
                     col.prop(standard_surface, "diffuse_roughness")
                     #TODO: Metalness goes here...
                     # Below is deprecated in Arnold 5
@@ -567,18 +567,19 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                     col.row().prop(mat, "specular_color", text="Color")
                     col.prop(mat, "specular_intensity", text="Weight")
                     col.prop(standard_surface, "specular_roughness")
+                    col.prop(standard_surface, "specular_ior")
                     col.prop(standard_surface, "specular_anisotropy")
                     col.prop(standard_surface, "specular_rotation")
-                    col.prop(standard_surface, "direct_specular")
-                    col.prop(standard_surface, "indirect_specular")
-                    col.label("Fresnel", icon='SETTINGS')
-                    box = col.box()
-                    box.prop(standard_surface, "specular_Fresnel")
-                    sub = box.row()
-                    sub.enabled = standard_surface.specular_Fresnel
-                    sub.prop(standard_surface, "Ksn")
+                    # Below is deprecated in Arnold 5
+                        # col.prop(standard_surface, "direct_specular")
+                        # col.prop(standard_surface, "indirect_specular")
+                        # col.label("Fresnel", icon='SETTINGS')
+                        # box = col.box()
+                        # box.prop(standard_surface, "specular_Fresnel")
+                        # sub = box.row()
+                        # sub.enabled = standard_surface.specular_Fresnel
+                        # sub.prop(standard_surface, "Ksn")
 
-                layout.prop(standard_surface, "bounce_factor")
 
                 # # (Reflection) - DEPRECATED IN ARNOLD 5
                 # sublayout = _subpanel(layout, "Transmission", standard_surface.ui_reflection,
@@ -605,18 +606,21 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                     col = sublayout.column()
                     col.row().prop(standard_surface, "transmission_color")
                     col.prop(standard_surface, "transmission")
+                    # TODO: Add transmission_depth and transmission_scatter
+                    # col.prop(standard_surface, "transmission_depth")
+                    # col.prop(standard_surface, "transmission_scatter")
                     col.prop(standard_surface, "specular_ior")
                     col.prop(standard_surface, "dispersion_abbe")
-                    col.prop(standard_surface, "Fresnel_use_IOR")
+                    # col.prop(standard_surface, "Fresnel_use_IOR")
                     col.prop(standard_surface, "refraction_roughness")
-                    col.row().prop(standard_surface, "transmittance")
-                    col.label("Exit Color:", icon='SETTINGS')
-                    box = col.box()
-                    box.prop(standard_surface, "refraction_exit_use_environment")
-                    box.row().prop(standard_surface, "refraction_exit_color")
-                    col.prop(standard_surface, "enable_internal_reflections")
+                    # Below is deprecated in Arnold 5
+                        # col.row().prop(standard_surface, "transmittance")
+                        # col.label("Exit Color:", icon='SETTINGS')
+                        # box = col.box()
+                        # box.prop(standard_surface, "refraction_exit_use_environment")
+                        # box.row().prop(standard_surface, "refraction_exit_color")
+                        # col.prop(standard_surface, "enable_internal_reflections")
 
-                layout.prop(standard_surface, "opacity")
 
                 # Subsurface
                 sublayout = _subpanel(layout, "Subsurface", standard_surface.ui_sss,
@@ -665,6 +669,9 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
             col.prop(wire, "edge_type")
             col.prop(wire, "line_width")
             col.prop(wire, "raster_space")
+
+        layout.prop(standard_surface, "bounce_factor")
+        layout.prop(standard_surface, "opacity")
 
 ##
 ## Textures
