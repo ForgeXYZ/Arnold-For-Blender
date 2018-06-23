@@ -355,9 +355,10 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         ("Krn"                      , ('FLOAT', "Reflection: Refl. at Normal", "ext_properties")),
         ("reflection_exit_color"    , ('RGB', "Reflection: Exit Color", "ext_properties")),
         # Refraction
-        ("Kt_color"                 , ('RGB', "Refraction: Color", "ext_properties")),
-        ("Kt"                       , ('FLOAT', "Refraction: Scale", "ext_properties")),
-        ("IOR"                      , ('FLOAT', "Refraction: IOR", "ext_properties")),
+        ("transmission_color"                 , ('RGB', "Refraction: Color", "ext_properties")),
+        ("transmission"                       , ('FLOAT', "Refraction: Scale", "ext_properties")),
+        # TODO: This will need to be switched out with coat_ior (specular_ior will need to go with specular)
+        ("specular_ior"                      , ('FLOAT', "Refraction: IOR", "ext_properties")),
         ("dispersion_abbe"          , ('FLOAT', "Refraction: Abbe Number", "ext_properties")),
         ("refraction_roughness"     , ('FLOAT', "Refraction: Roughness", "ext_properties")),
         ("transmittance"            , ('RGB', "Transmittance", "ext_properties")),
@@ -445,32 +446,32 @@ class ArnoldNodeStandardSurface(ArnoldNode):
 
         _draw_property(layout, properties, "bounce_factor", links)
 
-        # Reflection
-        sublayout = _subpanel(layout, "Reflection", properties.ui_reflection,
-                              "ext_properties", "ui_reflection", "node")
+        # # (Reflection) - Deprecated in Arnold 5
+        # sublayout = _subpanel(layout, "Reflection", properties.ui_reflection,
+        #                       "ext_properties", "ui_reflection", "node")
+        # if sublayout:
+        #     col = sublayout.column()
+        #     _draw_property(col, properties, "transmission_color", links)
+        #     _draw_property(col, properties, "transmission", links)
+        #     col.label("Fresnel:", icon='SETTINGS')
+        #     box = col.box()
+        #     box.prop(properties, "Fresnel")
+        #     sub = box.row()
+        #     sub.enabled = properties.Fresnel
+        #     _draw_property(sub, properties, "Krn", links)
+        #     col.label("Exit Color:", icon='SETTINGS')
+        #     box = col.box()
+        #     box.prop(properties, "reflection_exit_use_environment")
+        #     _draw_property(box, properties, "reflection_exit_color", links)
+
+        # Transmission
+        sublayout = _subpanel(layout, "Transmission", properties.ui_refraction,
+                              "ext_properties", "ui_refraction", "node")
         if sublayout:
             col = sublayout.column()
             _draw_property(col, properties, "transmission_color", links)
             _draw_property(col, properties, "transmission", links)
-            col.label("Fresnel:", icon='SETTINGS')
-            box = col.box()
-            box.prop(properties, "Fresnel")
-            sub = box.row()
-            sub.enabled = properties.Fresnel
-            _draw_property(sub, properties, "Krn", links)
-            col.label("Exit Color:", icon='SETTINGS')
-            box = col.box()
-            box.prop(properties, "reflection_exit_use_environment")
-            _draw_property(box, properties, "reflection_exit_color", links)
-
-        # Refraction
-        sublayout = _subpanel(layout, "Refraction", properties.ui_refraction,
-                              "ext_properties", "ui_refraction", "node")
-        if sublayout:
-            col = sublayout.column()
-            _draw_property(col, properties, "Kt_color", links)
-            _draw_property(col, properties, "Kt", links)
-            _draw_property(col, properties, "IOR", links)
+            _draw_property(col, properties, "specular_ior", links)
             _draw_property(col, properties, "dispersion_abbe", links)
             col.prop(properties, "Fresnel_use_IOR")
             _draw_property(col, properties, "refraction_roughness", links)
@@ -483,8 +484,8 @@ class ArnoldNodeStandardSurface(ArnoldNode):
 
         _draw_property(layout, properties, "opacity", links)
 
-        # Sub-Surface Scattering
-        sublayout = _subpanel(layout, "Sub-Surface Scattering", properties.ui_sss,
+        # Subsurface
+        sublayout = _subpanel(layout, "Subsurface", properties.ui_sss,
                               "ext_properties", "ui_sss", "node")
         if sublayout:
             col = sublayout.column()
@@ -992,7 +993,7 @@ class ArnoldNodeImage(ArnoldNode):
         scol.prop(self, "soffset", text="U")
         scol.prop(self, "toffset", text="V")
 
-        col.label("Scale:")
+        col.label("Weight:")
         scol = col.column(align=True)
         scol.prop(self, "sscale", text="U")
         scol.prop(self, "tscale", text="V")
@@ -1526,7 +1527,7 @@ class ArnoldNodeGobo(ArnoldNode):
         col.prop(self, "offset")
 
         subcol = col.column(align=True)
-        subcol.label("Scale:")
+        subcol.label("Weight:")
         subcol.prop(self, "scale_s", text="U")
         subcol.prop(self, "scale_t", text="V")
 
@@ -1700,7 +1701,7 @@ class ArnoldNodeLightBlocker(ArnoldNode):
         sub.prop_search(self, "geometry_matrix_object", context.scene, "objects", text="")
         sub = sub.column()
         sub.enabled = not self.geometry_matrix_object
-        sub.template_component_menu(self, "geometry_matrix_scale", name="Scale:")
+        sub.template_component_menu(self, "geometry_matrix_scale", name="Weight:")
         sub.template_component_menu(self, "geometry_matrix_rotation", name="Rotation:")
         sub.template_component_menu(self, "geometry_matrix_translation", name="Translation:")
 

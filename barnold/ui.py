@@ -538,24 +538,26 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                 lambert = shader.lambert
                 col = layout.column()
                 col.row().prop(mat, "diffuse_color", text="Color")
-                col.prop(mat, "diffuse_intensity", text="Scale")
+                col.prop(mat, "diffuse_intensity", text="Weight")
                 col.row().prop(lambert, "opacity")
             elif shader_type == 'standard_surface':
                 standard_surface = shader.standard_surface
                 path_from_id = standard_surface.path_from_id()
 
-                # Diffuse
-                sublayout = _subpanel(layout, "Diffuse", standard_surface.ui_diffuse,
+                # Base
+                sublayout = _subpanel(layout, "Base", standard_surface.ui_diffuse,
                                       path_from_id, "ui_diffuse", "material")
                 if sublayout:
                     col = sublayout.column()
+                    col.prop(mat, "diffuse_intensity", text="Weight")
                     col.row().prop(mat, "diffuse_color", text="Color")
-                    col.prop(mat, "diffuse_intensity", text="Scale")
                     col.prop(standard_surface, "diffuse_roughness")
-                    col.prop(standard_surface, "Fresnel_affect_diff")
-                    col.prop(standard_surface, "Kb")
-                    col.prop(standard_surface, "direct_diffuse")
-                    col.prop(standard_surface, "indirect_diffuse")
+                    #TODO: Metalness goes here...
+                    # Below is deprecated in Arnold 5
+                        # col.prop(standard_surface, "Fresnel_affect_diff")
+                        # col.prop(standard_surface, "Kb")
+                        # col.prop(standard_surface, "direct_diffuse")
+                        # col.prop(standard_surface, "indirect_diffuse")
 
                 # Specular
                 sublayout = _subpanel(layout, "Specular", standard_surface.ui_specular,
@@ -563,7 +565,7 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                 if sublayout:
                     col = sublayout.column()
                     col.row().prop(mat, "specular_color", text="Color")
-                    col.prop(mat, "specular_intensity", text="Scale")
+                    col.prop(mat, "specular_intensity", text="Weight")
                     col.prop(standard_surface, "specular_roughness")
                     col.prop(standard_surface, "specular_anisotropy")
                     col.prop(standard_surface, "specular_rotation")
@@ -578,32 +580,32 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
 
                 layout.prop(standard_surface, "bounce_factor")
 
-                # Reflection
-                sublayout = _subpanel(layout, "Reflection", standard_surface.ui_reflection,
-                                      path_from_id, "ui_reflection", "material")
+                # # (Reflection) - DEPRECATED IN ARNOLD 5
+                # sublayout = _subpanel(layout, "Transmission", standard_surface.ui_reflection,
+                #                       path_from_id, "ui_reflection", "material")
+                # if sublayout:
+                #     col = sublayout.column()
+                #     col.row().prop(standard_surface, "transmission_color")
+                #     col.prop(standard_surface, "transmission")
+                #     col.label("Fresnel:", icon='SETTINGS')
+                #     box = col.box()
+                #     box.prop(standard_surface, "Fresnel")
+                #     sub = box.row()
+                #     sub.enabled = standard_surface.Fresnel
+                #     sub.prop(standard_surface, "Krn")
+                #     col.label("Exit Color:", icon='SETTINGS')
+                #     box = col.box()
+                #     box.prop(standard_surface, "reflection_exit_use_environment")
+                #     box.row().prop(standard_surface, "reflection_exit_color")
+
+                # Transmission
+                sublayout = _subpanel(layout, "Transmission", standard_surface.ui_refraction,
+                                      path_from_id, "ui_refraction", "material")
                 if sublayout:
                     col = sublayout.column()
                     col.row().prop(standard_surface, "transmission_color")
                     col.prop(standard_surface, "transmission")
-                    col.label("Fresnel:", icon='SETTINGS')
-                    box = col.box()
-                    box.prop(standard_surface, "Fresnel")
-                    sub = box.row()
-                    sub.enabled = standard_surface.Fresnel
-                    sub.prop(standard_surface, "Krn")
-                    col.label("Exit Color:", icon='SETTINGS')
-                    box = col.box()
-                    box.prop(standard_surface, "reflection_exit_use_environment")
-                    box.row().prop(standard_surface, "reflection_exit_color")
-
-                # Refraction
-                sublayout = _subpanel(layout, "Refraction", standard_surface.ui_refraction,
-                                      path_from_id, "ui_refraction", "material")
-                if sublayout:
-                    col = sublayout.column()
-                    col.row().prop(standard_surface, "Kt_color")
-                    col.prop(standard_surface, "Kt")
-                    col.prop(standard_surface, "IOR")
+                    col.prop(standard_surface, "specular_ior")
                     col.prop(standard_surface, "dispersion_abbe")
                     col.prop(standard_surface, "Fresnel_use_IOR")
                     col.prop(standard_surface, "refraction_roughness")
@@ -616,8 +618,8 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
 
                 layout.prop(standard_surface, "opacity")
 
-                # Sub-Surface Scattering
-                sublayout = _subpanel(layout, "Sub-Surface Scattering", standard_surface.ui_sss,
+                # Subsurface
+                sublayout = _subpanel(layout, "Subsurface", standard_surface.ui_sss,
                                       path_from_id, "ui_sss", "material")
                 if sublayout:
                     col = sublayout.column()

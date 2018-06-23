@@ -1049,7 +1049,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
     #base = Material.diffuse_intensity
     #base_color = Material.diffuse_color
     diffuse_roughness = FloatProperty(
-        name="Roughness",
+        name="Diffuse Roughness",
         description="The diffuse component follows an Oren-Nayar reflection"
                     " model with surface roughness. A value of 0.0 is"
                     " comparable to a Lambert reflection. Higher values"
@@ -1091,7 +1091,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         min=0, max=1
     )
     transmission = FloatProperty(
-        name="Scale",
+        name="Weight",
         description="The contribution from reflection rays.",
         subtype='FACTOR',
         min=0, max=1
@@ -1116,13 +1116,13 @@ class ArnoldShaderStandardSurface(PropertyGroup):
                     " (true), or the color specified by reflection_exit_color"
                     " (false). See above."
     )
-    Kt = FloatProperty(
-        name="Scale",
+    transmission = FloatProperty(
+        name="Weight",
         description="Transparency allows light to pass through the material.",
         subtype='FACTOR',
         min=0, max=1
     )
-    Kt_color = FloatVectorProperty(
+    transmission_color = FloatVectorProperty(
         name="Color",
         description="Transparency color multiplies the refracted result by a"
                     " color. For tinted glass it is best to control the tint"
@@ -1168,7 +1168,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
                     " (true), or the color specified by refraction_exit_color"
                     " (false)."
     )
-    IOR = FloatProperty(
+    specular_ior = FloatProperty(
         name="IOR",
         description="The index of refraction used. The default value of 1.0 is"
                     " the refractive index of a vacuum, i.e., an object with"
@@ -1240,7 +1240,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=True
     )
     emission = FloatProperty(
-        name="Scale",
+        name="Weight",
         description="Controls the amount of emitted light. It can create"
                     " noise, especially if the source of indirect illumination"
                     " is very small (a light bulb geometry). It is generally"
@@ -1339,7 +1339,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=True
     )
     Ksss = FloatProperty(
-        name="Scale",
+        name="Weight",
         description="The amount of sub-surface scattering. Multiplies SSS"
                     " Color.",
         subtype='FACTOR',
@@ -1555,7 +1555,7 @@ class ArnoldCurves(PropertyGroup):
         default=0.001
     )
     bezier_scale = FloatProperty(
-        name="Scale",
+        name="Weight",
         min=0, max=1,
         default=0.5,
         subtype='FACTOR'
