@@ -1,5 +1,5 @@
 # Barnold (beta) Status: :yellow_heart: 
-Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.79b
+Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.79b. This is not yet production ready, but will be soon...
 
 ### Needs Fixing
 - Add metalness parameter to "Base" section of shader panel
