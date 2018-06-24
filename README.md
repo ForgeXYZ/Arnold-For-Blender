@@ -11,9 +11,16 @@ Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.7
 - Renders are upside down, kind of weird...
 
 ### Installation
+#### Windows
 - Ensure the Arnold 5.1 SDK is downloaded and saved in `path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows`
 - Add environment variable to "PATH" -> `path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\bin`
 - Add Arnold SDK's python folder(`path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\python`) to line 22 of `/barnold/engine/__init__.py`
 - Add Barnold to `/Blender/2.79/Scripts/Addons`
+
+#### Linux & macOS coming soon...
+
+### About
+I'm actively working on this every day, if you have any issues feel free to contact me at tyler@tylerfurby.com,
+I will ensure this plugin supports all future updates to Blender and Arnold renderer.
 
 ![Blender loves arnold](https://cdn.rawgit.com/tyler-furby/Furby-Studios-Website-Files/a449e03a/images/Untitled-1.png)
