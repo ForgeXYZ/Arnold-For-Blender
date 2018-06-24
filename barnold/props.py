@@ -177,7 +177,7 @@ class ArnoldOptions(PropertyGroup):
     )
     progressive_refinement = BoolProperty(
         name="Progressive Refinement",
-        default=True
+        default=False
     )
     initial_sampling_level = IntProperty(
         name="Inital Sampling Level",
