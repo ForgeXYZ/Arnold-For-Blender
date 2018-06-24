@@ -29,6 +29,8 @@ Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.7
 
 #### Linux & macOS installation instructions coming soon...
 
+### Complete Barnold Documentation (coming soon)
+
 ### About
 I'm actively working on this every day, if you have any issues feel free to contact me at tyler@tylerfurby.com,
 I will ensure this plugin supports all future updates to Blender and Arnold renderer.
