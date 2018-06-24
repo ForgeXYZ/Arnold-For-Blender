@@ -12,12 +12,22 @@ Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.7
 
 ### Installation
 #### Windows
-- Ensure the Arnold 5.1 SDK is downloaded and saved in `path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows`
-- Add environment variable to "PATH" -> `path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\bin`
-- Add Arnold SDK's python folder(`path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\python`) to line 22 of `/barnold/engine/__init__.py`
-- Add Barnold to `/Blender/2.79/Scripts/Addons`
+- Download the Arnold 5.1.1.0 SDK [here](https://www.solidangle.com/arnold/download/product-download/?id=2285) and save this directory in `path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows`
+- Add environment variable to "PATH" -> `path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\bin` 
+  ##### If you don't know how to set environment variables in Windows:
+  - In Search, search for and then select: System (Control Panel)
+  - Click the Advanced system settings link.
+  - Click Environment Variables. In the section System Variables, find the PATH environment variable and select it. Click Edit.
+  - Click New.
+  - In the Edit System Variable (or New System Variable) window, specify the value of the PATH environment variable: `\path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\bin` 
+  - Click OK. 
+  - Close all remaining windows by clicking OK.
+  - Restart computer.
+- Add `barnold` directory to `path\to\blender\2.79\scripts\addons`
+- Edit line 22 of `path\to\blender\2.79\scripts\addons\barnold\engine\__init__.py` to `sys.path.append(r"path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\python")`
+- Enable the plugin in blender my going to File>User Preferences>Add-ons tab>Search for 'arnold' in the search bar, and clicking the checkbox next to `Render:B-Arnold` to enable this plugin.
 
-#### Linux & macOS coming soon...
+#### Linux & macOS installation instructions coming soon...
 
 ### About
 I'm actively working on this every day, if you have any issues feel free to contact me at tyler@tylerfurby.com,
