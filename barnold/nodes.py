@@ -370,7 +370,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         ("Ksss"                     , ('FLOAT', "SSS: Scale", "ext_properties")),
         ("sss_radius"               , ('RGB', "SSS: Radius", "ext_properties")),
         # Emission
-        ("emission_color"           , ('RGB', "Emission: Color", "ext_properties")),
+        ("emission_color"           , ('RGB', "Emission: Color", "")),
         ("emission"                 , ('FLOAT', "Emission: Scale", "ext_properties"))
     ])
 
@@ -396,6 +396,12 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         subtype='COLOR',
         min=0, max=1,
         default=(1, 1, 1)
+    )
+    emission_color = FloatVectorProperty(
+        name="Color",
+        subtype='COLOR',
+        min=0, max=1,
+        default=(1,1,1)
     )
     ext_properties = PointerProperty(
         type=props.ArnoldShaderStandardSurface
@@ -498,7 +504,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
                               "ext_properties", "ui_emission", "node")
         if sublayout:
             col = sublayout.column()
-            _draw_property(col, properties, "emission_color", links)
+            _draw_property(col, self, "emission_color", links)
             _draw_property(col, properties, "emission", links)
 
         # Caustics
@@ -1758,7 +1764,7 @@ class ArnoldNodeDensity(ArnoldNode):
         self.inputs.new("NodeSocketString", "absorption_channel")
         self.inputs.new("ArnoldNodeSocketColor", "absorption_color")
         self.inputs.new("NodeSocketString", "emission_channel")
-        self.inputs.new("ArnoldNodeSocketColor", "emission_color")
+        # self.inputs.new("ArnoldNodeSocketColor", "emission_color")
         self.inputs.new("NodeSocketVector", "position_offset")
 
     def draw_buttons(self, context, layout):

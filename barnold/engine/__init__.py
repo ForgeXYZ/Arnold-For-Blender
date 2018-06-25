@@ -19,7 +19,7 @@ import bpy
 import bgl
 from mathutils import Matrix, Vector, geometry
 
-sys.path.append(r"C:\Users\tyler\Downloads\blender-2.79-4461be1-win64-vc14\blender-2.79.0-git.4461be1-windows64\2.79\scripts\modules\Arnold-5.1.1.0-windows\python")
+sys.path.append(r"C:\Program Files\Blender Foundation\Blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\python")
 import arnold
 
 from ..nodes import (
@@ -160,6 +160,8 @@ class Shaders:
                 arnold.AiNodeSetFlt(node, "specular_roughness", standard_surface.specular_roughness)
                 arnold.AiNodeSetFlt(node, "specular_anisotropy", standard_surface.specular_anisotropy)
                 arnold.AiNodeSetFlt(node, "specular_rotation", standard_surface.specular_rotation)
+                arnold.AiNodeSetFlt(node, "emission", standard_surface.emission)
+                arnold.AiNodeSetRGB(node, "emission_color", 1.0, 1.0, 1.0)
                 # TODO: other standard_surface node parmas
             elif shader.type == 'utility':
                 utility = shader.utility

@@ -1261,7 +1261,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
                     " using emission."
     )
     emission_color = FloatVectorProperty(
-        name="Collor",
+        name="Color",
         description="The emitted light color.",
         size=3,
         min=0, max=1,

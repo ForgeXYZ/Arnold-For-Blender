@@ -634,8 +634,10 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                                       path_from_id, "ui_emission", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.row().prop(standard_surface, "emission_color")
-                    col.prop(standard_surface, "emission")
+                    #col.row().prop(standard_surface, "emission_color")
+                    col.row().prop(standard_surface, "emission_color", text="Color")
+                    col.prop(standard_surface, "emission", text="Weight")
+                    #col.prop(standard_surface, "emission")
 
                 # Caustics
                 sublayout = _subpanel(layout, "Caustics", standard_surface.ui_caustics,
