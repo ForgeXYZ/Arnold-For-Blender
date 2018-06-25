@@ -25,7 +25,7 @@ Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.7
   - Restart computer.
 - Add `barnold` directory to `path\to\blender\2.79\scripts\addons`
 - Edit line 22 of `path\to\blender\2.79\scripts\addons\barnold\engine\__init__.py` to `sys.path.append(r"path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\python")`
-- Enable the plugin in blender my going to File>User Preferences>Add-ons tab>Search for 'arnold' in the search bar, and clicking the checkbox next to `Render:B-Arnold` to enable this plugin.
+- Enable the plugin in blender by going to File>User Preferences>Add-ons tab>Search for 'arnold' in the search bar, and clicking the checkbox next to `Render:B-Arnold` to enable this plugin.
 
 #### Linux & macOS installation instructions coming soon...
 
