@@ -1103,18 +1103,18 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=(1, 1, 1)
     )
     # TODO: Add transmission_depth and transmission_scatter
-    # transmission_depth = FloatVectorProperty(
-    #     name="Depth",
-    #     description="Controls the depth into the volume at which the transmission color is realized.",
-    #     subtype='FACTOR',
-    #     min=0, max=10
-    # )
-    # transmission_scatter = FloatVectorProperty(
-    #     name="Scatter",
-    #     description="Controls the color of the volume, typically for thick or large bodies of liquid.",
-    #     subtype='COLOR',
-    #     default=(0, 0, 0)
-    # )
+    transmission_depth = FloatProperty(
+        name="Depth",
+        description="Controls the depth into the volume at which the transmission color is realized.",
+        subtype='FACTOR',
+        min=0, max=10
+    )
+    transmission_scatter = FloatVectorProperty(
+        name="Scatter",
+        description="Controls the color of the volume, typically for thick or large bodies of liquid.",
+        subtype='COLOR',
+        default=(0, 0, 0)
+    )
     reflection_exit_color = FloatVectorProperty(
         name="Color",
         description="The color returned when a ray has reached its maximum"

@@ -607,8 +607,8 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                     col.row().prop(standard_surface, "transmission_color")
                     col.prop(standard_surface, "transmission")
                     # TODO: Add transmission_depth and transmission_scatter
-                    # col.prop(standard_surface, "transmission_depth")
-                    # col.prop(standard_surface, "transmission_scatter")
+                    col.prop(standard_surface, "transmission_depth")
+                    col.prop(standard_surface, "transmission_scatter")
                     col.prop(standard_surface, "specular_ior")
                     col.prop(standard_surface, "dispersion_abbe")
                     # col.prop(standard_surface, "Fresnel_use_IOR")

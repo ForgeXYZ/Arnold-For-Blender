@@ -162,6 +162,9 @@ class Shaders:
                 arnold.AiNodeSetFlt(node, "specular_rotation", standard_surface.specular_rotation)
                 arnold.AiNodeSetFlt(node, "emission", standard_surface.emission)
                 arnold.AiNodeSetRGB(node, "emission_color", 1.0, 1.0, 1.0)
+                arnold.AiNodeSetFlt(node, "transmission", standard_surface.transmission)
+                arnold.AiNodeSetFlt(node, "transmission_depth", standard_surface.transmission_depth)
+                # arnold.AiNodeSetRGB(node, "transmission_scatter", standard_surface.transmission_scatter)
                 # TODO: other standard_surface node parmas
             elif shader.type == 'utility':
                 utility = shader.utility

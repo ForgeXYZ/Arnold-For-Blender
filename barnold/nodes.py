@@ -354,9 +354,11 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         ("transmission"                       , ('FLOAT', "Reflection: Scale", "ext_properties")),
         ("Krn"                      , ('FLOAT', "Reflection: Refl. at Normal", "ext_properties")),
         ("reflection_exit_color"    , ('RGB', "Reflection: Exit Color", "ext_properties")),
+        ("transmission_depth"       , ('FLOAT', "Transmission: Depth", "ext_properties")),
+        ("transmission_scatter"       , ('RGB', "Transmission: Scatter", "ext_properties")),
         # Refraction
-        ("transmission_color"                 , ('RGB', "Refraction: Color", "ext_properties")),
-        ("transmission"                       , ('FLOAT', "Refraction: Scale", "ext_properties")),
+        # ("transmission_color"                 , ('RGB', "Refraction: Color", "ext_properties")),
+        # ("transmission"                       , ('FLOAT', "Refraction: Scale", "ext_properties")),
         # TODO: This will need to be switched out with coat_ior (specular_ior will need to go with specular)
         ("specular_ior"                      , ('FLOAT', "Refraction: IOR", "ext_properties")),
         ("dispersion_abbe"          , ('FLOAT', "Refraction: Abbe Number", "ext_properties")),
@@ -477,6 +479,8 @@ class ArnoldNodeStandardSurface(ArnoldNode):
             col = sublayout.column()
             _draw_property(col, properties, "transmission_color", links)
             _draw_property(col, properties, "transmission", links)
+            _draw_property(col, properties, "transmission_depth", links)
+            _draw_property(col, properties, "transmission_scatter", links)
             _draw_property(col, properties, "specular_ior", links)
             _draw_property(col, properties, "dispersion_abbe", links)
             col.prop(properties, "Fresnel_use_IOR")
@@ -835,6 +839,8 @@ class ArnoldNodeHair(ArnoldNode):
         self.inputs.new("ArnoldNodeSocketColor", "Transmission: Color", "transmission_color").default_value = (1, 0.4, 0.1)
         self.inputs.new("NodeSocketFloat", "Transmission", "transmission")
         self.inputs.new("NodeSocketFloat", "Transmission: Spread", "transmission_spread").default_value = 1
+        self.inputs.new("NodeSocketFloat", "Transmission: Depth", "transmission_depth").default_value= 1
+        self.inputs.new("ArnoldNodeSocketColor", "Transmission: Scatter", "transmission_scatter").default_value = (0, 0, 0)
         self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
 
     def draw_buttons(self, context, layout):
