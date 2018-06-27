@@ -3,6 +3,8 @@
 
 Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.79b. This is not yet production ready, but will be soon...
 
+Join the Slack channel for discussions/help/updates/feature requests/talk about water coolers: https://arnoldforblender.slack.com/
+
 ### Needs Fixing
 - Add metalness parameter to "Base" section of shader panel
 - Show bucket tiles during render from within Blender's Image Editor
