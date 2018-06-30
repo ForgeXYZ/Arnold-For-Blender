@@ -27,6 +27,7 @@ Join the Discord channel for discussions/help/updates/feature requests/talk abou
   - Restart computer.
 - Add `barnold` directory to `path\to\blender\2.79\scripts\addons`
 - Edit line 22 of `path\to\blender\2.79\scripts\addons\barnold\engine\__init__.py` to `sys.path.append(r"path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\python")`
+- Enable "Auto Run Python Scripts" in blender by going to File>User Preferences>File tab 
 - Enable the plugin in blender by going to File>User Preferences>Add-ons tab>Search for 'arnold' in the search bar, and clicking the checkbox next to `Render:B-Arnold` to enable this plugin.
 
 #### Linux & macOS installation instructions coming soon...
