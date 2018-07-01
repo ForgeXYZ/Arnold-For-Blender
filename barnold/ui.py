@@ -233,9 +233,9 @@ class ArnoldRenderDiagnosticsPanel(RenderButtonsPanel, Panel):
             col = sublayout.column()
             col.prop(opts, "abort_on_error")
             col.separator()
-            col.row().prop(opts, "error_color_bad_texture")
-            col.row().prop(opts, "error_color_bad_shader")
-            col.row().prop(opts, "error_color_bad_pixel")
+            col.prop(opts, "error_color_bad_texture")
+            col.prop(opts, "error_color_bad_shader")
+            col.prop(opts, "error_color_bad_pixel")
 
 
 @ArnoldRenderEngine.register_class
@@ -410,7 +410,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
         layout.prop(light, "type")
 
         col = layout.column()
-        col.row().prop(lamp, "color")
+        col.prop(lamp, "color")
         col.prop(light, "intensity")
         col.prop(light, "exposure")
 
@@ -446,7 +446,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
                 col.prop(light, "normalize")
             elif light_type == 'quad_light':
                 col.prop(light, "samples")
-                col.row().prop(lamp, "shape", expand=True)
+                col.prop(lamp, "shape", expand=True)
                 sub = col.row(align=True)
                 if lamp.shape == 'SQUARE':
                     sub.prop(lamp, "size")
@@ -477,7 +477,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
         if sublayout:
             col = sublayout.column()
             col.prop(light, "cast_shadows")
-            col.row().prop(light, "shadow_color")
+            col.prop(light, "shadow_color")
             col.prop(light, "shadow_density")
 
         sublayout = _subpanel(layout, "Volume", light.ui_volume,
@@ -537,9 +537,9 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
             if shader_type == 'lambert':
                 lambert = shader.lambert
                 col = layout.column()
-                col.row().prop(mat, "diffuse_color", text="Color")
                 col.prop(mat, "diffuse_intensity", text="Weight")
-                col.row().prop(lambert, "opacity")
+                col.prop(mat, "diffuse_color", text="Color")
+                col.prop(lambert, "opacity")
             elif shader_type == 'standard_surface':
                 standard_surface = shader.standard_surface
                 path_from_id = standard_surface.path_from_id()
@@ -549,10 +549,11 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                                       path_from_id, "ui_diffuse", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.row().prop(mat, "diffuse_color", text="Color")
-                    col.prop(mat, "diffuse_intensity", text="Weight")
+                    #TODO: Fix For Viewport
+                    col.prop(standard_surface, "base", text="Weight")
+                    col.prop(standard_surface, "base_color", text="Color")
                     col.prop(standard_surface, "diffuse_roughness")
-                    #TODO: Metalness goes here...
+                    col.prop(standard_surface, "metalness")
                     # Below is deprecated in Arnold 5
                         # col.prop(standard_surface, "Fresnel_affect_diff")
                         # col.prop(standard_surface, "Kb")
@@ -564,8 +565,9 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                                       path_from_id, "ui_specular", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.row().prop(mat, "specular_color", text="Color")
-                    col.prop(mat, "specular_intensity", text="Weight")
+                    #TODO: Fix for viewport
+                    col.prop(standard_surface, "specular", text="Weight")
+                    col.prop(standard_surface, "specular_color", text="Color")
                     col.prop(standard_surface, "specular_roughness")
                     col.prop(standard_surface, "specular_ior")
                     col.prop(standard_surface, "specular_anisotropy")
@@ -586,7 +588,7 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                 #                       path_from_id, "ui_reflection", "material")
                 # if sublayout:
                 #     col = sublayout.column()
-                #     col.row().prop(standard_surface, "transmission_color")
+                #     col.prop(standard_surface, "transmission_color")
                 #     col.prop(standard_surface, "transmission")
                 #     col.label("Fresnel:", icon='SETTINGS')
                 #     box = col.box()
@@ -604,17 +606,17 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                                       path_from_id, "ui_refraction", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.row().prop(standard_surface, "transmission_color")
                     col.prop(standard_surface, "transmission")
-                    # TODO: Add transmission_depth and transmission_scatter
+                    col.prop(standard_surface, "transmission_color")
                     col.prop(standard_surface, "transmission_depth")
                     col.prop(standard_surface, "transmission_scatter")
-                    col.prop(standard_surface, "specular_ior")
-                    col.prop(standard_surface, "dispersion_abbe")
+                    col.prop(standard_surface, "transmission_scatter_anisotropy")
+                    col.prop(standard_surface, "transmission_dispersion")
+                    col.prop(standard_surface, "transmission_extra_roughness")
+                    col.prop(standard_surface, "transmit_aovs")
                     # col.prop(standard_surface, "Fresnel_use_IOR")
-                    col.prop(standard_surface, "refraction_roughness")
                     # Below is deprecated in Arnold 5
-                        # col.row().prop(standard_surface, "transmittance")
+                        # col.prop(standard_surface, "transmittance")
                         # col.label("Exit Color:", icon='SETTINGS')
                         # box = col.box()
                         # box.prop(standard_surface, "refraction_exit_use_environment")
@@ -627,53 +629,89 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                                       path_from_id, "ui_sss", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.row().prop(standard_surface, "Ksss_color")
-                    col.prop(standard_surface, "Ksss")
-                    col.row().prop(standard_surface, "sss_radius")
+                    col.prop(standard_surface, "subsurface")
+                    col.prop(standard_surface, "subsurface_color")
+                    col.prop(standard_surface, "subsurface_radius")
+                    col.prop(standard_surface, "subsurface_scale")
+                    col.prop(standard_surface, "subsurface_type")
+                    col.prop(standard_surface, "subsurface_anisotropy")
+
+
+                # Coat
+                sublayout = _subpanel(layout, "Coat", standard_surface.ui_coat,
+                                      path_from_id, "ui_coat", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    col.prop(standard_surface, "coat")
+                    col.prop(standard_surface, "coat_color")
+                    col.prop(standard_surface, "coat_roughness")
+                    col.prop(standard_surface, "coat_ior")
+                    col.prop(standard_surface, "coat_normal")
+
+
+                # Emission
                 sublayout = _subpanel(layout, "Emission", standard_surface.ui_emission,
                                       path_from_id, "ui_emission", "material")
                 if sublayout:
                     col = sublayout.column()
-                    #col.row().prop(standard_surface, "emission_color")
-                    col.row().prop(standard_surface, "emission_color", text="Color")
                     col.prop(standard_surface, "emission", text="Weight")
-                    #col.prop(standard_surface, "emission")
+                    col.prop(standard_surface, "emission_color", text="Color")
 
-                # Caustics
-                sublayout = _subpanel(layout, "Caustics", standard_surface.ui_caustics,
-                                      path_from_id, "ui_caustics", "material")
+
+                # Thin Film
+                sublayout = _subpanel(layout, "Thin Film", standard_surface.ui_thinfilm,
+                                      path_from_id, "ui_thinfilm", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.prop(standard_surface, "enable_glossy_caustics")
-                    col.prop(standard_surface, "enable_reflective_caustics")
-                    col.prop(standard_surface, "enable_refractive_caustics")
-            elif shader_type == 'utility':
-                utility = shader.utility
-                col = layout.column()
-                col.row().prop(utility, "color")
-                col.prop(utility, "opacity")
-                col.prop(utility, "color_mode")
-                col.prop(utility, "shade_mode")
-                col.prop(utility, "overlay_mode")
-                col.prop(utility, "ao_distance")
-            elif shader_type == 'flat':
-                flat = shader.flat
-                col = layout.column()
-                col.row().prop(flat, "color")
-                col.row().prop(flat, "opacity")
-            elif shader_type == 'hair':
-                pass
-        elif mat_type == 'WIRE':
-            wire = shader.wire
-            col = layout.column()
-            col.row().prop(wire, "fill_color")
-            col.row().prop(wire, "line_color")
-            col.prop(wire, "edge_type")
-            col.prop(wire, "line_width")
-            col.prop(wire, "raster_space")
+                    col.prop(standard_surface, "thin_film_thickness")
+                    col.prop(standard_surface, "thin_film_ior")
 
-        layout.prop(standard_surface, "bounce_factor")
-        layout.prop(standard_surface, "opacity")
+                # Geometry
+                sublayout = _subpanel(layout, "Geometry", standard_surface.ui_geometry,
+                                      path_from_id, "ui_geometry", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    col.prop(standard_surface, "opacity")
+                    col.prop(standard_surface, "thin_walled")
+
+
+                # Advanced
+                sublayout = _subpanel(layout, "Advanced", standard_surface.ui_geometry,
+                                      path_from_id, "ui_advanced", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    col.prop(standard_surface, "caustics")
+                    col.prop(standard_surface, "internal_reflections")
+                    col.prop(standard_surface, "exit_to_background")
+                    col.prop(standard_surface, "indirect_diffuse")
+                    col.prop(standard_surface, "indirect_specular")
+        #     elif shader_type == 'utility':
+        #         utility = shader.utility
+        #         col = layout.column()
+        #         col.prop(utility, "color")
+        #         col.prop(utility, "opacity")
+        #         col.prop(utility, "color_mode")
+        #         col.prop(utility, "shade_mode")
+        #         col.prop(utility, "overlay_mode")
+        #         col.prop(utility, "ao_distance")
+        #     elif shader_type == 'flat':
+        #         flat = shader.flat
+        #         col = layout.column()
+        #         col.prop(flat, "color")
+        #         col.prop(flat, "opacity")
+        #     elif shader_type == 'hair':
+        #         pass
+        # elif mat_type == 'WIRE':
+        #     wire = shader.wire
+        #     col = layout.column()
+        #     col.prop(wire, "fill_color")
+        #     col.prop(wire, "line_color")
+        #     col.prop(wire, "edge_type")
+        #     col.prop(wire, "line_width")
+        #     col.prop(wire, "raster_space")
+
+        # layout.prop(standard_surface, "bounce_factor")
+        # layout.prop(standard_surface, "opacity")
 
 ##
 ## Textures

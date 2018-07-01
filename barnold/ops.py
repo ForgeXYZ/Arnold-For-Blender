@@ -39,7 +39,7 @@ class ArnoldNodeSocketAdd(Operator):
     bl_idname = "barnold.node_socket_add"
     bl_options = {'INTERNAL'}
     bl_label = "Create Socket"
-    
+
     identifier = StringProperty()
 
     def execute(self, context):

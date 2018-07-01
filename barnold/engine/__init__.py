@@ -147,44 +147,80 @@ class Shaders:
         if mat.type == 'SURFACE':
             node = arnold.AiNode(shader.type)
             if shader.type == 'lambert':
-                arnold.AiNodeSetFlt(node, "base", mat.diffuse_intensity)
-                arnold.AiNodeSetRGB(node, "base_color", *mat.diffuse_color)
+                arnold.AiNodeSetFlt(node, "base", *mat.base)
+                arnold.AiNodeSetRGB(node, "base_color", *mat.base_color)
                 arnold.AiNodeSetRGB(node, "opacity", *shader.lambert.opacity)
             elif shader.type == 'standard_surface':
                 standard_surface = shader.standard_surface
-                arnold.AiNodeSetFlt(node, "base", mat.diffuse_intensity)
-                arnold.AiNodeSetRGB(node, "base_color", *mat.diffuse_color)
+                arnold.AiNodeSetFlt(node, "base", standard_surface.base)
+                arnold.AiNodeSetRGB(node, "base_color", *standard_surface.base_color)
                 arnold.AiNodeSetFlt(node, "diffuse_roughness", standard_surface.diffuse_roughness)
-                arnold.AiNodeSetFlt(node, "specular", mat.specular_intensity)
-                arnold.AiNodeSetRGB(node, "specular_color", *mat.specular_color)
+                arnold.AiNodeSetFlt(node, "metalness", standard_surface.metalness)
+                arnold.AiNodeSetFlt(node, "specular", standard_surface.specular)
+                arnold.AiNodeSetRGB(node, "specular_color", *standard_surface.specular_color)
                 arnold.AiNodeSetFlt(node, "specular_roughness", standard_surface.specular_roughness)
+                arnold.AiNodeSetFlt(node, "specular_ior", standard_surface.specular_ior)
                 arnold.AiNodeSetFlt(node, "specular_anisotropy", standard_surface.specular_anisotropy)
                 arnold.AiNodeSetFlt(node, "specular_rotation", standard_surface.specular_rotation)
                 arnold.AiNodeSetFlt(node, "emission", standard_surface.emission)
-                arnold.AiNodeSetRGB(node, "emission_color", 1.0, 1.0, 1.0)
+                arnold.AiNodeSetRGB(node, "emission_color", *standard_surface.emission_color)
                 arnold.AiNodeSetFlt(node, "transmission", standard_surface.transmission)
+                arnold.AiNodeSetRGB(node, "transmission_color", *standard_surface.transmission_color)
                 arnold.AiNodeSetFlt(node, "transmission_depth", standard_surface.transmission_depth)
-                # arnold.AiNodeSetRGB(node, "transmission_scatter", standard_surface.transmission_scatter)
+                arnold.AiNodeSetRGB(node, "transmission_scatter", *standard_surface.transmission_scatter)
+                arnold.AiNodeSetFlt(node, "transmission_scatter_anisotropy", standard_surface.transmission_scatter_anisotropy)
+                arnold.AiNodeSetFlt(node, "transmission_dispersion", standard_surface.transmission_dispersion)
+                arnold.AiNodeSetFlt(node, "transmission_extra_roughness", standard_surface.transmission_extra_roughness)
+                arnold.AiNodeSetBool(node, "transmit_aovs", standard_surface.transmit_aovs)
+                arnold.AiNodeSetFlt(node, "sss_synopsis", standard_surface.sss_synopsis)
+                arnold.AiNodeSetFlt(node, "subsurface", standard_surface.subsurface)
+                arnold.AiNodeSetRGB(node, "subsurface_color", *standard_surface.subsurface_color)
+                arnold.AiNodeSetRGB(node, "subsurface_radius", *standard_surface.subsurface_radius)
+                arnold.AiNodeSetFlt(node, "subsurface_scale", standard_surface.subsurface_scale)
+                arnold.AiNodeSetFlt(node, "subsurface_anisotropy", standard_surface.subsurface_anisotropy)
+                arnold.AiNodeSetStr(node, "subsurface_type", standard_surface.subsurface_type)
+                arnold.AiNodeSetBool(node, "thin_walled", standard_surface.thin_walled)
+                # arnold.AiNodeSetRGB(node, "normal", standard_surface.normal)
+                # arnold.AiNodeSetFlt(node, "tangent", standard_surface.tangent)
+                arnold.AiNodeSetFlt(node, "coat", standard_surface.coat)
+                arnold.AiNodeSetRGB(node, "coat_color", *standard_surface.coat_color)
+                arnold.AiNodeSetFlt(node, "coat_roughness", standard_surface.coat_roughness)
+                arnold.AiNodeSetFlt(node, "coat_ior", standard_surface.coat_ior)
+                arnold.AiNodeSetRGB(node, "coat_normal", *standard_surface.coat_normal)
+                arnold.AiNodeSetFlt(node, "coat_affect_color", standard_surface.coat_affect_color)
+                arnold.AiNodeSetFlt(node, "coat_affect_roughness", standard_surface.coat_affect_roughness)
+                arnold.AiNodeSetFlt(node, "opacity", standard_surface.opacity)
+                arnold.AiNodeSetBool(node, "caustics", standard_surface.caustics)
+                arnold.AiNodeSetBool(node, "internal_reflections", standard_surface.internal_reflections)
+                arnold.AiNodeSetBool(node, "exit_to_background", standard_surface.exit_to_background)
+                arnold.AiNodeSetFlt(node, "indirect_diffuse", standard_surface.indirect_diffuse)
+                arnold.AiNodeSetFlt(node, "indirect_specular", standard_surface.indirect_specular)
+                # arnold.AiNodeSetStr(node, "sss_set_name", standard_surface.sss_set_name)
+                # arnold.AiNodeSetStr(node, "anistropy_tangent", standard_surface.anistropy_tangent)
+                arnold.AiNodeSetFlt(node, "thin_film_thickness", standard_surface.thin_film_thickness)
+                arnold.AiNodeSetFlt(node, "thin_film_ior", standard_surface.thin_film_ior)
+                # arnold.AiNodeSetRGB(node, "aov_id(1-8)", standard_surface.aov_id(1-8))
                 # TODO: other standard_surface node parmas
             elif shader.type == 'utility':
                 utility = shader.utility
                 arnold.AiNodeSetStr(node, "color_mode", utility.color_mode)
                 arnold.AiNodeSetStr(node, "shade_mode", utility.shade_mode)
                 arnold.AiNodeSetStr(node, "overlay_mode", utility.overlay_mode)
-                arnold.AiNodeSetRGB(node, "color", *mat.diffuse_color)
+                arnold.AiNodeSetRGB(node, "color", *mat.base_color)
                 arnold.AiNodeSetFlt(node, "opacity", utility.opacity)
                 arnold.AiNodeSetFlt(node, "ao_distance", utility.ao_distance)
             elif shader.type == 'flat':
-                arnold.AiNodeSetRGB(node, "color", *mat.diffuse_color)
+                arnold.AiNodeSetRGB(node, "color", *mat.base_color)
                 arnold.AiNodeSetRGB(node, "opacity", *shader.flat.opacity)
             elif shader.type == 'hair':
                 # TODO: implement hair
+                arnold.AiNodeSetFlt(node, "base", standard_hair.base)
                 return None
         elif mat.type == 'WIRE':
             wire = shader.wire
             node = arnold.AiNode('wireframe')
             arnold.AiNodeSetStr(node, "edge_type", wire.edge_type)
-            arnold.AiNodeSetRGB(node, "line_color", *mat.diffuse_color)
+            arnold.AiNodeSetRGB(node, "line_color", *mat.base_color)
             arnold.AiNodeSetRGB(node, "fill_color", *wire.fill_color)
             arnold.AiNodeSetFlt(node, "line_width", wire.line_width)
             arnold.AiNodeSetBool(node, "raster_space", wire.raster_space)
@@ -936,7 +972,7 @@ def render(engine, scene):
             else:
                 result = engine.begin_result(_x, _y, width, height)
                 # TODO: sometimes highlighted tiles become empty
-                #engine.update_result(result)
+                engine.update_result(result)
                 _htiles[(_x, _y)] = result
 
             if engine.test_break():
@@ -950,8 +986,11 @@ def render(engine, scene):
             engine.update_memory_stats(mem, peak)
 
         # display callback must be a variable
-        # cb = arnold.AtDisplayCallBack(display_callback)
-        # arnold.AiNodeSetPtr(session['display'], "callback", cb)
+        # cb = arnold.AiNodeSetPtr(display_callback, "callback_data", display)
+        # cb = arnold.AtNodeLoader(display_callback)
+        cb = arnold.AtRenderUpdateCallback(display_callback)
+        # arnold.AiNodeSetPtr(_callback, "callback", cb)
+        arnold.AiNodeSetPtr(session['display'], "callback_data", cb)
 
         res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
         if res == arnold.AI_SUCCESS:
@@ -1164,7 +1203,7 @@ def view_update(engine, context):
 
 
 def view_draw(engine, context):
-    #print(">>> view_draw [%f]:" % time.clock(), engine)
+    print(">>> view_draw [%f]:" % time.clock(), engine)
     try:
         region = context.region
         v3d = context.space_data
