@@ -1057,6 +1057,9 @@ class ArnoldShaderStandard_Surface(PropertyGroup):
     ui_caustics = BoolProperty(
         name="Coustics"
     )
+    ui_advanced = BoolProperty(
+        name="Advanced"
+    )
     base = FloatProperty(
         name="Base",
         description="The base color weight",

@@ -676,7 +676,7 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
 
 
                 # Advanced
-                sublayout = _subpanel(layout, "Advanced", standard_surface.ui_geometry,
+                sublayout = _subpanel(layout, "Advanced", standard_surface.ui_advanced,
                                       path_from_id, "ui_advanced", "material")
                 if sublayout:
                     col = sublayout.column()
