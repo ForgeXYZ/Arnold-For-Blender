@@ -321,13 +321,10 @@ class ArnoldNodeLambert(ArnoldNode):
         self.inputs.new("NodeSocketFloat", "Weight", "base").default_value = 0.7
         self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
 
-    def init(self, context):
-        self.outputs.new("driver_display_callback", "driver", "driver")
-
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeStandardSurface(ArnoldNode):
-    bl_label = "StandardSurface"
+class ArnoldNodeStandard_Surface(ArnoldNode):
+    bl_label = "Standard Surface"
     bl_icon = 'MATERIAL'
     bl_width_default = 200
 
@@ -335,48 +332,50 @@ class ArnoldNodeStandardSurface(ArnoldNode):
 
     sockets = collections.OrderedDict([
         # Diffuse
-        ("base_color"                 , ('RGB', "Diffuse: Color", "")),
-        ("base"                       , ('FLOAT', "Diffuse: Scale", "")),
-        ("diffuse_roughness"        , ('FLOAT', "Diffuse: Roughness", "ext_properties")),
-        ("Kb"                       , ('FLOAT', "Diffuse: BackLighting", "ext_properties")),
-        ("direct_diffuse"           , ('FLOAT', "Diffuse: Direct Scale", "ext_properties")),
-        ("indirect_diffuse"         , ('FLOAT', "Diffuse: Indirect Scale", "ext_properties")),
+        ("base_color"               , ('RGB', "Base Color",     "ext_properties")),
+        ("base"                     , ('FLOAT', "Base",     "ext_properties")),
+        ("diffuse_roughness"        , ('FLOAT', "Diffuse Roughness", "ext_properties")),
+        ("metalness"                , ('FLOAT', "Diffuse Metalness", "ext_properties")),
+        ("Kb"                       , ('FLOAT', "Diffuse BackLighting", "ext_properties")),
+        ("direct_diffuse"           , ('FLOAT', "Diffuse Direct Scale", "ext_properties")),
+        ("indirect_diffuse"         , ('FLOAT', "Diffuse Indirect Scale", "ext_properties")),
         # Specular
-        ("specular_color"                 , ('RGB', "Specular: Color", "")),
-        ("specular"                       , ('FLOAT', "Specular: Scale", "")),
-        ("specular_roughness"       , ('FLOAT', "Specular: Roughness", "ext_properties")),
-        ("specular_anisotropy"      , ('FLOAT', "Specular: Anisotropy", "ext_properties")),
-        ("specular_rotation"        , ('FLOAT', "Specular: Rotation", "ext_properties")),
-        ("direct_specular"          , ('FLOAT', "Specular: Direct Scale", "ext_properties")),
-        ("indirect_specular"        , ('FLOAT', "Specular: Indirect Scale", "ext_properties")),
-        ("Ksn"                      , ('FLOAT', "Specular: Refl. at Normal", "ext_properties")),
-        # Bounce Factor
-        ("bounce_factor"            , ('FLOAT', "Bounce Factor", "ext_properties")),
+        ("specular_color"           , ('RGB',   "Specular Color", "ext_properties")),
+        ("specular"                 , ('FLOAT', "Specular Scale", "ext_properties")),
+        ("specular_roughness"       , ('FLOAT', "Specular Roughness", "ext_properties")),
+        ("specular_anisotropy"      , ('FLOAT', "Specular Anisotropy", "ext_properties")),
+        ("specular_rotation"        , ('FLOAT', "Specular Rotation", "ext_properties")),
+        ("direct_specular"          , ('FLOAT', "Specular Direct Scale", "ext_properties")),
+        ("indirect_specular"        , ('FLOAT', "Specular Indirect Scale", "ext_properties")),
+        ("Ksn"                      , ('FLOAT', "Specular Refl. at Normal", "ext_properties")),
         # Reflection
-        ("transmission_color"                 , ('RGB', "Reflection: Color", "ext_properties")),
-        ("transmission"                       , ('FLOAT', "Reflection: Scale", "ext_properties")),
-        ("Krn"                      , ('FLOAT', "Reflection: Refl. at Normal", "ext_properties")),
-        ("reflection_exit_color"    , ('RGB', "Reflection: Exit Color", "ext_properties")),
-        ("transmission_depth"       , ('FLOAT', "Transmission: Depth", "ext_properties")),
-        ("transmission_scatter"       , ('RGB', "Transmission: Scatter", "ext_properties")),
-        # Refraction
-        # ("transmission_color"                 , ('RGB', "Refraction: Color", "ext_properties")),
-        # ("transmission"                       , ('FLOAT', "Refraction: Scale", "ext_properties")),
-        # TODO: This will need to be switched out with coat_ior (specular_ior will need to go with specular)
-        ("specular_ior"                      , ('FLOAT', "Refraction: IOR", "ext_properties")),
+        ("transmission_color"                 , ('RGB', "Transmission Color", "ext_properties")),
+        ("transmission"                       , ('FLOAT', "Transmission", "ext_properties")),
+        ("transmission_depth"       , ('FLOAT', "Transmission Depth", "ext_properties")),
+        ("transmission_scatter"       , ('RGB', "Transmission Scatter", "ext_properties")),
+        ("transmission_scatter_anisotropy", ('FLOAT', "Transmission Anisotropy", "ext_properties")),
+        ("transmission_extra_roughness", ('FLOAT', "Transmission Extra Roughness", "ext_properties")),
+        ("specular_ior"                , ('FLOAT', "Specular IOR", "ext_properties")),
         ("dispersion_abbe"          , ('FLOAT', "Refraction: Abbe Number", "ext_properties")),
         ("refraction_roughness"     , ('FLOAT', "Refraction: Roughness", "ext_properties")),
         ("transmittance"            , ('RGB', "Transmittance", "ext_properties")),
         ("refraction_exit_color"    , ('RGB', "Refraction: Exit Color", "ext_properties")),
+        # Coat
+        ("coat"                , ('FLOAT', "Coat", "ext_properties")),
+        ("coat_color"          , ('FLOAT', "Coat Color", "ext_properties")),
+        ("coat_roughness"     , ('FLOAT', "Coat Roughness", "ext_properties")),
+        ("coat_ior"            , ('FLOAT', "Coat IOR", "ext_properties")),
         # Opacity
-        ("opacity"                  , ('RGB', "Opacity", "ext_properties")),
+        ("opacity"                  , ('FLOAT', "Opacity", "ext_properties")),
         # SSS
-        ("Ksss_color"               , ('RGB', "SSS: Color", "ext_properties")),
-        ("Ksss"                     , ('FLOAT', "SSS: Scale", "ext_properties")),
-        ("sss_radius"               , ('RGB', "SSS: Radius", "ext_properties")),
+        ("subsurface"               , ('FLOAT', "Subsurface", "ext_properties")),
+        ("subsurface_color"         , ('RGB', "Subsurface Color", "ext_properties")),
+        ("subsurface_radius"        , ('RGB', "Subsurface Radius", "ext_properties")),
+        ("subsurface_scale"         , ('FLOAT', "Subsurface Scale", "ext_properties")),
+        ("subsurface_anisotropy"    , ('FLOAT', "Subsurface Anisotropy", "ext_properties")),
         # Emission
-        ("emission_color"           , ('RGB', "Emission: Color", "")),
-        ("emission"                 , ('FLOAT', "Emission: Scale", "ext_properties"))
+        ("emission_color"           , ('RGB', "Emission Color", "")),
+        ("emission"                 , ('FLOAT', "Emission", "ext_properties"))
     ])
 
     base = FloatProperty(
@@ -409,7 +408,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         default=(1,1,1)
     )
     ext_properties = PointerProperty(
-        type=props.ArnoldShaderStandardSurface
+        type=props.ArnoldShaderStandard_Surface
     )
 
     def init(self, context):
@@ -428,100 +427,96 @@ class ArnoldNodeStandardSurface(ArnoldNode):
                               "ext_properties", "ui_diffuse", "node")
         if sublayout:
             col = sublayout.column()
-            _draw_property(col, self, "base_color", links)
-            _draw_property(col, self, "base", links)
+            _draw_property(col, properties, "base", links)
+            _draw_property(col, properties, "base_color", links)
             _draw_property(col, properties, "diffuse_roughness", links)
-            col.prop(properties, "Fresnel_affect_diff")
-            _draw_property(col, properties, "Kb", links)
-            _draw_property(col, properties, "direct_diffuse", links)
-            _draw_property(col, properties, "indirect_diffuse", links)
+            _draw_property(col, properties, "metalness", links)
 
         # Specular
         sublayout = _subpanel(layout, "Specular", properties.ui_specular,
                               "ext_properties", "ui_specular", "node")
         if sublayout:
             col = sublayout.column()
-            _draw_property(col, self, "specular_color", links)
-            _draw_property(col, self, "specular", links)
+            _draw_property(col, properties, "specular", links)
+            _draw_property(col, properties, "specular_color", links)
             _draw_property(col, properties, "specular_roughness", links)
+            _draw_property(col, properties, "specular_ior", links)
             _draw_property(col, properties, "specular_anisotropy", links)
             _draw_property(col, properties, "specular_rotation", links)
-            _draw_property(col, properties, "direct_specular", links)
-            _draw_property(col, properties, "indirect_specular", links)
-            col.label("Fresnel", icon='SETTINGS')
-            box = col.box()
-            box.prop(properties, "specular_Fresnel")
-            sub = box.row()
-            sub.enabled = properties.specular_Fresnel
-            _draw_property(sub, properties, "Ksn", links)
-
-        _draw_property(layout, properties, "bounce_factor", links)
-
-        # # (Reflection) - Deprecated in Arnold 5
-        # sublayout = _subpanel(layout, "Reflection", properties.ui_reflection,
-        #                       "ext_properties", "ui_reflection", "node")
-        # if sublayout:
-        #     col = sublayout.column()
-        #     _draw_property(col, properties, "transmission_color", links)
-        #     _draw_property(col, properties, "transmission", links)
-        #     col.label("Fresnel:", icon='SETTINGS')
-        #     box = col.box()
-        #     box.prop(properties, "Fresnel")
-        #     sub = box.row()
-        #     sub.enabled = properties.Fresnel
-        #     _draw_property(sub, properties, "Krn", links)
-        #     col.label("Exit Color:", icon='SETTINGS')
-        #     box = col.box()
-        #     box.prop(properties, "reflection_exit_use_environment")
-        #     _draw_property(box, properties, "reflection_exit_color", links)
 
         # Transmission
         sublayout = _subpanel(layout, "Transmission", properties.ui_refraction,
                               "ext_properties", "ui_refraction", "node")
         if sublayout:
             col = sublayout.column()
-            _draw_property(col, properties, "transmission_color", links)
             _draw_property(col, properties, "transmission", links)
+            _draw_property(col, properties, "transmission_color", links)
             _draw_property(col, properties, "transmission_depth", links)
             _draw_property(col, properties, "transmission_scatter", links)
-            _draw_property(col, properties, "specular_ior", links)
-            _draw_property(col, properties, "dispersion_abbe", links)
-            col.prop(properties, "Fresnel_use_IOR")
-            _draw_property(col, properties, "refraction_roughness", links)
-            _draw_property(col, properties, "transmittance", links)
-            col.label("Exit Color:", icon='SETTINGS')
-            box = col.box()
-            box.prop(properties, "refraction_exit_use_environment")
-            _draw_property(box, properties, "refraction_exit_color", links)
-            col.prop(properties, "enable_internal_reflections")
-
-        _draw_property(layout, properties, "opacity", links)
+            _draw_property(col, properties, "transmission_scatter_anisotropy", links)
+            _draw_property(col, properties, "transmission_dispersion", links)
+            _draw_property(col, properties, "transmission_extra_roughness", links)
+            _draw_property(col, properties, "transmit_aovs", links)
 
         # Subsurface
         sublayout = _subpanel(layout, "Subsurface", properties.ui_sss,
                               "ext_properties", "ui_sss", "node")
         if sublayout:
             col = sublayout.column()
-            _draw_property(col, properties, "Ksss_color", links)
-            _draw_property(col, properties, "Ksss", links)
-            _draw_property(col, properties, "sss_radius", links)
+            _draw_property(col, properties, "subsurface", links)
+            _draw_property(col, properties, "subsurface_color", links)
+            _draw_property(col, properties, "subsurface_radius", links)
+            _draw_property(col, properties, "subsurface_scale", links)
+            _draw_property(col, properties, "subsurface_type", links)
+            _draw_property(col, properties, "subsurface_anisotropy", links)
+
+        # Coat
+        sublayout = _subpanel(layout, "Coat", properties.ui_coat,
+                              "ext_properties", "ui_coat", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "coat", links)
+            _draw_property(col, properties, "coat_color", links)
+            _draw_property(col, properties, "coat_roughness", links)
+            _draw_property(col, properties, "coat_ior", links)
+            _draw_property(col, properties, "coat_normal", links)
+
 
         # Emission
         sublayout = _subpanel(layout, "Emission", properties.ui_emission,
                               "ext_properties", "ui_emission", "node")
         if sublayout:
             col = sublayout.column()
-            _draw_property(col, self, "emission_color", links)
-            _draw_property(col, properties, "emission", links)
+            _draw_property(col, self, "emission", links)
+            _draw_property(col, properties, "emission_color", links)
 
-        # Caustics
-        sublayout = _subpanel(layout, "Caustics", properties.ui_caustics,
-                              "ext_properties", "ui_caustics", "node")
+        # Thin Film
+        sublayout = _subpanel(layout, "Thin Film", properties.ui_thinfilm,
+                              "ext_properties", "ui_thinfilm", "node")
         if sublayout:
             col = sublayout.column()
-            col.prop(properties, "enable_glossy_caustics")
-            col.prop(properties, "enable_reflective_caustics")
-            col.prop(properties, "enable_refractive_caustics")
+            _draw_property(col, properties, "thin_film_thickness", links)
+            _draw_property(col, properties, "thin_film_ior", links)
+
+        # Geometry
+        sublayout = _subpanel(layout, "Geometry", properties.ui_geometry,
+                              "ext_properties", "ui_geometry", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "opacity", links)
+            _draw_property(col, properties, "thin_walled", links)
+
+        # Advanced
+        sublayout = _subpanel(layout, "Advanced", properties.ui_caustics,
+                              "ext_properties", "ui_advanced", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "caustics", links)
+            _draw_property(col, properties, "internal_reflections", links)
+            _draw_property(col, properties, "exit_to_background", links)
+            _draw_property(col, properties, "indirect_diffuse", links)
+            _draw_property(col, properties, "indirect_specular", links)
+
 
     def _find_index(self, identifier):
         ret = 0
@@ -1908,7 +1903,7 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeOutput")
         ]),
         ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_SHADERS", "Shaders", items=[
-            nodeitems_utils.NodeItem("ArnoldNodeStandardSurface"),
+            nodeitems_utils.NodeItem("ArnoldNodeStandard_Surface"),
             nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),
             nodeitems_utils.NodeItem("ArnoldNodeHair"),

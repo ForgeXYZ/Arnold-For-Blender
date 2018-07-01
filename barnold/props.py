@@ -213,7 +213,7 @@ class ArnoldOptions(PropertyGroup):
         name="Camera (AA)",
         min=0, max=100,
         soft_min=1, soft_max=10,
-        default=1
+        default=3
     )
     #AA_seed = scene.frame_current
     AA_sample_clamp = FloatProperty(
@@ -450,18 +450,20 @@ class ArnoldOptions(PropertyGroup):
     #    default=1
     #)
     GI_diffuse_depth = IntProperty(
-        name="Diffuse"
+        name="Diffuse",
+        default=1
     )
     GI_specular_depth = IntProperty(
-        name="Glossy"
+        name="Specular",
+        default=1
     )
-    # TODO: DELETE?  GI_reflection_depth = IntProperty(
-    #     name="Reflection",
-    #     default=2
+    # GI_reflection_depth = IntProperty(
+    #      name="Reflection",
+    #      default=2
     # )
     GI_transmission_depth = IntProperty(
-        name="Refraction",
-        default=2
+        name="Transmission",
+        default=8
     )
     GI_volume_depth = IntProperty(
         name="Volume"
@@ -475,20 +477,20 @@ class ArnoldOptions(PropertyGroup):
         default=2
     )
     GI_specular_samples = IntProperty(
-        name="Glossy",
+        name="Specular",
         default=2
     )
     GI_transmission_samples = IntProperty(
-        name="Refraction",
+        name="Transmission",
         default=2
     )
     GI_sss_samples = IntProperty(
         name="SSS",
-        default=0
+        default=2
     )
     #GI_single_scatter_samples
     GI_volume_samples = IntProperty(
-        name="Volume indirect",
+        name="Volume Indirect",
         default=2
     )
     #GI_falloff_start_dist
@@ -1011,7 +1013,7 @@ class ArnoldLight(PropertyGroup):
 @ArnoldRenderEngine.register_class
 class ArnoldShaderLambert(PropertyGroup):
     #base = Material.diffuse_intensity
-    #base_color = Material.diffuse_color
+    #base_color = Material.base_color
     opacity = FloatVectorProperty(
         name="Opacity",
         description="",
@@ -1023,7 +1025,7 @@ class ArnoldShaderLambert(PropertyGroup):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldShaderStandardSurface(PropertyGroup):
+class ArnoldShaderStandard_Surface(PropertyGroup):
     ui_diffuse = BoolProperty(
         name="Diffuse",
         default=True
@@ -1043,11 +1045,42 @@ class ArnoldShaderStandardSurface(PropertyGroup):
     ui_emission = BoolProperty(
         name="Emission"
     )
+    ui_coat = BoolProperty(
+        name="Coat"
+    )
+    ui_thinfilm = BoolProperty(
+        name="Thin Coat"
+    )
+    ui_geometry = BoolProperty(
+        name="Geometry"
+    )
     ui_caustics = BoolProperty(
         name="Coustics"
     )
-    #base = Material.diffuse_intensity
-    #base_color = Material.diffuse_color
+    base = FloatProperty(
+        name="Base",
+        description="The base color weight",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0.8
+    )
+    base_color = FloatVectorProperty(
+        name="Color",
+        description="The base color sets how bright the surface is when lit directly with a white light source (intensity at 100%). It defines which percentage for each component of the RGB spectrum which does not get absorbed when light scatters beneath the surface. Metal normally has a black or very dark base color, however, rusty metal's need some base color. A base color map is usually required.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    metalness = FloatProperty(
+        name="Metalness",
+        description="With metalness 1.0 the surface behaves like a metal, using fully specular reflection and complex fresnel.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+    # base = Material.diffuse_intensity
+    # base_color = Material.diffuse_color
     diffuse_roughness = FloatProperty(
         name="Diffuse Roughness",
         description="The diffuse component follows an Oren-Nayar reflection"
@@ -1056,7 +1089,23 @@ class ArnoldShaderStandardSurface(PropertyGroup):
                     " will result in a rougher surface look more suitable"
                     " for materials like concrete, plaster or sand.",
         subtype='FACTOR',
-        min=0, max=1
+        min=0, max=1,
+        default= 0
+    )
+    specular = FloatProperty(
+        name="Specular",
+        description="The specular weight. Influences the brightness of the specular highlight.",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=1
+    )
+    specular_color = FloatVectorProperty(
+        name="Color",
+        description="The color the specular reflection will be modulated with. Use this color to 'tint' the specular highlight. You should only use colored specular for certain metals, whereas non-metallic surfaces usually have a monochromatic specular color. Non-metallic surfaces normally do not have a colored specular.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
     )
     #specular = Material.specular_intensity
     #specular_color = Material.specular_color
@@ -1069,7 +1118,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
                     " that are close to a diffuse reflection.",
         subtype='FACTOR',
         min=0, max=1,
-        default=0.466905
+        default=0.1
     )
     specular_anisotropy = FloatProperty(
         name="Anisotropy",
@@ -1078,7 +1127,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
                     " rougher of glossier in certain directions.",
         subtype='FACTOR',
         min=0, max=1,
-        default=0.5
+        default=0
     )
     specular_rotation = FloatProperty(
         name="Rotation",
@@ -1115,25 +1164,19 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         subtype='COLOR',
         default=(0, 0, 0)
     )
-    reflection_exit_color = FloatVectorProperty(
-        name="Color",
-        description="The color returned when a ray has reached its maximum"
-                    " reflection depth value.",
-        subtype='COLOR',
-        min=0, max=1
-    )
-    reflection_exit_use_environment = BoolProperty(
-        name="Use Environment",
-        description="Specify whether to use the environment color for"
-                    " reflection rays where there was insufficient ray depth"
-                    " (true), or the color specified by reflection_exit_color"
-                    " (false). See above."
-    )
-    transmission = FloatProperty(
-        name="Weight",
-        description="Transparency allows light to pass through the material.",
+    transmission_scatter_anisotropy = FloatProperty(
+        name="Scatter Anisotropy",
+        description="The directional bias, or anisotropy, of the scattering. The default value of zero gives isotropic scattering so that light is scattered evenly in all directions. Positive values bias the scattering effect forwards, in the direction of the light, while negative values bias the scattering backward, toward the light.",
         subtype='FACTOR',
-        min=0, max=1
+        min=-0.5, max=0.5,
+        default=0
+    )
+    transmission_dispersion = FloatProperty(
+        name="Dispersion Abbe",
+        description="Specifies the Abbe number of the material, which describes how much the index of refraction varies across wavelengths. For glass and diamonds, this is typically in the range of 10 to 70, with lower numbers giving more dispersion. The default value is 0, which turns off dispersion. The chromatic noise can be reduced by either increasing the global Camera (AA) samples or the Refraction samples.",
+        subtype='FACTOR',
+        min=0, max=100,
+        default=0
     )
     transmission_color = FloatVectorProperty(
         name="Color",
@@ -1143,114 +1186,75 @@ class ArnoldShaderStandardSurface(PropertyGroup):
                     " filters the refraction according to the distance"
                     " traveled by the refracted ray.",
         subtype='COLOR',
-        min=0, max=1,
         default=(1, 1, 1)
     )
-    transmittance = FloatVectorProperty(
-        name="Transmittance",
-        description="Transmittance filters the refraction according to the"
-                    " distance traveled by the refracted ray. The longer light"
-                    " travels inside a mesh, the more it is affected by the"
-                    " Transmittance color. Therefore green glass gets a deeper"
-                    " green as rays travel through thicker parts. The effect"
-                    " is exponential and computed with Beer's Law. It is"
-                    " recommended to use light, subtle color values.",
-        subtype='COLOR',
-        min=0, max=1,
-        default=(1, 1, 1)
-    )
-    refraction_roughness = FloatProperty(
+    transmission_extra_roughness = FloatProperty(
         name="Extra Roughness",
-        description="Controls the blurriness of a refraction computed with an"
-                    " 'isotropic microfacet BTDF'. The range goes from 0 (no"
-                    " roughness) to 1.",
+        description="Adds some additional blurriness of a refraction computed with an isotropic microfacet BTDF. The range goes from 0 (no roughness) to 1.",
         subtype='FACTOR',
-        min=0, max=1
+        min=0, max=1,
+        default=0
     )
-    refraction_exit_color = FloatVectorProperty(
-        name="Color",
-        description="The color returned when a ray has reached its maximum"
-                    " refraction depth value.",
-        subtype='COLOR',
-        min=0, max=1
+    sss_synopsis = BoolProperty(
+        name="Subsurface Scattering",
+        description="Sub-Surface Scattering (SSS) simulates the effect of light entering an object and scattering beneath its surface. Not all light reflects from a surface. Some of it will penetrate below the surface of an illuminated object. There it will be absorbed by the material and scattered internally. Some of this scattered light will make its way back out of the surface and become visible to the camera. This is known as 'sub-surface scattering' or 'SSS'. SSS is necessary for the realistic rendering of materials such as marble, skin, leaves, wax, and milk. The SSS component in this shader is calculated using a brute-force raytracing method.",
+        default=False
     )
-    refraction_exit_use_environment = BoolProperty(
-        name="Use Environment",
-        description="Specify whether to use the environment color for"
-                    " refraction rays where there was insufficient ray depth"
-                    " (true), or the color specified by refraction_exit_color"
-                    " (false)."
+    transmit_aovs = BoolProperty(
+        name="Extra Roughness",
+        description="When enabled, Transmission will pass through AOVs. If the background is transparent, then the transmissive surface will become transparent so that it can be composited over another background. Light path expression AOVs will be passed through so that for example a diffuse surface seen through a transmissive surface will end up in the diffuse AOV. Other AOVs can also be passed straight through (without any opacity blending), which can be used for creating masks for example. ",
+        default=False
     )
     specular_ior = FloatProperty(
         name="IOR",
-        description="The index of refraction used. The default value of 1.0 is"
-                    " the refractive index of a vacuum, i.e., an object with"
-                    " IOR of 1.0 in empty space will not refract any rays. In"
-                    " simple terms, 1.0 means 'no refraction'. The Standard Surface"
-                    " shader assumes that any geometry has outward facing"
-                    " normals, that objects are embedded in air (IOR 1.0) and"
-                    " that there are no overlapping surfaces.",
+        description="The IOR parameter (Index of Refraction) defines the material's Fresnel reflectivity and is by default the angular function used. Effectively the IOR will define the balance between reflections on surfaces facing the viewer and on surface edges. You can see the reflection intensity remains unchanged, but the reflection intensity on the front side changes a lot.",
+        subtype='FACTOR',
         min=0, soft_max=3,
+        default=1.52
+    )
+    subsurface = FloatProperty(
+        name="Weight",
+        description="The 'blend' between diffuse and subsurface scattering. When set to 1.0, there is only SSS, and when set to 0 it is only Lambert. In most cases, you want this to be 1.0 (full SSS).",
+        min=0, max=1,
+        subtype='FACTOR',
+        default=0
+    )
+    subsurface_color = FloatVectorProperty(
+        name="Subsurface Color",
+        description="The color used to determine the subsurface scattering effect. For example, replicating a skin material would mean setting this to a fleshy color.",
+        subtype='COLOR',
+        default=(1, 1, 1)
+    )
+    subsurface_radius = FloatVectorProperty(
+        name="Radius",
+        description="The approximate distance up to which light can scatter below the surface, also known as “mean free path” (MFP). This parameter affects the average distance that light might propagate below the surface before scattering back out. This effect on the distance can be specified for each color component separately. Higher values will smooth the appearance of the subsurface scattering, while lower values will result in a more opaque look.",
+        subtype='COLOR',
+        default=(1, 1, 1)
+    )
+    subsurface_scale = FloatProperty(
+        name="Scale",
+        description="Controls the distance that the light is likely to travel under the surface before reflecting back out. It scales the scattering radius and multiplies the SSS Radius Color.",
+        subtype='FACTOR',
+        min=0,max=10,
         default=1
     )
-    dispersion_abbe = FloatProperty(
-        name="Dispersion Abbe"
-    )
-    Kb = FloatProperty(
-        name="BackLighting",
-        description="Backlight provides the effect of a translucent object"
-                    " being lit from behind (the shading point is 'lit' by"
-                    " the specified fraction of the light hitting the reverse"
-                    " of the object at that point). This should only be used"
-                    " with thin objects (single sided geometry); objects with"
-                    " thickness will render incorrectly.",
+    subsurface_anisotropy = FloatProperty(
+        name="Anisotropy",
+        description="Henyey-Greenstein Anisotropy coefficient between -1 (full back-scatter) and 1 (full forward-scatter). The default is 0 for an isotropic medium, which scatters the light evenly in all directions, giving a uniform effect. Positive values bias the scattering effect forwards, in the direction of the light, while negative values bias the scattering backward, toward the light.",
         subtype='FACTOR',
-        min=0, max=1
+        min=-1,max=1,
+        default=0
     )
-    Fresnel = BoolProperty(
-        name="Enable",
-        description="Reflection level will be dependent on the viewing angle"
-                    " of the surface following the Fresnel equations (which"
-                    " depends on the IOR value). The Fresnel effect's"
-                    " reflection increase as the viewer's angle of incidence"
-                    " with respect to the surface approaches 0"
+    subsurface_type = StringProperty(
+        name="Type",
+        description="Henyey-Greenstein Anisotropy coefficient between -1 (full back-scatter) and 1 (full forward-scatter). The default is 0 for an isotropic medium, which scatters the light evenly in all directions, giving a uniform effect. Positive values bias the scattering effect forwards, in the direction of the light, while negative values bias the scattering backward, toward the light.",
+        subtype='BYTE_STRING',
+        default='diffusion'
     )
-    Krn = FloatProperty(
-        name="Reflectance at Normal",
-        description="The Fresnel effect is more noticeable when using lower"
-                    " values. Increasing this value gives the material a more"
-                    " metallic-like reflection. Metals have a more uniform"
-                    " reflectance across all angles compared to plastics or"
-                    " dielectrics, which have very little normal reflectance.",
-        #subtype='FACTOR',
-        #min=0, max=1
-    )
-    specular_Fresnel = BoolProperty(
-        name="Enable",
-        description="Specular reflection level will be dependent on the"
-                    " viewing angle of the surface following the Fresnel"
-                    " equations (which depends on the IOR value). The Fresnel"
-                    " effect's reflection increase as the viewer's angle of"
-                    " incidence with respect to the surface approaches 0."
-    )
-    Ksn = FloatProperty(
-        name="Reflectance at Normal",
-        description="The Fresnel effect is more noticeable when using lower"
-                    " values. Increasing this value gives the material a more"
-                    " metallic-like specular reflection. Metals have a more"
-                    " uniform reflectance across all angles compared to plastics"
-                    " or dielectrics, which have very little normal reflectance.",
-        #subtype='FACTOR',
-        #min=0, max=1
-    )
-    Fresnel_use_IOR = BoolProperty(
-        name="Fresnel use IOR",
-        description="Calculate Fresnel reflectance based on the IOR parameter,"
-                    " ignoring the values set in Krn and Ksn."
-    )
-    Fresnel_affect_diff = BoolProperty(
-        name="Fresnel Affects Diffuse",
-        default=True
+    thin_walled = BoolProperty(
+        name="Thin Walled",
+        description="Thin Walled can also provide the effect of a translucent object being lit from behind (the shading point is 'lit' by the specified fraction of the light hitting the reverse of the object at that point). It is recommended that this only be used with thin objects (single sided geometry) as objects with thickness may render incorrectly.",
+        default=False
     )
     emission = FloatProperty(
         name="Weight",
@@ -1268,15 +1272,86 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    direct_specular = FloatProperty(
-        name="Direct Scale",
-        description="The amount of specularity received from direct sources"
-                    " only. Values other than 1.0 will cause the materials"
-                    " to not preserve energy and global illumination may not"
-                    " converge.",
+    # normal = FloatVectorProperty(
+    #     #TODO: Implement Normal
+    # )
+    coat = FloatProperty(
+        name='Weight',
+        description='This attribute is used to coat the material. It acts as a clear-coat layer on top of all other shading effects. The coating is always reflective (with the given roughness) and is assumed to be dielectric. Examples would be the clear-coat layer for car paint or the sheen layer for a skin material. For example, for an extra oily layer or wet skin. Other examples would be objects that have been laminated or a protective film over an aluminum cell phone.',
+        subtype='FACTOR',
+        min=0,max=1,
+        default=0
+    )
+    coat_color = FloatVectorProperty(
+        name="Color",
+        description="This is the color of the coating layer's transparency.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    coat_roughness = FloatProperty(
+        name='Roughness',
+        description='Controls the glossiness of the specular reflections. The lower the value, the sharper the reflection. In the limit, a value of 0 will give you a perfectly sharp mirror reflection, while 1.0 will create reflections that are close to a diffuse reflection. You should connect a map here to get variation in the coat highlight.',
+        subtype='FACTOR',
+        min=0,max=1,
+        default=0.1
+    )
+    coat_ior = FloatProperty(
+        name='IOR',
+        description="The IOR parameter (Index of Refraction) defines the material's Fresnel reflectivity and is by default the angular function used. Effectively the IOR will define the balance between reflections on surfaces facing the viewer and on surface edges. You can see the reflection intensity remains unchanged, but the reflection intensity on the front side changes a lot.",
+        subtype='FACTOR',
+        min=0,max=10,
+        default=1.5
+    )
+    coat_normal = FloatVectorProperty(
+        name='Normal',
+        description="The Coat Normal affects the Fresnel blending of the coat over the base, so depending on the normal, the base will be more or less visible from particular angles. Uses for Coat Normal could be a bumpy coat layer over a smoother base. This could include a rain effect, a carbon fiber shader or a car paint shader where you could use different normals (using e.g. flakes) for the coat layer and base layers.",
+        subtype='COLOR',
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1)
+    )
+    coat_affect_color = FloatProperty(
+        name='Affect Color',
+        description="In the real world, when a material is coated there is a certain amount of internal reflections on the inside of the coating. This causes light to bounce onto the surface multiple times before escaping, allowing the material's color to have an enhanced effect. An example of this is varnished wood. This effect can be achieved by using Coat Affect Color.",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=0
+    )
+    coat_affect_roughness = FloatProperty(
+        name='Affect Roughness',
+        description="This causes the coating's roughness to have an effect on the underlying layer's roughness, simulating the blurring effect of being seen through the top layer.",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=0
+    )
+    opacity = FloatProperty(
+        name="Opacity",
+        description="Controls the degree to which light is not allowed to"
+                    " travel through it. Unlike transparency, whereby the"
+                    " material still considers diffuse, specular etc, opacity"
+                    " will affect the entire shader. Useful for retaining the"
+                    " shadow definition of an object, whilst making the object"
+                    " itself invisible to the camera.",
         subtype='FACTOR',
         min=0, max=1,
         default=1
+    )
+    caustics = BoolProperty(
+        name="Caustics",
+        description="This switch in the Standard Surface shader specifies whether specular or transmission bounces behind diffuse bounces are enabled or not. As caustics can be noisy, these are disabled by default.",
+        default=False
+    )
+    internal_reflections = BoolProperty(
+        name="Internal Reflections",
+        description="Unchecking internal reflections will disable indirect specular and mirror perfect reflection computations when ray refraction depth is bigger than zero (when there has been at least one refraction ray traced in the current ray tree).",
+        default=True
+    )
+    exit_to_background = BoolProperty(
+        name="Exit To Background",
+        description="This will cause the Standard Surface shader to trace a ray against the background/environment when the maximum GI reflection/refraction depth is met and return the color that is visible in the background/environment in that direction. When the option is disabled, the path is terminated instead and returns black when the maximum depth is reached.",
+        default=False
     )
     indirect_specular = FloatProperty(
         name="Indirect Scale",
@@ -1284,14 +1359,6 @@ class ArnoldShaderStandardSurface(PropertyGroup):
                     " only. Values other than 1.0 will cause the materials"
                     " to not preserve energy and global illumination may not"
                     " converge.",
-        subtype='FACTOR',
-        min=0, max=1,
-        default=1
-    )
-    direct_diffuse = FloatProperty(
-        name="Direct Scale",
-        description="The amount of diffuse light received from direct"
-                    " sources only.",
         subtype='FACTOR',
         min=0, max=1,
         default=1
@@ -1304,104 +1371,20 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         min=0, max=1,
         default=1
     )
-    enable_glossy_caustics = BoolProperty(
-        name="Glossy caustics",
-        description="Arnold can produce 'soft' caustics from glossy surfaces"
-                    " or large sources of indirect light. This switch in the"
-                    " standard surface shader specifies whether the diffuse GI rays"
-                    " can 'see' glossy reflection rays (there are also"
-                    " switches for mirror reflection and refraction rays)."
-                    " By default only the direct and indirect diffuse rays"
-                    " are seen by GI rays. Note that 'hard' caustics from"
-                    " small but bright light sources (e.g., spot light"
-                    " through a wine glass) are not currently possible."
-    )
-    enable_reflective_caustics = BoolProperty(
-        name="Reflective caustics",
-        description="Arnold can produce 'soft' caustics from glossy surfaces"
-                    " or large sources of indirect light. This switch in the"
-                    " standard surface shader specifies whether the diffuse GI rays"
-                    " can 'see' mirror reflection rays (there are also"
-                    " switches for glossy reflection and refraction rays)."
-                    " By default only the direct and indirect diffuse rays"
-                    " are seen by GI rays. Note that 'hard' caustics from"
-                    " small but bright light sources (e.g., spot light"
-                    " through a wine glass) are not currently possible."
-    )
-    enable_refractive_caustics = BoolProperty(
-        name="Refractive caustics",
-        description="Arnold can produce 'soft' caustics from glossy surfaces"
-                    " or large sources of indirect light. This switch in the"
-                    " standard surface shader specifies whether the diffuse GI rays"
-                    " can 'see' refraction rays (there are also switches for"
-                    " mirror and glossy reflection rays). By default only the"
-                    " direct and indirect diffuse rays are seen by GI rays."
-                    " Note that 'hard' caustics from small but bright light"
-                    " sources (e.g., spot light through a wine glass) are not"
-                    " currently possible."
-    )
-    enable_internal_reflections = BoolProperty(
-        name="Internal Reflections",
-        description="Unchecking internal reflections will disable indirect"
-                    " specular and mirror perfect reflection computations when"
-                    " ray refraction depth is bigger than zero (when there has"
-                    " been at least one refraction ray traced in the current"
-                    " ray tree). Scenes with high amounts of transparent and"
-                    " reflective surfaces can benefit from disabling Internal"
-                    " Reflections.",
-        default=True
-    )
-    Ksss = FloatProperty(
-        name="Weight",
-        description="The amount of sub-surface scattering. Multiplies SSS"
-                    " Color.",
+    thin_film_thickness = FloatProperty(
+        name="Thickness",
+        description="Defines the actual thickness of the film between the specified min and max thickness (0 to 2000 (soft min/max)). This affects the specular, transmission and coat components. Normally this would be something like a noise map to give some variation to the interference effect. If the thickness becomes large like 3000 [nm], the iridescence effect will disappear, which is a physically correct behavior."
+                    " sources only.",
         subtype='FACTOR',
-        min=0, max=1
+        min=0, max=2000,
+        default=0
     )
-    Ksss_color = FloatVectorProperty(
-        name="Color",
-        description="The color used to determine the suburface scattering"
-                    " effect. For example, replicating a skin material, would"
-                    " mean setting this to a fleshy color.",
-        size=3,
-        min=0, max=1,
-        default=(1, 1, 1),
-        subtype='COLOR'
-    )
-    sss_radius = FloatVectorProperty(
-        name="Radius",
-        description="The radius of the area each sample affects. Higher values"
-                    " will smooth the appearance of the subsurface scattering."
-                    " Results will vary depending on the scale of your object"
-                    " in scene.",
-        size=3,
-        min=0, max=1,
-        default=(0.1, 0.1, 0.1),
-        subtype='COLOR'
-    )
-    bounce_factor = FloatProperty(
-        name="Bounce Factor",
-        description="The relative energy loss (or gain) at each bounce. This"
-                    " should be left at its default value of 1.0, which is the"
-                    " only value with meaningful physical sense. Values bigger"
-                    " than 1.0 will make it impossible for GI algorithms to"
-                    " converge to a stable solution, and values smaller than"
-                    " 1.0 will have insufficient GI shading.",
-        min=0, soft_max=4,
-        default=1
-    )
-    opacity = FloatVectorProperty(
-        name="Opacity",
-        description="Controls the degree to which light is not allowed to"
-                    " travel through it. Unlike transparency, whereby the"
-                    " material still considers diffuse, specular etc, opacity"
-                    " will affect the entire shader. Useful for retaining the"
-                    " shadow definition of an object, whilst making the object"
-                    " itself invisible to the camera.",
-        size=3,
-        min=0, max=1,
-        default=(1, 1, 1),
-        subtype='COLOR'
+    thin_film_ior = FloatProperty(
+        name="IOR",
+        description="The refractive index of the medium surrounding the material. Normally this is set to 1.0 for air.",
+        subtype='FACTOR',
+        min=0, max=3.5,
+        default=1.5
     )
 
 
@@ -1460,8 +1443,8 @@ class ArnoldShaderUtility(PropertyGroup):
     color = FloatVectorProperty(
         name="Color",
         description="Color used as the shading mode for the model.",
-        get=lambda self: self.id_data.diffuse_color,
-        set=lambda self, value: setattr(self.id_data, "diffuse_color", value),
+        get=lambda self: self.id_data.base_color,
+        set=lambda self, value: setattr(self.id_data, "base_color", value),
         subtype='COLOR',
         default=(1, 1, 1)
     )
@@ -1480,8 +1463,8 @@ class ArnoldShaderFlat(PropertyGroup):
     color = FloatVectorProperty(
         name="Color",
         description="The input color.",
-        get=lambda self: self.id_data.diffuse_color,
-        set=lambda self, value: setattr(self.id_data, "diffuse_color", value),
+        get=lambda self: self.id_data.base_color,
+        set=lambda self, value: setattr(self.id_data, "base_color", value),
         subtype='COLOR',
         default=(1, 1, 1)
     )
@@ -1502,8 +1485,8 @@ class ArnoldShaderWireframe(PropertyGroup):
     )
     fill_color = FloatVectorProperty(
         name="Fill Color",
-        get=lambda self: self.id_data.diffuse_color,
-        set=lambda self, value: setattr(self.id_data, "diffuse_color"),
+        get=lambda self: self.id_data.base_color,
+        set=lambda self, value: setattr(self.id_data, "base_color"),
         default=(1, 1, 1),
         min=0, max=1,
         subtype='COLOR'
@@ -1534,7 +1517,7 @@ class ArnoldShader(PropertyGroup):
         name="Type",
         items=[
             ('lambert', "Lambert", "Lambert"),
-            ('standard_surface', "StandardSurface", "StandardSurface"),
+            ('standard_surface', "Standard Surface", "Standard Surface"),
             ('utility', "Utility", "Utility"),
             ('flat', "Flat", "Flat"),
             ('hair', "Hair", "Hair")
@@ -1542,7 +1525,7 @@ class ArnoldShader(PropertyGroup):
         default='lambert'
     )
     lambert = PointerProperty(type=ArnoldShaderLambert)
-    standard_surface = PointerProperty(type=ArnoldShaderStandardSurface)
+    standard_surface = PointerProperty(type=ArnoldShaderStandard_Surface)
     utility = PointerProperty(type=ArnoldShaderUtility)
     flat = PointerProperty(type=ArnoldShaderFlat)
     #hair = PointerProperty(type=ArnoldShaderHair)
