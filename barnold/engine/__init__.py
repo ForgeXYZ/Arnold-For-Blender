@@ -179,6 +179,7 @@ class Shaders:
                 arnold.AiNodeSetRGB(node, "opacity", *shader.flat.opacity)
             elif shader.type == 'hair':
                 # TODO: implement hair
+                arnold.AiNodeSetFlt(node, "base", standard_hair.base)
                 return None
         elif mat.type == 'WIRE':
             wire = shader.wire
@@ -857,7 +858,7 @@ def _export(data, scene, camera, xres, yres, session=None):
         arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
         arnold.AiNodeSetBool(filter, "scalar_mode", opts.sample_filter_scalar_mode)
 
-    display = arnold.AiNode("driver_png")
+    display = arnold.AiNode("driver_display_callback")
     arnold.AiNodeSetStr(display, "name", "__driver")
     arnold.AiNodeSetFlt(display, "gamma", opts.display_gamma)
     arnold.AiNodeSetBool(display, "rgba_packing", False)
@@ -936,7 +937,7 @@ def render(engine, scene):
             else:
                 result = engine.begin_result(_x, _y, width, height)
                 # TODO: sometimes highlighted tiles become empty
-                #engine.update_result(result)
+                engine.update_result(result)
                 _htiles[(_x, _y)] = result
 
             if engine.test_break():
@@ -950,8 +951,11 @@ def render(engine, scene):
             engine.update_memory_stats(mem, peak)
 
         # display callback must be a variable
-        # cb = arnold.AtDisplayCallBack(display_callback)
-        # arnold.AiNodeSetPtr(session['display'], "callback", cb)
+        # cb = arnold.AiNodeSetPtr(display_callback, "callback_data", display)
+        # cb = arnold.AtNodeLoader(display_callback)
+        cb = arnold.AtRenderUpdateCallback(display_callback)
+        # arnold.AiNodeSetPtr(_callback, "callback", cb)
+        arnold.AiNodeSetPtr(session['display'], "callback_data", cb)
 
         res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
         if res == arnold.AI_SUCCESS:
@@ -1164,7 +1168,7 @@ def view_update(engine, context):
 
 
 def view_draw(engine, context):
-    #print(">>> view_draw [%f]:" % time.clock(), engine)
+    print(">>> view_draw [%f]:" % time.clock(), engine)
     try:
         region = context.region
         v3d = context.space_data

@@ -321,6 +321,9 @@ class ArnoldNodeLambert(ArnoldNode):
         self.inputs.new("NodeSocketFloat", "Weight", "base").default_value = 0.7
         self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
 
+    def init(self, context):
+        self.outputs.new("driver_display_callback", "driver", "driver")
+
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeStandardSurface(ArnoldNode):
@@ -1781,6 +1784,7 @@ class ArnoldNodeDensity(ArnoldNode):
         return {
             "interpolation": ('STRING', self.interpolation)
         }
+
 
 
 @ArnoldRenderEngine.register_class

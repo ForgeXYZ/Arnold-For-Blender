@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-__author__ = "Ildar Nikolaev"
-__email__ = "nildar@users.sourceforge.net"
+__author__ = "Tyler Furby"
+__email__ = "tyler@tylerfurby.com"
 
 bl_info = {
-    "name"          : "B-Arnold",
-    "description"   : "Arnold Render integration",
-    "author"        : "N.Ildar <nildar@users.sourceforge.net>",
+    "name"          : "Barnold",
+    "description"   : "Solid Angle's Arnold Renderer for Blender",
+    "author"        : "Tyler Furby <tyler@tylerfurby.com>", "N.Ildar <nildar@users.sourceforge.net>"
     "version"       : (0, 0, 2),
     "blender"       : (2, 79, 0),
     "location"      : "Info header, render engine menu",

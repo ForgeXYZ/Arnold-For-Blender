@@ -672,8 +672,8 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
             col.prop(wire, "line_width")
             col.prop(wire, "raster_space")
 
-        layout.prop(standard_surface, "bounce_factor")
-        layout.prop(standard_surface, "opacity")
+        # layout.prop(standard_surface, "bounce_factor")
+        # layout.prop(standard_surface, "opacity")
 
 ##
 ## Textures
