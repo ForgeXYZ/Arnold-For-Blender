@@ -1,4 +1,4 @@
-# Barnold (beta) Status: :yellow_heart: 
+# Barnold (beta) Status: :green_heart: 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5D8ZMMACFUX36)
 
 Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.79b. This is not yet production ready, but will be soon...
