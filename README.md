@@ -10,7 +10,7 @@ Join the Discord channel for discussions/help/updates/feature requests/talk abou
 
 ### Installation
 #### Windows
-- Download the Arnold 5.1.1.0 SDK [here](https://www.solidangle.com/arnold/download/product-download/?id=2285) and save this directory in `path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows`
+- Download the Repo, it includes a custom Arnold SDK containg the display driver, and adjustments to the SDK make it work
 - Add environment variable to "PATH" -> `path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\bin` 
   ##### If you don't know how to set environment variables in Windows:
   - In Search, search for and then select: System (Control Panel)
