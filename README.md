@@ -6,7 +6,7 @@ Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.7
 Join the Discord channel for discussions/help/updates/feature requests/talk about water coolers: https://discord.gg/WNdNXzZ
 
 ### Needs Fixing
-- Add specular/emission/transparency to viewport shading
+- Add specular/emission/transparency/subsurface/coat to viewport shading
 - Show bucket tiles during render from within Blender's Image Editor
 - Fix IPR
 - Renders are upside down, kind of weird...
