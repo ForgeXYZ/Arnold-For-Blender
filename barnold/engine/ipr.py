@@ -50,14 +50,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
     if dir not in sys.path:
         sys.path.append(dir)
 
-
-    # driverdll = ctypes.CDLL ("C:\\Program Files\Blender Foundation\\Blender\\2.79\\scripts\\modules\\Arnold-5.1.1.0-windows\\plugins\\driver_display_callback.dll")
-    # driverdll.NodeLoader.argtypes = [ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32, ctypes.POINTER(ctypes.c_float)]
-    # driverdll.NodeLoader.argtypes = [ctypes.uint32, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32, ctypes.POINTER(ctypes.c_float)]
-
     import arnold
-
-    plugin = arnold.AiLoadPlugins('C:\\Users\\tyler\\source\\repos\\driver_display_callback\\x64\\Release')
 
     nodes = {}
     nptrs = []  # nodes linked by AiNodeSetPtr
@@ -102,11 +95,11 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
 
     arnold.AiBegin()
     try:
-        arnold.AiMsgSetConsoleFlags(arnold.AI_LOG_ALL)
-        arnold.AiMsgSetConsoleFlags(0x000E)
+        # arnold.AiMsgSetConsoleFlags(arnold.AI_LOG_ALL)
+        # arnold.AiMsgSetConsoleFlags(0x000E)
 
-        from pprint import pprint as pp
-        pp(data)
+        # from pprint import pprint as pp
+        # pp(data)
 
         ## Nodes
         for node in data['nodes']:
@@ -127,9 +120,8 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
         filter = arnold.AiNode("gaussian_filter")
         arnold.AiNodeSetStr(filter, "name", "__filter")
         driver = arnold.AiNode("driver_display_callback")
-        #Previously... driver = arnold.AiNode("driver_display")
         arnold.AiNodeSetStr(driver, "name", "__driver")
-        # arnold.AiNodeSetBool(driver, "color_packing", False)
+        arnold.AiNodeSetBool(driver, "color_packing", False)
         outputs_aovs = (
             b"RGBA RGBA __filter __driver",
         )
@@ -145,15 +137,15 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
         ).reshape([h, w, 4])
         rect = _rect(mmap_name, *mmap_size)
 
-        def callback(x, y, width, height, buffer, data):
-            print("+++ _callback:", x, y, width, height, ctypes.cast(buffer, ctypes.c_void_p))
+        def _callback(x, y, width, height, buffer, data):
+            #print("+++ _callback:", x, y, width, height, ctypes.cast(buffer, ctypes.c_void_p))
             if buffer:
                 try:
                     if new_data.poll():
                         arnold.AiRenderInterrupt()
                     else:
-                        print("+++ _callback: tile", x, y, width, height)
-                        _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
+                        #print("+++ _callback: tile", x, y, width, height)
+                        _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_ubyte))
                         a = numpy.ctypeslib.as_array(_buffer, shape=(height, width, 4))
                         rect[y : y + height, x : x + width] = a
                         redraw_event.set()
@@ -163,11 +155,10 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
             elif not new_data.poll():
                 return
             arnold.AiRenderAbort()
-            print("+++ _callback: abort")
+            #print("+++ _callback: abort")
 
-        cb = arnold.AtRenderUpdateCallback(callback)
-        # arnold.AiNodeSetPtr(driver, "callback", _callback)
-        arnold.AiNodeSetPtr(driver, "callback_data", cb)
+        cb = arnold.AtDisplayCallBack(_callback)
+        arnold.AiNodeSetPtr(driver, "callback", cb)
 
         class _Dict(dict):
             def update(self, u):
@@ -186,15 +177,15 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
                 if res != arnold.AI_SUCCESS:
                     break
             if state.value == ABORT:
-                print("+++ _worker: abort")
+                #print("+++ _worker: abort")
                 break;
 
             data = _Dict()
             _data = new_data.recv()
             while _data is not None:
-                from pprint import pprint as pp
-                print("+++ _worker: data")
-                pp(_data)
+                # from pprint import pprint as pp
+                # print("+++ _worker: data")
+                # pp(_data)
                 data.update(_data)
                 if not new_data.poll():
                     _nodes = data.get('nodes')
@@ -225,9 +216,9 @@ def _main():
     import bpy
     _mp.set_executable(bpy.app.binary_path_python)
 
-    import logging
-    logger = _mp.log_to_stderr()
-    logger.setLevel(logging.INFO)
+    # import logging
+    # logger = _mp.log_to_stderr()
+    # logger.setLevel(logging.INFO)
 
     global _engine_, _data_, _width_, _height_, _mmap_size_, _mmap_
 
@@ -271,7 +262,7 @@ def _main():
             _mmap_size_ = _mmap_size(data.setdefault('options', {}))
             data['mmap_size'] = _mmap_size_
         if data:
-            print(">>> update [%f]" % time.clock())
+            #print(">>> update [%f]" % time.clock())
             pin.send(data)
         return _mmap_size_, numpy.frombuffer(_mmap_, dtype=numpy.float32)
 

@@ -331,35 +331,26 @@ class ArnoldNodeStandardSurface(ArnoldNode):
     ai_name = "standard_surface"
 
     sockets = collections.OrderedDict([
-        # Diffuse
+        # Base
         ("base_color"               , ('RGB', "Base Color",     "ext_properties")),
         ("base"                     , ('FLOAT', "Base",     "ext_properties")),
         ("diffuse_roughness"        , ('FLOAT', "Diffuse Roughness", "ext_properties")),
         ("metalness"                , ('FLOAT', "Diffuse Metalness", "ext_properties")),
-        ("Kb"                       , ('FLOAT', "Diffuse BackLighting", "ext_properties")),
-        ("direct_diffuse"           , ('FLOAT', "Diffuse Direct Scale", "ext_properties")),
-        ("indirect_diffuse"         , ('FLOAT', "Diffuse Indirect Scale", "ext_properties")),
         # Specular
         ("specular_color"           , ('RGB',   "Specular Color", "ext_properties")),
         ("specular"                 , ('FLOAT', "Specular Scale", "ext_properties")),
         ("specular_roughness"       , ('FLOAT', "Specular Roughness", "ext_properties")),
+        ("specular_ior"             , ('FLOAT', "Specular IOR", "ext_properties")),
         ("specular_anisotropy"      , ('FLOAT', "Specular Anisotropy", "ext_properties")),
         ("specular_rotation"        , ('FLOAT', "Specular Rotation", "ext_properties")),
-        ("direct_specular"          , ('FLOAT', "Specular Direct Scale", "ext_properties")),
-        ("indirect_specular"        , ('FLOAT', "Specular Indirect Scale", "ext_properties")),
-        ("Ksn"                      , ('FLOAT', "Specular Refl. at Normal", "ext_properties")),
-        # Reflection
+        # Transmission
         ("transmission_color"                 , ('RGB', "Transmission Color", "ext_properties")),
         ("transmission"                       , ('FLOAT', "Transmission", "ext_properties")),
         ("transmission_depth"       , ('FLOAT', "Transmission Depth", "ext_properties")),
         ("transmission_scatter"       , ('RGB', "Transmission Scatter", "ext_properties")),
         ("transmission_scatter_anisotropy", ('FLOAT', "Transmission Anisotropy", "ext_properties")),
         ("transmission_extra_roughness", ('FLOAT', "Transmission Extra Roughness", "ext_properties")),
-        ("specular_ior"                , ('FLOAT', "Specular IOR", "ext_properties")),
-        ("dispersion_abbe"          , ('FLOAT', "Refraction: Abbe Number", "ext_properties")),
-        ("refraction_roughness"     , ('FLOAT', "Refraction: Roughness", "ext_properties")),
-        ("transmittance"            , ('RGB', "Transmittance", "ext_properties")),
-        ("refraction_exit_color"    , ('RGB', "Refraction: Exit Color", "ext_properties")),
+        ("transmission_dispersion"          , ('FLOAT', "Transmission Abbe", "ext_properties")),
         # Coat
         ("coat"                , ('FLOAT', "Coat", "ext_properties")),
         ("coat_color"          , ('FLOAT', "Coat Color", "ext_properties")),
@@ -367,7 +358,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         ("coat_ior"            , ('FLOAT', "Coat IOR", "ext_properties")),
         # Opacity
         ("opacity"                  , ('FLOAT', "Opacity", "ext_properties")),
-        # SSS
+        # Subsurface
         ("subsurface"               , ('FLOAT', "Subsurface", "ext_properties")),
         ("subsurface_color"         , ('RGB', "Subsurface Color", "ext_properties")),
         ("subsurface_radius"        , ('RGB', "Subsurface Radius", "ext_properties")),
@@ -552,16 +543,9 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         links = [i.identifier for i in self.inputs if i.is_linked]
         props = self.ext_properties
         ret = {
-            'reflection_exit_use_environment': ('BOOL', props.reflection_exit_use_environment),
-            'refraction_exit_use_environment': ('BOOL', props.refraction_exit_use_environment),
-            'Fresnel': ('BOOL', props.Fresnel),
-            'specular_Fresnel': ('BOOL', props.specular_Fresnel),
-            'Fresnel_use_IOR': ('BOOL', props.Fresnel_use_IOR),
-            'Fresnel_affect_diff': ('BOOL', props.Fresnel_affect_diff),
-            'enable_glossy_caustics': ('BOOL', props.enable_glossy_caustics),
-            'enable_reflective_caustics': ('BOOL', props.enable_reflective_caustics),
-            'enable_refractive_caustics': ('BOOL', props.enable_refractive_caustics),
-            'enable_internal_reflections': ('BOOL', props.enable_internal_reflections),
+            'exit_to_background': ('BOOL', props.exit_to_background),
+            'caustics': ('BOOL', props.caustics),
+            'internal_reflections': ('BOOL', props.internal_reflections),
         }
         for i, (t, n, p) in self.sockets.items():
             if i not in links:
@@ -795,8 +779,8 @@ class ArnoldNodeRaySwitch(ArnoldNode):
         self.outputs.new("NodeSocketShader", "RGBA", "output")
         self.inputs.new("NodeSocketColor", "Camera", "camera").default_value = (1, 1, 1, 1)
         self.inputs.new("NodeSocketColor", "Shadow", "shadow").default_value = (1, 1, 1, 1)
-        self.inputs.new("NodeSocketColor", "Reflection", "reflection").default_value = (1, 1, 1, 1)
-        self.inputs.new("NodeSocketColor", "Refraction", "refraction").default_value = (1, 1, 1, 1)
+        # self.inputs.new("NodeSocketColor", "Reflection", "reflection").default_value = (1, 1, 1, 1)
+        # self.inputs.new("NodeSocketColor", "Refraction", "refraction").default_value = (1, 1, 1, 1)
         self.inputs.new("NodeSocketColor", "Diffuse", "diffuse").default_value = (1, 1, 1, 1)
         self.inputs.new("NodeSocketColor", "Glossy", "glossy").default_value = (1, 1, 1, 1)
 

@@ -893,7 +893,7 @@ def _export(data, scene, camera, xres, yres, session=None):
         arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
         arnold.AiNodeSetBool(filter, "scalar_mode", opts.sample_filter_scalar_mode)
 
-    display = arnold.AiNode("driver_png")
+    display = arnold.AiNode("driver_display_callback")
     arnold.AiNodeSetStr(display, "name", "__driver")
     arnold.AiNodeSetFlt(display, "gamma", opts.display_gamma)
     arnold.AiNodeSetBool(display, "rgba_packing", False)
@@ -960,7 +960,7 @@ def render(engine, scene):
                     result = _htiles.pop((_x, _y), None)
                     if result is None:
                         result = engine.begin_result(_x, _y, width, height)
-                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
+                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_ubyte))
                     rect = numpy.ctypeslib.as_array(_buffer, shape=(width * height, 4))
                     # TODO: gamma correction. need??? kick is darker
                     # set 1/2.2 the driver_display node by default
@@ -988,9 +988,9 @@ def render(engine, scene):
         # display callback must be a variable
         # cb = arnold.AiNodeSetPtr(display_callback, "callback_data", display)
         # cb = arnold.AtNodeLoader(display_callback)
-        cb = arnold.AtRenderUpdateCallback(display_callback)
+        cb = arnold.AtDisplayCallBack(display_callback)
         # arnold.AiNodeSetPtr(_callback, "callback", cb)
-        arnold.AiNodeSetPtr(session['display'], "callback_data", cb)
+        arnold.AiNodeSetPtr(session['display'], "callback", cb)
 
         res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
         if res == arnold.AI_SUCCESS:
