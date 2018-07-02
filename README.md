@@ -1,4 +1,4 @@
-# Barnold (beta) Status: :yellow_heart: 
+# Barnold (beta) Status: :green_heart: 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5D8ZMMACFUX36)
 
 Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.79b. This is not yet production ready, but will be soon...
@@ -6,14 +6,11 @@ Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.7
 Join the Discord channel for discussions/help/updates/feature requests/talk about water coolers: https://discord.gg/WNdNXzZ
 
 ### Needs Fixing
-- Add specular/emission/transparency/subsurface/coat to viewport shading
-- Show bucket tiles during render from within Blender's Image Editor
 - Fix IPR
-- Renders are upside down, kind of weird...
 
 ### Installation
 #### Windows
-- Download the Arnold 5.1.1.0 SDK [here](https://www.solidangle.com/arnold/download/product-download/?id=2285) and save this directory in `path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows`
+- Download the Repo, it includes a custom Arnold SDK containg the display driver, and adjustments to the SDK make it work
 - Add environment variable to "PATH" -> `path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\bin` 
   ##### If you don't know how to set environment variables in Windows:
   - In Search, search for and then select: System (Control Panel)
