@@ -654,7 +654,7 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                                       path_from_id, "ui_emission", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.prop(standard_surface, "emission", text="Weight")
+                    col.prop(mat, "emit", text="Weight")
                     col.prop(standard_surface, "emission_color", text="Color")
 
 
