@@ -163,7 +163,7 @@ class Shaders:
                 arnold.AiNodeSetFlt(node, "specular_anisotropy", standard_surface.specular_anisotropy)
                 arnold.AiNodeSetFlt(node, "specular_rotation", standard_surface.specular_rotation)
                 arnold.AiNodeSetFlt(node, "emission", mat.emit)
-                arnold.AiNodeSetRGB(node, "emission_color", *standard_surface.emission_color)
+                arnold.AiNodeSetRGB(node, "emission_color", *mat.diffuse_color)
                 arnold.AiNodeSetFlt(node, "transmission", standard_surface.transmission)
                 arnold.AiNodeSetRGB(node, "transmission_color", *standard_surface.transmission_color)
                 arnold.AiNodeSetFlt(node, "transmission_depth", standard_surface.transmission_depth)
