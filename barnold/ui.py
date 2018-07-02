@@ -550,8 +550,8 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                 if sublayout:
                     col = sublayout.column()
                     #TODO: Fix For Viewport
-                    col.prop(standard_surface, "base", text="Weight")
-                    col.prop(standard_surface, "base_color", text="Color")
+                    col.prop(mat, "diffuse_intensity", text="Weight")
+                    col.prop(mat, "diffuse_color", text="Color")
                     col.prop(standard_surface, "diffuse_roughness")
                     col.prop(standard_surface, "metalness")
                     # Below is deprecated in Arnold 5
@@ -566,7 +566,7 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                 if sublayout:
                     col = sublayout.column()
                     #TODO: Fix for viewport
-                    col.prop(standard_surface, "specular", text="Weight")
+                    col.prop(mat, "specular", text="Weight")
                     col.prop(standard_surface, "specular_color", text="Color")
                     col.prop(standard_surface, "specular_roughness")
                     col.prop(standard_surface, "specular_ior")

@@ -323,8 +323,8 @@ class ArnoldNodeLambert(ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeStandard_Surface(ArnoldNode):
-    bl_label = "Standard Surface"
+class ArnoldNodeStandardSurface(ArnoldNode):
+    bl_label = "StandardSurface"
     bl_icon = 'MATERIAL'
     bl_width_default = 200
 
@@ -408,7 +408,7 @@ class ArnoldNodeStandard_Surface(ArnoldNode):
         default=(1,1,1)
     )
     ext_properties = PointerProperty(
-        type=props.ArnoldShaderStandard_Surface
+        type=props.ArnoldShaderStandardSurface
     )
 
     def init(self, context):
@@ -427,8 +427,8 @@ class ArnoldNodeStandard_Surface(ArnoldNode):
                               "ext_properties", "ui_diffuse", "node")
         if sublayout:
             col = sublayout.column()
-            _draw_property(col, properties, "base", links)
-            _draw_property(col, properties, "base_color", links)
+            _draw_property(col, self, "base", links)
+            _draw_property(col, self, "base_color", links)
             _draw_property(col, properties, "diffuse_roughness", links)
             _draw_property(col, properties, "metalness", links)
 
@@ -1903,7 +1903,7 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeOutput")
         ]),
         ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_SHADERS", "Shaders", items=[
-            nodeitems_utils.NodeItem("ArnoldNodeStandard_Surface"),
+            nodeitems_utils.NodeItem("ArnoldNodeStandardSurface"),
             nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),
             nodeitems_utils.NodeItem("ArnoldNodeHair"),

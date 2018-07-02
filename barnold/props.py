@@ -1025,7 +1025,7 @@ class ArnoldShaderLambert(PropertyGroup):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldShaderStandard_Surface(PropertyGroup):
+class ArnoldShaderStandardSurface(PropertyGroup):
     ui_diffuse = BoolProperty(
         name="Diffuse",
         default=True
@@ -1528,7 +1528,7 @@ class ArnoldShader(PropertyGroup):
         default='lambert'
     )
     lambert = PointerProperty(type=ArnoldShaderLambert)
-    standard_surface = PointerProperty(type=ArnoldShaderStandard_Surface)
+    standard_surface = PointerProperty(type=ArnoldShaderStandardSurface)
     utility = PointerProperty(type=ArnoldShaderUtility)
     flat = PointerProperty(type=ArnoldShaderFlat)
     #hair = PointerProperty(type=ArnoldShaderHair)
