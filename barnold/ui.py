@@ -566,8 +566,8 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                 if sublayout:
                     col = sublayout.column()
                     #TODO: Fix for viewport
-                    col.prop(mat, "specular", text="Weight")
-                    col.prop(standard_surface, "specular_color", text="Color")
+                    col.prop(mat, "specular_intensity", text="Weight")
+                    col.prop(mat, "specular_color", text="Color")
                     col.prop(standard_surface, "specular_roughness")
                     col.prop(standard_surface, "specular_ior")
                     col.prop(standard_surface, "specular_anisotropy")
