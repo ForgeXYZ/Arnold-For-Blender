@@ -7,7 +7,7 @@ Join the Discord channel for discussions/help/updates/feature requests/talk abou
 
 ### Needs Fixing
 - Fix IPR
-- Fix node system
+- Fix node system (Don't use nodes for now, just use the materials panel for changing materials until the node system is fixed)
 
 ### Installation
 #### Windows
