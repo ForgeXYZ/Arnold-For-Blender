@@ -147,8 +147,8 @@ class Shaders:
         if mat.type == 'SURFACE':
             node = arnold.AiNode(shader.type)
             if shader.type == 'lambert':
-                arnold.AiNodeSetFlt(node, "base", *mat.base)
-                arnold.AiNodeSetRGB(node, "base_color", *mat.base_color)
+                arnold.AiNodeSetFlt(node, "Kd", mat.diffuse_intensity)
+                arnold.AiNodeSetRGB(node, "Kd_color", *mat.diffuse_color)
                 arnold.AiNodeSetRGB(node, "opacity", *shader.lambert.opacity)
             elif shader.type == 'standard_surface':
                 standard_surface = shader.standard_surface

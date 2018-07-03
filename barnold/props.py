@@ -181,7 +181,7 @@ class ArnoldOptions(PropertyGroup):
     )
     initial_sampling_level = IntProperty(
         name="Inital Sampling Level",
-        min=-10, max=-1,
+        min=-10, max=0,
         default = -3
     )
     ipr_bucket_size = IntProperty(
