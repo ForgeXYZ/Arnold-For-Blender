@@ -7,6 +7,7 @@ Join the Discord channel for discussions/help/updates/feature requests/talk abou
 
 ### Needs Fixing
 - Fix IPR
+- Fix node system
 
 ### Installation
 #### Windows
