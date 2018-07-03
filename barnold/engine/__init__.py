@@ -220,10 +220,26 @@ class Shaders:
             wire = shader.wire
             node = arnold.AiNode('wireframe')
             arnold.AiNodeSetStr(node, "edge_type", wire.edge_type)
-            arnold.AiNodeSetRGB(node, "line_color", *mat.base_color)
+            arnold.AiNodeSetRGB(node, "line_color", *mat.diffuse_color)
             arnold.AiNodeSetRGB(node, "fill_color", *wire.fill_color)
             arnold.AiNodeSetFlt(node, "line_width", wire.line_width)
             arnold.AiNodeSetBool(node, "raster_space", wire.raster_space)
+        elif mat.type == 'VOLUME':
+            standard_volume = shader.standard_volume
+            node = arnold.AiNode(shader.type)
+            arnold.AiNodeSetFlt(node, "density", standard_volume.density)
+            arnold.AiNodeSetFlt(node, "scatter", standard_volume.scatter)
+            arnold.AiNodeSetRGB(node, "scatter_color", *standard_volume.scatter_color)
+            arnold.AiNodeSetFlt(node, "scatter_anisotropy", standard_volume.scatter_anisotropy)
+            arnold.AiNodeSetRGB(node, "transparent", *standard_volume.transparent)
+            arnold.AiNodeSetFlt(node, "transparent_depth", standard_volume.transparent_depth)
+            #arnold.AiNodeSetStr(node, "emission_mode", standard_volume.emission_mode)
+            arnold.AiNodeSetFlt(node, "emission", standard_volume.emission)
+            arnold.AiNodeSetRGB(node, "emission_color", *standard_volume.emission_color)
+            arnold.AiNodeSetFlt(node, "temperature", standard_volume.temperature)
+            # arnold.AiNodeSetFlt(node, "blackbody_kelvin", standard_volume.blackbody_kelvin)
+            # arnold.AiNodeSetFlt(node, "blackbody_intensity", standard_volume.blackbody_intensity)
+            # arnold.AiNodeSetFlt(node, "interpolation", standard_volume.interpolation)
         else:
             return None
         arnold.AiNodeSetStr(node, "name", self._Name(mat.name))

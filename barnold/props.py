@@ -932,6 +932,7 @@ class ArnoldLight(PropertyGroup):
         subtype='UNSIGNED',
         default=2
     )
+
     volume = FloatProperty(
         name="Volume",
         soft_min=0, soft_max=1,
@@ -1479,6 +1480,91 @@ class ArnoldShaderFlat(PropertyGroup):
         default=(1, 1, 1)
     )
 
+@ArnoldRenderEngine.register_class
+class ArnoldShaderStandardVolume(PropertyGroup):
+    ui_standardvolume_density = BoolProperty(
+        name="Volume",
+        default=True
+    )
+    ui_standardvolume_scatter = BoolProperty(
+        name="Scatter",
+        default=True
+    )
+    ui_standardvolume_transparency = BoolProperty(
+        name="Volume",
+        default=True
+    )
+    ui_standardvolume_emission = BoolProperty(
+        name="Volume",
+        default=True
+    )
+    ui_standardvolume_advanced = BoolProperty(
+        name="Volume",
+        default=True
+    )
+    density = FloatProperty(
+        name="Weight",
+        description="The density of the volume, with low density resulting in thin volumes and high density in thick volumes.",
+        min=0, max=1,
+        default=0.25
+    )
+    scatter = FloatProperty(
+        name="Weight",
+        description="The brightness of the volume under illumination.",
+        min=0, max=1,
+        default=1
+    )
+    scatter_color = FloatVectorProperty(
+        name="Color",
+        description="The density of the volume, with low density resulting in thin volumes and high density in thick volumes.",
+        subtype='COLOR',
+        min=0, max=1,
+        default=(1, 1, 1)
+    )
+    scatter_anisotropy = FloatProperty(
+        name="Anisotropy",
+        description="The directional bias, or anisotropy, of the scattering.",
+        min=0, max=1,
+        default=0
+    )
+    transparent = FloatVectorProperty(
+        name="Transparent Color",
+        description="Additional control over the density of the volume, to tint the color of volume shadows and objects seen through the volume.",
+        subtype='COLOR',
+        min=0, max=1,
+        default=(1, 1, 1)
+    )
+    transparent_depth = FloatProperty(
+        name="Transparent Depth",
+        description="Additional control over the density of the volume, to control the depth into the volume at which the transparent color is realized.",
+        min=0, max=5,
+        default=1
+    )
+    emission = FloatProperty(
+        name="Weight",
+        description="Emission is the rate at which a volume emits light.",
+        min=0, max=5,
+        default=1
+    )
+    emission_color = FloatVectorProperty(
+        name="Color",
+        description="A color to tint (multiply to) the emission.",
+        subtype='COLOR',
+        min=0, max=1,
+        default=(1, 1, 1)
+    )
+    # emission_mode = FloatStringProperty(
+    #     name="Mode",
+    #     description="Method of volume emission",
+    #     default="None"
+    # )
+    temperature = FloatProperty(
+        name="Temperature",
+        description="If a blackbody channel is used, this acts as a multiplier for the blackbody temperature.",
+        min=0,max=1,
+        default=1
+    )
+
 
 @ArnoldRenderEngine.register_class
 class ArnoldShaderWireframe(PropertyGroup):
@@ -1488,8 +1574,8 @@ class ArnoldShaderWireframe(PropertyGroup):
     )
     fill_color = FloatVectorProperty(
         name="Fill Color",
-        get=lambda self: self.id_data.base_color,
-        set=lambda self, value: setattr(self.id_data, "base_color"),
+        get=lambda self: self.id_data.diffuse_color,
+        set=lambda self, value: setattr(self.id_data, "diffuse_color"),
         default=(1, 1, 1),
         min=0, max=1,
         subtype='COLOR'
@@ -1533,6 +1619,7 @@ class ArnoldShader(PropertyGroup):
     flat = PointerProperty(type=ArnoldShaderFlat)
     #hair = PointerProperty(type=ArnoldShaderHair)
     wire = PointerProperty(type=ArnoldShaderWireframe)
+    standard_volume = PointerProperty(type=ArnoldShaderStandardVolume)
 
     @classmethod
     def register(cls):

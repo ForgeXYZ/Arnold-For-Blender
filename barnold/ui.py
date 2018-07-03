@@ -709,10 +709,49 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
             col.prop(wire, "edge_type")
             col.prop(wire, "line_width")
             col.prop(wire, "raster_space")
+        elif mat_type == 'VOLUME':
+            standard_volume = shader.standard_volume
+            path_from_id = standard_volume.path_from_id()
 
-        # layout.prop(standard_surface, "bounce_factor")
-        # layout.prop(standard_surface, "opacity")
+            # Volume Density
+            sublayout = _subpanel(layout, "Density", standard_volume.ui_standardvolume_density,
+                                  path_from_id, "ui_standardvolume_density", "material")
+            if sublayout:
+                col = sublayout.column()
+                #TODO: Fix For Viewport
+                col.prop(standard_volume, "density", text="Density")
 
+            # Volume Scatter
+            sublayout = _subpanel(layout, "Scatter", standard_volume.ui_standardvolume_scatter,
+                                  path_from_id, "ui_standardvolume_scatter", "material")
+            if sublayout:
+                col = sublayout.column()
+                col.prop(standard_volume, "scatter", text="Scatter")
+                col.prop(standard_volume, "scatter_color", text="Scatter Color")
+                col.prop(standard_volume, "scatter_anisotropy", text="Scatter Anisotropy")
+
+            # Volume Transparency
+            sublayout = _subpanel(layout, "Transparency", standard_volume.ui_standardvolume_transparency,
+                                  path_from_id, "ui_standardvolume_transparency", "material")
+            if sublayout:
+                col = sublayout.column()
+                col.prop(standard_volume, "transparent", text="Transparent Color")
+
+            # Volume Emission
+            sublayout = _subpanel(layout, "Emission", standard_volume.ui_standardvolume_emission,
+                                  path_from_id, "ui_standardvolume_emission", "material")
+            if sublayout:
+                col = sublayout.column()
+                # col.prop(standard_volume, "emission_mode", text="Emission Mode")
+                col.prop(standard_volume, "emission", text="Emission")
+                col.prop(standard_volume, "emission_color", text="Emission Color")
+
+            # Volume Etc.
+            sublayout = _subpanel(layout, "Advanced", standard_volume.ui_standardvolume_advanced,
+                                  path_from_id, "ui_standardvolume_advanced", "material")
+            if sublayout:
+                col = sublayout.column()
+                col.prop(standard_volume, "temperature", text="Temperature")
 ##
 ## Textures
 ##
