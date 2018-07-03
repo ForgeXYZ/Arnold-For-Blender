@@ -1446,8 +1446,8 @@ class ArnoldShaderUtility(PropertyGroup):
     color = FloatVectorProperty(
         name="Color",
         description="Color used as the shading mode for the model.",
-        get=lambda self: self.id_data.base_color,
-        set=lambda self, value: setattr(self.id_data, "base_color", value),
+        get=lambda self: self.id_data.diffuse_color,
+        set=lambda self, value: setattr(self.id_data, "diffuse_color", value),
         subtype='COLOR',
         default=(1, 1, 1)
     )
@@ -1466,8 +1466,8 @@ class ArnoldShaderFlat(PropertyGroup):
     color = FloatVectorProperty(
         name="Color",
         description="The input color.",
-        get=lambda self: self.id_data.base_color,
-        set=lambda self, value: setattr(self.id_data, "base_color", value),
+        get=lambda self: self.id_data.diffuse_color,
+        set=lambda self, value: setattr(self.id_data, "diffuse_color", value),
         subtype='COLOR',
         default=(1, 1, 1)
     )

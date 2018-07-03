@@ -685,30 +685,30 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                     col.prop(standard_surface, "exit_to_background")
                     col.prop(standard_surface, "indirect_diffuse")
                     col.prop(standard_surface, "indirect_specular")
-        #     elif shader_type == 'utility':
-        #         utility = shader.utility
-        #         col = layout.column()
-        #         col.prop(utility, "color")
-        #         col.prop(utility, "opacity")
-        #         col.prop(utility, "color_mode")
-        #         col.prop(utility, "shade_mode")
-        #         col.prop(utility, "overlay_mode")
-        #         col.prop(utility, "ao_distance")
-        #     elif shader_type == 'flat':
-        #         flat = shader.flat
-        #         col = layout.column()
-        #         col.prop(flat, "color")
-        #         col.prop(flat, "opacity")
-        #     elif shader_type == 'hair':
-        #         pass
-        # elif mat_type == 'WIRE':
-        #     wire = shader.wire
-        #     col = layout.column()
-        #     col.prop(wire, "fill_color")
-        #     col.prop(wire, "line_color")
-        #     col.prop(wire, "edge_type")
-        #     col.prop(wire, "line_width")
-        #     col.prop(wire, "raster_space")
+            elif shader_type == 'utility':
+                utility = shader.utility
+                col = layout.column()
+                col.prop(utility, "color")
+                col.prop(utility, "opacity")
+                col.prop(utility, "color_mode")
+                col.prop(utility, "shade_mode")
+                col.prop(utility, "overlay_mode")
+                col.prop(utility, "ao_distance")
+            elif shader_type == 'flat':
+                flat = shader.flat
+                col = layout.column()
+                col.prop(flat, "color")
+                col.prop(flat, "opacity")
+            elif shader_type == 'hair':
+                pass
+        elif mat_type == 'WIRE':
+            wire = shader.wire
+            col = layout.column()
+            col.prop(wire, "fill_color")
+            col.prop(wire, "line_color")
+            col.prop(wire, "edge_type")
+            col.prop(wire, "line_width")
+            col.prop(wire, "raster_space")
 
         # layout.prop(standard_surface, "bounce_factor")
         # layout.prop(standard_surface, "opacity")
