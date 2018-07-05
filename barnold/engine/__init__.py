@@ -212,7 +212,8 @@ class Shaders:
             elif shader.type == 'flat':
                 arnold.AiNodeSetRGB(node, "color", *mat.base_color)
                 arnold.AiNodeSetRGB(node, "opacity", *shader.flat.opacity)
-            elif shader.type == 'hair':
+            elif shader.type == 'standard_hair':
+                standard_hair = shader.standard_hair
                 arnold.AiNodeSetFlt(node, "base", standard_hair.base)
                 arnold.AiNodeSetRGB(node, "base_color", *standard_hair.base_color)
                 arnold.AiNodeSetFlt(node, "melanin", standard_hair.melanin)
@@ -243,7 +244,7 @@ class Shaders:
             arnold.AiNodeSetBool(node, "raster_space", wire.raster_space)
         elif mat.type == 'VOLUME':
             standard_volume = shader.standard_volume
-            node = arnold.AiNode(shader.type)
+            node = arnold.AiNode('standard_volume')
             arnold.AiNodeSetFlt(node, "density", standard_volume.density)
             arnold.AiNodeSetFlt(node, "scatter", standard_volume.scatter)
             arnold.AiNodeSetRGB(node, "scatter_color", *standard_volume.scatter_color)
@@ -254,8 +255,8 @@ class Shaders:
             arnold.AiNodeSetFlt(node, "emission", standard_volume.emission)
             arnold.AiNodeSetRGB(node, "emission_color", *standard_volume.emission_color)
             arnold.AiNodeSetFlt(node, "temperature", standard_volume.temperature)
-            # arnold.AiNodeSetFlt(node, "blackbody_kelvin", standard_volume.blackbody_kelvin)
-            # arnold.AiNodeSetFlt(node, "blackbody_intensity", standard_volume.blackbody_intensity)
+            arnold.AiNodeSetFlt(node, "blackbody_kelvin", standard_volume.blackbody_kelvin)
+            arnold.AiNodeSetFlt(node, "blackbody_intensity", standard_volume.blackbody_intensity)
             # arnold.AiNodeSetFlt(node, "interpolation", standard_volume.interpolation)
         else:
             return None
@@ -362,7 +363,7 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
         points = arnold.AiArrayConvert(len(p), 1, arnold.AI_TYPE_VECTOR, ctypes.c_void_p(p.ctypes.data))
         radius = arnold.AiArrayConvert(len(r), 1, arnold.AI_TYPE_FLOAT, ctypes.c_void_p(r.ctypes.data))
 
-        arnold.AiMsgDebug(b"    hair [%d] (%f)", ctypes.c_int(len(p)), ctypes.c_double(time.perf_counter() - pc))
+        arnold.AiMsgDebug(b"    standard_hair [%d] (%f)", ctypes.c_int(len(p)), ctypes.c_double(time.perf_counter() - pc))
 
         node = arnold.AiNode("curves")
         arnold.AiNodeSetUInt(node, "num_points", steps)
@@ -412,7 +413,7 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
                             j += 1
                             n += 1
 
-                arnold.AiMsgDebug(b"    hair uvs (%f)", ctypes.c_double(time.perf_counter() - pc))
+                arnold.AiMsgDebug(b"    standard_hair uvs (%f)", ctypes.c_double(time.perf_counter() - pc))
 
                 arnold.AiNodeDeclare(node, "uparamcoord", "uniform FLOAT")
                 arnold.AiNodeDeclare(node, "vparamcoord", "uniform FLOAT")
@@ -1019,10 +1020,7 @@ def render(engine, scene):
             engine.update_memory_stats(mem, peak)
 
         # display callback must be a variable
-        # cb = arnold.AiNodeSetPtr(display_callback, "callback_data", display)
-        # cb = arnold.AtNodeLoader(display_callback)
         cb = arnold.AtDisplayCallBack(display_callback)
-        # arnold.AiNodeSetPtr(_callback, "callback", cb)
         arnold.AiNodeSetPtr(session['display'], "callback", cb)
 
         res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)

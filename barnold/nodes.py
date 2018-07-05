@@ -273,7 +273,8 @@ class ArnoldNodeOutput(_NodeOutput, Node):
 
     def init(self, context):
         super().init(context)
-        self.inputs.new("NodeSocketShader", "Shader", "shader")
+        self.inputs.new("NodeSocketShader", "Surface Shader", "surface")
+        self.inputs.new("NodeSocketShader", "Volume Shader", "volume")
 
 
 @ArnoldRenderEngine.register_class
@@ -320,6 +321,28 @@ class ArnoldNodeLambert(ArnoldNode):
         self.inputs.new("ArnoldNodeSocketColor", "Diffuse", "base_color")
         self.inputs.new("NodeSocketFloat", "Weight", "base").default_value = 0.7
         self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeStandardVolume(ArnoldNode):
+    bl_label="Standard Volume"
+    bl_icon= "MATERIAL"
+    bl_width_default=200
+
+    ai_name="standard_volume"
+
+    def init(self, context):
+        self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.inputs.new("NodeSocketFloat", "Density", "density").default_value = 1.0
+        self.inputs.new("NodeSocketFloat", "Scatter", "scatter").default_value = 1.0
+        self.inputs.new("ArnoldNodeSocketColor", "Scatter Color", "scatter_color").default_value = (0.5, 0.5, 0.5)
+        self.inputs.new("ArnoldNodeSocketColor", "Transparent", "transparent").default_value = (0.368, 0.368, 0.368)
+        self.inputs.new("NodeSocketFloat", "Transparent Depth", "transparent_depth").default_value = 1.0
+        self.inputs.new("NodeSocketFloat", "Emission", "emission").default_value = 1.0
+        self.inputs.new("ArnoldNodeSocketColor", "Emission Color", "emission_color")
+        self.inputs.new("NodeSocketFloat", "Temperature", "temperature").default_value=1.0
+        self.inputs.new("NodeSocketFloat", "Blackbody Kelvin", "blackbody_kelvin").default_value=5000.000
+        self.inputs.new("NodeSocketFloat", "Blackbody Intensity", "blackbody_intensity").default_value=1.0
+
 
 
 @ArnoldRenderEngine.register_class
@@ -816,12 +839,12 @@ class ArnoldNodeRaySwitch(ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeHair(ArnoldNode):
-    bl_label = "Hair"
+class ArnoldNodeStandardHair(ArnoldNode):
+    bl_label = "Standard Hair"
     bl_icon = 'MATERIAL'
     bl_width_default = 200
 
-    ai_name = "hair"
+    ai_name = "standard_hair"
 
     uparam = StringProperty(
         name="U"
@@ -1920,9 +1943,10 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeStandardSurface"),
             nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),
-            nodeitems_utils.NodeItem("ArnoldNodeHair"),
+            nodeitems_utils.NodeItem("ArnoldNodeStandardHair"),
             nodeitems_utils.NodeItem("ArnoldNodeUtility"),
             nodeitems_utils.NodeItem("ArnoldNodeWireframe"),
+            nodeitems_utils.NodeItem("ArnoldNodeStandardVolume"),
             nodeitems_utils.NodeItem("ArnoldNodeAmbientOcclusion"),
             nodeitems_utils.NodeItem("ArnoldNodeMotionVector"),
             nodeitems_utils.NodeItem("ArnoldNodeRaySwitch"),
