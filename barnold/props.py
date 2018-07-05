@@ -1023,8 +1023,179 @@ class ArnoldShaderLambert(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-
-
+@ArnoldRenderEngine.register_class
+class ArnoldShaderStandardHair(PropertyGroup):
+    ui_standardhair_color = BoolProperty(
+        name="Color",
+        default=True
+    )
+    ui_standardhair_specular = BoolProperty(
+        name="Specular",
+        default=True
+    )
+    ui_standardhair_tint = BoolProperty(
+        name="Tint",
+        default=True
+    )
+    ui_standardhair_diffuse = BoolProperty(
+        name="Diffuse",
+        default=True
+    )
+    ui_standardhair_emission = BoolProperty(
+        name="Emission",
+        default=True
+    )
+    ui_standardhair_advanced = BoolProperty(
+        name="Advanced",
+        default=False
+    )
+    base = FloatProperty(
+        name="Base",
+        description="The brightness of the hair, a multiplier for the base color.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1
+    )
+    base_color = FloatVectorProperty(
+        name="Base Color",
+        description="The base color sets how bright the surface is when lit directly with a white light source (intensity at 100%). It defines which percentage for each component of the RGB spectrum which does not get absorbed when light scatters beneath the surface. Metal normally has a black or very dark base color, however, rusty metal's need some base color. A base color map is usually required.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    melanin = FloatProperty(
+        name="Melanin",
+        description="The Melanin parameter is used to generate natural hair colors, by controlling the amount of melanin in hair. Colors will range from blonde around 0.2 to red and brown around 0.5, to black at 1.0.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1
+    )
+    melanin_redness = FloatProperty(
+        name="Melanin Redness",
+        description="Controls the redness of hair. Higher values increase the proportion of red pheomelanin (as found in red hair), relative to the amount of brown eumelanin.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0.5
+    )
+    melanin_randomize = FloatProperty(
+        name="Melanin Randomize",
+        description="Randomizes the amount of melanin in hair fibers, for variation in hair colors.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+    roughness = FloatProperty(
+        name="Roughness",
+        description="Controls the roughness of hair specular reflections and transmission. Lower values give sharper, brighter specular highlights while higher values give softer highlights.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0.2
+    )
+    ior = FloatProperty(
+        name="IOR",
+        description="Index of refraction. Each hair fiber is modeled as a dielectric cylinder, with hair reflecting off and transmitting into the fiber depending on the IOR. Lower IOR values give stronger forward scattering, and higher values give a stronger reflection. You can use IOR values outside of 1.4-1.6 to render wet hair.",
+        subtype="FACTOR",
+        min=0, max=3,
+        default=1.55
+    )
+    shift = FloatProperty(
+        name="Shift",
+        description="The angle of scales on the hair fiber, shifting the primary and secondary specular reflections away from the perfect mirror direction. For realistic results for human hair, a small angle between 0° and 10° should be used (values for animal fur may be different). For synthetic hair, such as a nylon wig, use a shift value of 0 since the surface of the fiber is smooth.",
+        subtype="FACTOR",
+        min=0, max=20,
+        default=3
+    )
+    specular_tint = FloatVectorProperty(
+        name="Specular Tint",
+        description="The scale of the primary specular contribution, which simply multiplies the primary specular color.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    specular2_tint = FloatVectorProperty(
+        name="2nd Specular Tint",
+        description="The scale of the secondary specular contribution, which simply multiplies the secondary specular tint. For realistic and clean hair, this color should be set to white to let the base color tint the reflection.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    transmission_tint = FloatVectorProperty(
+        name="Transmission Tint",
+        description="The scale of the transmission contribution, which simply multiplies the transmission tint. For realistic and clean hair, this color should be set to white to let the base color tint the transmission.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    diffuse = FloatProperty(
+        name="Diffuse",
+        description="Controls the diffuseness of hair, with 0 giving fully specular scattering, and 1 fully diffuse scattering. For typical realistic hair, no diffuse component is needed. Dirty or damaged hair might be approximated with diffuse scattering.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+    diffuse_color = FloatVectorProperty(
+        name="Diffuse Color",
+        description="Diffuse scattering color.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    emission = FloatProperty(
+        name="Emission",
+        description="The multiplier for the emission color.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+    emission_color = FloatVectorProperty(
+        name="Emission Color",
+        description="The multiplier for the emission color.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    opacity = FloatVectorProperty(
+        name="Opacity",
+        description="The opacity of the hair. This is set to full white by default, which means fully opaque hair, and for best performance, it should be left to the default.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    indirect_diffuse = FloatProperty(
+        name="Indirect Diffuse",
+        description="The amount of diffuse light received from indirect sources only. Values other than 1 are not physically correct.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1
+    )
+    indirect_specular = FloatProperty(
+        name="Indirect Specular",
+        description="The amount of specularity received from indirect sources only. Values other than 1 are not physically correct.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1
+    )
+    extra_depth = FloatProperty(
+        name="Extra Depth",
+        description="Adds extra Specular Ray Depth just for this shader. Blonde hair renders correctly by default, without needing to increase the GI_specular_samples first.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1
+    )
+    extra_samples = FloatProperty(
+        name="Extra Samples",
+        description="Adds additional GI samples on a per-shader basis (d'Eon BSDF Specular and Transmission (R, TT, and TRT paths).",
+        subtype="FACTOR",
+        min=0, max=500,
+        default=0
+    )
 @ArnoldRenderEngine.register_class
 class ArnoldShaderStandardSurface(PropertyGroup):
     ui_diffuse = BoolProperty(
@@ -1609,7 +1780,7 @@ class ArnoldShader(PropertyGroup):
             ('standard_surface', "Standard Surface", "Standard Surface"),
             ('utility', "Utility", "Utility"),
             ('flat', "Flat", "Flat"),
-            ('hair', "Hair", "Hair")
+            ('standard_hair', "Standard Hair", "Standard Hair")
         ],
         default='lambert'
     )
@@ -1617,7 +1788,7 @@ class ArnoldShader(PropertyGroup):
     standard_surface = PointerProperty(type=ArnoldShaderStandardSurface)
     utility = PointerProperty(type=ArnoldShaderUtility)
     flat = PointerProperty(type=ArnoldShaderFlat)
-    #hair = PointerProperty(type=ArnoldShaderHair)
+    standard_hair = PointerProperty(type=ArnoldShaderStandardHair)
     wire = PointerProperty(type=ArnoldShaderWireframe)
     standard_volume = PointerProperty(type=ArnoldShaderStandardVolume)
 

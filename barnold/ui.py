@@ -699,8 +699,71 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                 col = layout.column()
                 col.prop(flat, "color")
                 col.prop(flat, "opacity")
-            elif shader_type == 'hair':
-                pass
+            elif shader_type == 'standard_hair':
+                standard_hair = shader.standard_hair
+                path_from_id = standard_hair.path_from_id()
+                # Color
+                sublayout = _subpanel(layout, "Color", standard_hair.ui_standardhair_color,
+                                      path_from_id, "ui_standardhair_color", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    #TODO: Fix For Viewport
+                    col.prop(standard_hair, "base", text="Base")
+                    col.prop(standard_hair, "base_color", text="Base Color")
+                    col.prop(standard_hair, "melanin", text="Melanin")
+                    col.prop(standard_hair, "melanin_redness", text="Melanin Redness")
+                    col.prop(standard_hair, "melanin_randomize", text="Melanin Randomize")
+
+                # Specular
+                sublayout = _subpanel(layout, "Specular", standard_hair.ui_standardhair_specular,
+                                      path_from_id, "ui_standardhair_specular", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    #TODO: Fix For Viewport
+                    col.prop(standard_hair, "roughness", text="Roughness")
+                    col.prop(standard_hair, "ior", text="IOR")
+                    col.prop(standard_hair, "shift", text="Shift")
+
+                # Specular
+                sublayout = _subpanel(layout, "Tint", standard_hair.ui_standardhair_tint,
+                                      path_from_id, "ui_standardhair_tint", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    #TODO: Fix For Viewport
+                    col.prop(standard_hair, "specular_tint", text="Specular Tint")
+                    col.prop(standard_hair, "specular2_tint", text="2nd Specular Tint")
+                    col.prop(standard_hair, "transmission_tint", text="Transmission Tint")
+
+                # Diffuse
+                sublayout = _subpanel(layout, "Diffuse", standard_hair.ui_standardhair_diffuse,
+                                      path_from_id, "ui_standardhair_diffuse", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    #TODO: Fix For Viewport
+                    col.prop(standard_hair, "diffuse", text="Diffuse")
+                    col.prop(standard_hair, "diffuse_color", text="Diffuse Color")
+
+                # Emission
+                sublayout = _subpanel(layout, "Emission", standard_hair.ui_standardhair_emission,
+                                      path_from_id, "ui_standardhair_emission", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    #TODO: Fix For Viewport
+                    col.prop(standard_hair, "emission", text="Weight")
+                    col.prop(standard_hair, "emission_color", text="Color")
+                    col.prop(standard_hair, "opacity", text="Opacity")
+
+                # Advanced
+                sublayout = _subpanel(layout, "Advanced", standard_hair.ui_standardhair_advanced,
+                                      path_from_id, "ui_standardhair_advanced", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    #TODO: Fix For Viewport
+                    col.prop(standard_hair, "indirect_diffuse", text="Indirect Diffuse")
+                    col.prop(standard_hair, "indirect_specular", text="Indirect Specular")
+                    col.prop(standard_hair, "extra_depth", text="Extra Depth")
+                    col.prop(standard_hair, "extra_samples", text="Extra Samples")
+
         elif mat_type == 'WIRE':
             wire = shader.wire
             col = layout.column()

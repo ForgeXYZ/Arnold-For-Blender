@@ -213,9 +213,26 @@ class Shaders:
                 arnold.AiNodeSetRGB(node, "color", *mat.base_color)
                 arnold.AiNodeSetRGB(node, "opacity", *shader.flat.opacity)
             elif shader.type == 'hair':
-                # TODO: implement hair
                 arnold.AiNodeSetFlt(node, "base", standard_hair.base)
-                return None
+                arnold.AiNodeSetRGB(node, "base_color", *standard_hair.base_color)
+                arnold.AiNodeSetFlt(node, "melanin", standard_hair.melanin)
+                arnold.AiNodeSetFlt(node, "melanin_redness", standard_hair.melanin_redness)
+                arnold.AiNodeSetFlt(node, "melanin_randomize", standard_hair.melanin_randomize)
+                arnold.AiNodeSetFlt(node, "roughness", standard_hair.roughness)
+                arnold.AiNodeSetFlt(node, "ior", standard_hair.ior)
+                arnold.AiNodeSetFlt(node, "shift", standard_hair.shift)
+                arnold.AiNodeSetRGB(node, "specular_tint", *standard_hair.specular_tint)
+                arnold.AiNodeSetRGB(node, "specular2_tint", *standard_hair.specular2_tint)
+                arnold.AiNodeSetRGB(node, "transmission_tint", *standard_hair.transmission_tint)
+                arnold.AiNodeSetFlt(node, "diffuse", standard_hair.diffuse)
+                arnold.AiNodeSetRGB(node, "diffuse_color", *standard_hair.diffuse_color)
+                arnold.AiNodeSetFlt(node, "emission", standard_hair.emission)
+                arnold.AiNodeSetRGB(node, "emission_color ", *standard_hair.emission_color)
+                arnold.AiNodeSetRGB(node, "opacity", *standard_hair.opacity)
+                arnold.AiNodeSetFlt(node, "indirect_diffuse", standard_hair.indirect_diffuse)
+                arnold.AiNodeSetFlt(node, "indirect_specular", standard_hair.indirect_specular)
+                arnold.AiNodeSetFlt(node, "extra_depth", standard_hair.extra_depth)
+                arnold.AiNodeSetFlt(node, "extra_samples", standard_hair.extra_samples)
         elif mat.type == 'WIRE':
             wire = shader.wire
             node = arnold.AiNode('wireframe')
