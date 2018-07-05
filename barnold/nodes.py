@@ -324,233 +324,263 @@ class ArnoldNodeLambert(ArnoldNode):
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeStandardSurface(ArnoldNode):
-    bl_label = "StandardSurface"
+    bl_label = "Standard Surface"
     bl_icon = 'MATERIAL'
     bl_width_default = 200
 
     ai_name = "standard_surface"
 
-    sockets = collections.OrderedDict([
-        # Base
-        ("base_color"               , ('RGB', "Base Color",     "ext_properties")),
-        ("base"                     , ('FLOAT', "Base",     "ext_properties")),
-        ("diffuse_roughness"        , ('FLOAT', "Diffuse Roughness", "ext_properties")),
-        ("metalness"                , ('FLOAT', "Diffuse Metalness", "ext_properties")),
-        # Specular
-        ("specular_color"           , ('RGB',   "Specular Color", "ext_properties")),
-        ("specular"                 , ('FLOAT', "Specular Scale", "ext_properties")),
-        ("specular_roughness"       , ('FLOAT', "Specular Roughness", "ext_properties")),
-        ("specular_ior"             , ('FLOAT', "Specular IOR", "ext_properties")),
-        ("specular_anisotropy"      , ('FLOAT', "Specular Anisotropy", "ext_properties")),
-        ("specular_rotation"        , ('FLOAT', "Specular Rotation", "ext_properties")),
-        # Transmission
-        ("transmission_color"                 , ('RGB', "Transmission Color", "ext_properties")),
-        ("transmission"                       , ('FLOAT', "Transmission", "ext_properties")),
-        ("transmission_depth"       , ('FLOAT', "Transmission Depth", "ext_properties")),
-        ("transmission_scatter"       , ('RGB', "Transmission Scatter", "ext_properties")),
-        ("transmission_scatter_anisotropy", ('FLOAT', "Transmission Anisotropy", "ext_properties")),
-        ("transmission_extra_roughness", ('FLOAT', "Transmission Extra Roughness", "ext_properties")),
-        ("transmission_dispersion"          , ('FLOAT', "Transmission Abbe", "ext_properties")),
-        # Coat
-        ("coat"                , ('FLOAT', "Coat", "ext_properties")),
-        ("coat_color"          , ('FLOAT', "Coat Color", "ext_properties")),
-        ("coat_roughness"     , ('FLOAT', "Coat Roughness", "ext_properties")),
-        ("coat_ior"            , ('FLOAT', "Coat IOR", "ext_properties")),
-        # Opacity
-        ("opacity"                  , ('FLOAT', "Opacity", "ext_properties")),
-        # Subsurface
-        ("subsurface"               , ('FLOAT', "Subsurface", "ext_properties")),
-        ("subsurface_color"         , ('RGB', "Subsurface Color", "ext_properties")),
-        ("subsurface_radius"        , ('RGB', "Subsurface Radius", "ext_properties")),
-        ("subsurface_scale"         , ('FLOAT', "Subsurface Scale", "ext_properties")),
-        ("subsurface_anisotropy"    , ('FLOAT', "Subsurface Anisotropy", "ext_properties")),
-        # Emission
-        ("emission_color"           , ('RGB', "Emission Color", "")),
-        ("emission"                 , ('FLOAT', "Emission", "ext_properties"))
-    ])
+    # sockets = collections.OrderedDict([
+    #     # Base
+    #     ("base_color"               , ('RGB', "Base Color",     "ext_properties")),
+    #     ("base"                     , ('FLOAT', "Base",     "ext_properties")),
+    #     ("diffuse_roughness"        , ('FLOAT', "Diffuse Roughness", "ext_properties")),
+    #     ("metalness"                , ('FLOAT', "Diffuse Metalness", "ext_properties")),
+    #     # Specular
+    #     ("specular_color"           , ('RGB',   "Specular Color", "ext_properties")),
+    #     ("specular"                 , ('FLOAT', "Specular Scale", "ext_properties")),
+    #     ("specular_roughness"       , ('FLOAT', "Specular Roughness", "ext_properties")),
+    #     ("specular_ior"             , ('FLOAT', "Specular IOR", "ext_properties")),
+    #     ("specular_anisotropy"      , ('FLOAT', "Specular Anisotropy", "ext_properties")),
+    #     ("specular_rotation"        , ('FLOAT', "Specular Rotation", "ext_properties")),
+    #     # Transmission
+    #     ("transmission_color"                 , ('RGB', "Transmission Color", "ext_properties")),
+    #     ("transmission"                       , ('FLOAT', "Transmission", "ext_properties")),
+    #     ("transmission_depth"       , ('FLOAT', "Transmission Depth", "ext_properties")),
+    #     ("transmission_scatter"       , ('RGB', "Transmission Scatter", "ext_properties")),
+    #     ("transmission_scatter_anisotropy", ('FLOAT', "Transmission Anisotropy", "ext_properties")),
+    #     ("transmission_extra_roughness", ('FLOAT', "Transmission Extra Roughness", "ext_properties")),
+    #     ("transmission_dispersion"          , ('FLOAT', "Transmission Abbe", "ext_properties")),
+    #     # Coat
+    #     ("coat"                , ('FLOAT', "Coat", "ext_properties")),
+    #     ("coat_color"          , ('FLOAT', "Coat Color", "ext_properties")),
+    #     ("coat_roughness"     , ('FLOAT', "Coat Roughness", "ext_properties")),
+    #     ("coat_ior"            , ('FLOAT', "Coat IOR", "ext_properties")),
+    #     # Opacity
+    #     ("opacity"                  , ('FLOAT', "Opacity", "ext_properties")),
+    #     # Subsurface
+    #     ("subsurface"               , ('FLOAT', "Subsurface", "ext_properties")),
+    #     ("subsurface_color"         , ('RGB', "Subsurface Color", "ext_properties")),
+    #     ("subsurface_radius"        , ('RGB', "Subsurface Radius", "ext_properties")),
+    #     ("subsurface_scale"         , ('FLOAT', "Subsurface Scale", "ext_properties")),
+    #     ("subsurface_anisotropy"    , ('FLOAT', "Subsurface Anisotropy", "ext_properties")),
+    #     # Emission
+    #     ("emission_color"           , ('RGB', "Emission Color", "")),
+    #     ("emission"                 , ('FLOAT', "Emission", "ext_properties"))
+    # ])
 
-    base = FloatProperty(
-        name="Scale",
-        subtype='FACTOR',
-        min=0, max=1,
-        default=0.7
-    )
-    base_color = FloatVectorProperty(
-        name="Color",
-        subtype='COLOR',
-        min=0, max=1,
-        default=(1, 1, 1)
-    )
-    specular = FloatProperty(
-        name="Scale",
-        subtype='FACTOR',
-        min=0, max=1
-    )
-    specular_color = FloatVectorProperty(
-        name="Color",
-        subtype='COLOR',
-        min=0, max=1,
-        default=(1, 1, 1)
-    )
-    emission_color = FloatVectorProperty(
-        name="Color",
-        subtype='COLOR',
-        min=0, max=1,
-        default=(1,1,1)
-    )
-    ext_properties = PointerProperty(
-        type=props.ArnoldShaderStandardSurface
-    )
+    # base = FloatProperty(
+    #     name="Scale",
+    #     subtype='FACTOR',
+    #     min=0, max=1,
+    #     default=0.7
+    # )
+    # base_color = FloatVectorProperty(
+    #     name="Color",
+    #     subtype='COLOR',
+    #     min=0, max=1,
+    #     default=(1, 1, 1)
+    # )
+    # specular = FloatProperty(
+    #     name="Scale",
+    #     subtype='FACTOR',
+    #     min=0, max=1
+    # )
+    # specular_color = FloatVectorProperty(
+    #     name="Color",
+    #     subtype='COLOR',
+    #     min=0, max=1,
+    #     default=(1, 1, 1)
+    # )
+    # emission_color = FloatVectorProperty(
+    #     name="Color",
+    #     subtype='COLOR',
+    #     min=0, max=1,
+    #     default=(1,1,1)
+    # )
+    # ext_properties = PointerProperty(
+    #     type=props.ArnoldShaderStandardSurface
+    # )
+
+    # def init(self, context):
+    #     self.outputs.new("NodeSocketShader", "RGB", "output")
+    #     self.create_socket("base_color")
+    #     self.create_socket("base")
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.create_socket("base_color")
-        self.create_socket("base")
+        self.inputs.new("NodeSocketFloat", "Base", "base").default_value = 0.8
+        self.inputs.new("ArnoldNodeSocketColor", "Base Color", "base_color")
+        self.inputs.new("NodeSocketFloat", "Diffuse Roughness", "diffuse_roughness")
+        self.inputs.new("NodeSocketFloat", "Specular", "specular").default_value=1.0
+        self.inputs.new("ArnoldNodeSocketColor", "Specular Color", "specular_color")
+        self.inputs.new("NodeSocketFloat", "Specular Roughness", "specular_roughness").default_value=.1
+        self.inputs.new("NodeSocketFloat", "Transmission", "transmission")
+        self.inputs.new("ArnoldNodeSocketColor", "Transmission Color", "transmission_color")
+        self.inputs.new("NodeSocketFloat", "Transmission Depth", "transmission_depth")
+        self.inputs.new("ArnoldNodeSocketColor", "Transmission Scatter", "transmission_scatter").default_value=(0,0,0)
+        self.inputs.new("NodeSocketFloat", "Transmission Extra Roughness", "transmission_extra_roughness")
+        self.inputs.new("NodeSocketFloat", "Subsurface", "subsurface")
+        self.inputs.new("ArnoldNodeSocketColor", "Subsurface Color", "subsurface_color")
+        self.inputs.new("ArnoldNodeSocketColor", "Subsurface Radius", "subsurface_radius")
+        self.inputs.new("NodeSocketFloat", "Coat", "coat")
+        self.inputs.new("ArnoldNodeSocketColor", "Coat Color", "coat_color")
+        self.inputs.new("NodeSocketFloat", "Coat Roughness", "coat_roughness").default_value=.1
+        self.inputs.new("NodeSocketFloat", "Emission", "emission")
+        self.inputs.new("ArnoldNodeSocketColor", "Emission Color", "emission_color")
+        self.inputs.new("NodeSocketFloat", "Opacity", "opacity")
+        self.inputs.new("NodeSocketVectorXYZ", "Normal Camera", "normal")
 
-    def draw_buttons_ext(self, context, layout):
-        inputs = self.inputs
-        properties = self.ext_properties
+    # def init(self, context):
+    #     self.outputs.new("NodeSocketShader", "RGB", "output")
+    #     self.inputs.new("ArnoldNodeSocketColor", "Diffuse", "base_color")
+    #     self.inputs.new("NodeSocketFloat", "Weight", "base").default_value = 0.7
+    #     self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
 
-        links = {i.identifier: i.is_linked for i in inputs}
-
-        # Diffuse
-        sublayout = _subpanel(layout, "Diffuse", properties.ui_diffuse,
-                              "ext_properties", "ui_diffuse", "node")
-        if sublayout:
-            col = sublayout.column()
-            _draw_property(col, self, "base", links)
-            _draw_property(col, self, "base_color", links)
-            _draw_property(col, properties, "diffuse_roughness", links)
-            _draw_property(col, properties, "metalness", links)
-
-        # Specular
-        sublayout = _subpanel(layout, "Specular", properties.ui_specular,
-                              "ext_properties", "ui_specular", "node")
-        if sublayout:
-            col = sublayout.column()
-            _draw_property(col, properties, "specular", links)
-            _draw_property(col, properties, "specular_color", links)
-            _draw_property(col, properties, "specular_roughness", links)
-            _draw_property(col, properties, "specular_ior", links)
-            _draw_property(col, properties, "specular_anisotropy", links)
-            _draw_property(col, properties, "specular_rotation", links)
-
-        # Transmission
-        sublayout = _subpanel(layout, "Transmission", properties.ui_refraction,
-                              "ext_properties", "ui_refraction", "node")
-        if sublayout:
-            col = sublayout.column()
-            _draw_property(col, properties, "transmission", links)
-            _draw_property(col, properties, "transmission_color", links)
-            _draw_property(col, properties, "transmission_depth", links)
-            _draw_property(col, properties, "transmission_scatter", links)
-            _draw_property(col, properties, "transmission_scatter_anisotropy", links)
-            _draw_property(col, properties, "transmission_dispersion", links)
-            _draw_property(col, properties, "transmission_extra_roughness", links)
-            _draw_property(col, properties, "transmit_aovs", links)
-
-        # Subsurface
-        sublayout = _subpanel(layout, "Subsurface", properties.ui_sss,
-                              "ext_properties", "ui_sss", "node")
-        if sublayout:
-            col = sublayout.column()
-            _draw_property(col, properties, "subsurface", links)
-            _draw_property(col, properties, "subsurface_color", links)
-            _draw_property(col, properties, "subsurface_radius", links)
-            _draw_property(col, properties, "subsurface_scale", links)
-            _draw_property(col, properties, "subsurface_type", links)
-            _draw_property(col, properties, "subsurface_anisotropy", links)
-
-        # Coat
-        sublayout = _subpanel(layout, "Coat", properties.ui_coat,
-                              "ext_properties", "ui_coat", "node")
-        if sublayout:
-            col = sublayout.column()
-            _draw_property(col, properties, "coat", links)
-            _draw_property(col, properties, "coat_color", links)
-            _draw_property(col, properties, "coat_roughness", links)
-            _draw_property(col, properties, "coat_ior", links)
-            _draw_property(col, properties, "coat_normal", links)
-
-
-        # Emission
-        sublayout = _subpanel(layout, "Emission", properties.ui_emission,
-                              "ext_properties", "ui_emission", "node")
-        if sublayout:
-            col = sublayout.column()
-            _draw_property(col, self, "emission", links)
-            _draw_property(col, properties, "emission_color", links)
-
-        # Thin Film
-        sublayout = _subpanel(layout, "Thin Film", properties.ui_thinfilm,
-                              "ext_properties", "ui_thinfilm", "node")
-        if sublayout:
-            col = sublayout.column()
-            _draw_property(col, properties, "thin_film_thickness", links)
-            _draw_property(col, properties, "thin_film_ior", links)
-
-        # Geometry
-        sublayout = _subpanel(layout, "Geometry", properties.ui_geometry,
-                              "ext_properties", "ui_geometry", "node")
-        if sublayout:
-            col = sublayout.column()
-            _draw_property(col, properties, "opacity", links)
-            _draw_property(col, properties, "thin_walled", links)
-
-        # Advanced
-        sublayout = _subpanel(layout, "Advanced", properties.ui_caustics,
-                              "ext_properties", "ui_advanced", "node")
-        if sublayout:
-            col = sublayout.column()
-            _draw_property(col, properties, "caustics", links)
-            _draw_property(col, properties, "internal_reflections", links)
-            _draw_property(col, properties, "exit_to_background", links)
-            _draw_property(col, properties, "indirect_diffuse", links)
-            _draw_property(col, properties, "indirect_specular", links)
-
-
-    def _find_index(self, identifier):
-        ret = 0
-        socks = iter(self.sockets)
-        for i in self.inputs:
-            for s in socks:
-                if s == identifier:
-                    return ret
-                if s == i.identifier:
-                    ret += 1
-                    break
-            else:
-                break
-        return ret
-
-    def create_socket(self, identifier):
-        from_index = len(self.inputs)
-        to_index = self._find_index(identifier)
-        type, name, path = self.sockets[identifier]
-        sock = self.inputs.new("ArnoldNodeSocketProperty", name, identifier)
-        sock.path = path
-        sock.attr = identifier
-        if type in ('RGB', 'RGBA'):
-            sock.is_color = True
-            sock.color = (0.78, 0.78, 0.16, 1 if type == 'RGB' else 0.5)
-        elif type == 'FLOAT':
-            sock.color = (0.63, 0.63, 0.63, 1.0)
-        if to_index < from_index:
-            self.inputs.move(from_index, to_index)
-
-    @property
-    def ai_properties(self):
-        links = [i.identifier for i in self.inputs if i.is_linked]
-        props = self.ext_properties
-        ret = {
-            'exit_to_background': ('BOOL', props.exit_to_background),
-            'caustics': ('BOOL', props.caustics),
-            'internal_reflections': ('BOOL', props.internal_reflections),
-        }
-        for i, (t, n, p) in self.sockets.items():
-            if i not in links:
-                ret[i] = (t, self.path_resolve(p + "." + i if p else i))
-        return ret
+    # def draw_buttons_ext(self, context, layout):
+    #     inputs = self.inputs
+    #     properties = self.ext_properties
+    #
+    #     links = {i.identifier: i.is_linked for i in inputs}
+    #
+    #     # Diffuse
+    #     sublayout = _subpanel(layout, "Diffuse", properties.ui_diffuse,
+    #                           "ext_properties", "ui_diffuse", "node")
+    #     if sublayout:
+    #         col = sublayout.column()
+    #         _draw_property(col, self, "base", links)
+    #         _draw_property(col, self, "base_color", links)
+    #         _draw_property(col, properties, "diffuse_roughness", links)
+    #         _draw_property(col, properties, "metalness", links)
+    #
+    #     # Specular
+    #     sublayout = _subpanel(layout, "Specular", properties.ui_specular,
+    #                           "ext_properties", "ui_specular", "node")
+    #     if sublayout:
+    #         col = sublayout.column()
+    #         _draw_property(col, properties, "specular", links)
+    #         _draw_property(col, properties, "specular_color", links)
+    #         _draw_property(col, properties, "specular_roughness", links)
+    #         _draw_property(col, properties, "specular_ior", links)
+    #         _draw_property(col, properties, "specular_anisotropy", links)
+    #         _draw_property(col, properties, "specular_rotation", links)
+    #
+    #     # Transmission
+    #     sublayout = _subpanel(layout, "Transmission", properties.ui_refraction,
+    #                           "ext_properties", "ui_refraction", "node")
+    #     if sublayout:
+    #         col = sublayout.column()
+    #         _draw_property(col, properties, "transmission", links)
+    #         _draw_property(col, properties, "transmission_color", links)
+    #         _draw_property(col, properties, "transmission_depth", links)
+    #         _draw_property(col, properties, "transmission_scatter", links)
+    #         _draw_property(col, properties, "transmission_scatter_anisotropy", links)
+    #         _draw_property(col, properties, "transmission_dispersion", links)
+    #         _draw_property(col, properties, "transmission_extra_roughness", links)
+    #         _draw_property(col, properties, "transmit_aovs", links)
+    #
+    #     # Subsurface
+    #     sublayout = _subpanel(layout, "Subsurface", properties.ui_sss,
+    #                           "ext_properties", "ui_sss", "node")
+    #     if sublayout:
+    #         col = sublayout.column()
+    #         _draw_property(col, properties, "subsurface", links)
+    #         _draw_property(col, properties, "subsurface_color", links)
+    #         _draw_property(col, properties, "subsurface_radius", links)
+    #         _draw_property(col, properties, "subsurface_scale", links)
+    #         _draw_property(col, properties, "subsurface_type", links)
+    #         _draw_property(col, properties, "subsurface_anisotropy", links)
+    #
+    #     # Coat
+    #     sublayout = _subpanel(layout, "Coat", properties.ui_coat,
+    #                           "ext_properties", "ui_coat", "node")
+    #     if sublayout:
+    #         col = sublayout.column()
+    #         _draw_property(col, properties, "coat", links)
+    #         _draw_property(col, properties, "coat_color", links)
+    #         _draw_property(col, properties, "coat_roughness", links)
+    #         _draw_property(col, properties, "coat_ior", links)
+    #         _draw_property(col, properties, "coat_normal", links)
+    #
+    #
+    #     # Emission
+    #     sublayout = _subpanel(layout, "Emission", properties.ui_emission,
+    #                           "ext_properties", "ui_emission", "node")
+    #     if sublayout:
+    #         col = sublayout.column()
+    #         _draw_property(col, self, "emission", links)
+    #         _draw_property(col, properties, "emission_color", links)
+    #
+    #     # Thin Film
+    #     sublayout = _subpanel(layout, "Thin Film", properties.ui_thinfilm,
+    #                           "ext_properties", "ui_thinfilm", "node")
+    #     if sublayout:
+    #         col = sublayout.column()
+    #         _draw_property(col, properties, "thin_film_thickness", links)
+    #         _draw_property(col, properties, "thin_film_ior", links)
+    #
+    #     # Geometry
+    #     sublayout = _subpanel(layout, "Geometry", properties.ui_geometry,
+    #                           "ext_properties", "ui_geometry", "node")
+    #     if sublayout:
+    #         col = sublayout.column()
+    #         _draw_property(col, properties, "opacity", links)
+    #         _draw_property(col, properties, "thin_walled", links)
+    #
+    #     # Advanced
+    #     sublayout = _subpanel(layout, "Advanced", properties.ui_caustics,
+    #                           "ext_properties", "ui_advanced", "node")
+    #     if sublayout:
+    #         col = sublayout.column()
+    #         _draw_property(col, properties, "caustics", links)
+    #         _draw_property(col, properties, "internal_reflections", links)
+    #         _draw_property(col, properties, "exit_to_background", links)
+    #         _draw_property(col, properties, "indirect_diffuse", links)
+    #         _draw_property(col, properties, "indirect_specular", links)
+    #
+    #
+    # def _find_index(self, identifier):
+    #     ret = 0
+    #     socks = iter(self.sockets)
+    #     for i in self.inputs:
+    #         for s in socks:
+    #             if s == identifier:
+    #                 return ret
+    #             if s == i.identifier:
+    #                 ret += 1
+    #                 break
+    #         else:
+    #             break
+    #     return ret
+    #
+    # def create_socket(self, identifier):
+    #     from_index = len(self.inputs)
+    #     to_index = self._find_index(identifier)
+    #     type, name, path = self.sockets[identifier]
+    #     sock = self.inputs.new("ArnoldNodeSocketProperty", name, identifier)
+    #     sock.path = path
+    #     sock.attr = identifier
+    #     if type in ('RGB', 'RGBA'):
+    #         sock.is_color = True
+    #         sock.color = (0.78, 0.78, 0.16, 1 if type == 'RGB' else 0.5)
+    #     elif type == 'FLOAT':
+    #         sock.color = (0.63, 0.63, 0.63, 1.0)
+    #     if to_index < from_index:
+    #         self.inputs.move(from_index, to_index)
+    #
+    # @property
+    # def ai_properties(self):
+    #     links = [i.identifier for i in self.inputs if i.is_linked]
+    #     props = self.ext_properties
+    #     ret = {
+    #         'exit_to_background': ('BOOL', props.exit_to_background),
+    #         'caustics': ('BOOL', props.caustics),
+    #         'internal_reflections': ('BOOL', props.internal_reflections),
+    #     }
+    #     for i, (t, n, p) in self.sockets.items():
+    #         if i not in links:
+    #             ret[i] = (t, self.path_resolve(p + "." + i if p else i))
+    #     return ret
 
 
 @ArnoldRenderEngine.register_class

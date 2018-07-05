@@ -1447,9 +1447,14 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    # normal = FloatVectorProperty(
-    #     #TODO: Implement Normal
-    # )
+    normal = FloatVectorProperty(
+        name="Normal Camera",
+        description="Connect a Normal map here (usually exported from Mudbox or ZBrush). Normal mapping works by replacing the interpolated surface normal by the one evaluated from an RGB texture, where each channel (Red, Green, Blue) correspond to the X, Y and Z coordinates of the surface normal. It can be faster than bump mapping since bump mapping requires evaluating the shader underneath at least three times.",
+        size= 3,
+        min=0, max=1,
+        default=(0,0,0),
+        subtype="XYZ"
+    )
     coat = FloatProperty(
         name='Weight',
         description='This attribute is used to coat the material. It acts as a clear-coat layer on top of all other shading effects. The coating is always reflective (with the given roughness) and is assumed to be dielectric. Examples would be the clear-coat layer for car paint or the sheen layer for a skin material. For example, for an extra oily layer or wet skin. Other examples would be objects that have been laminated or a protective film over an aluminum cell phone.',
@@ -1482,10 +1487,10 @@ class ArnoldShaderStandardSurface(PropertyGroup):
     coat_normal = FloatVectorProperty(
         name='Normal',
         description="The Coat Normal affects the Fresnel blending of the coat over the base, so depending on the normal, the base will be more or less visible from particular angles. Uses for Coat Normal could be a bumpy coat layer over a smoother base. This could include a rain effect, a carbon fiber shader or a car paint shader where you could use different normals (using e.g. flakes) for the coat layer and base layers.",
-        subtype='COLOR',
+        subtype='XYZ',
         size=3,
-        min=0, max=1,
-        default=(1, 1, 1)
+        min=0, max=200,
+        default=(0, 0, 0)
     )
     coat_affect_color = FloatProperty(
         name='Affect Color',

@@ -63,7 +63,7 @@ _AiNodeSet = {
     "BOOL": lambda n, i, v: arnold.AiNodeSetBool(n, i, v),
     "BYTE": lambda n, i, v: arnold.AiNodeSetByte(n, i, v),
     "INT": lambda n, i, v: arnold.AiNodeSetInt(n, i, v),
-    "FLOAT": lambda n, i, v: arnold.AiNodeSetFlt(n, i, v),
+    "FLOAT": lambda n, i, v: arnold.AiNodeSetFlt(n, i , v),
     "VECTOR2": lambda n, i, v: arnold.AiNodeSetVec2(n, i, *v),
     "RGB": lambda n, i, v: arnold.AiNodeSetRGB(n, i, *v),
     "RGBA": lambda n, i, v: arnold.AiNodeSetRGBA(n, i, *v),
@@ -180,13 +180,13 @@ class Shaders:
                 arnold.AiNodeSetFlt(node, "subsurface_anisotropy", standard_surface.subsurface_anisotropy)
                 arnold.AiNodeSetStr(node, "subsurface_type", standard_surface.subsurface_type)
                 arnold.AiNodeSetBool(node, "thin_walled", standard_surface.thin_walled)
-                # arnold.AiNodeSetRGB(node, "normal", standard_surface.normal)
+                arnold.AiNodeSetVec(node, "normal", *standard_surface.normal)
                 # arnold.AiNodeSetFlt(node, "tangent", standard_surface.tangent)
                 arnold.AiNodeSetFlt(node, "coat", standard_surface.coat)
                 arnold.AiNodeSetRGB(node, "coat_color", *standard_surface.coat_color)
                 arnold.AiNodeSetFlt(node, "coat_roughness", standard_surface.coat_roughness)
                 arnold.AiNodeSetFlt(node, "coat_ior", standard_surface.coat_ior)
-                arnold.AiNodeSetRGB(node, "coat_normal", *standard_surface.coat_normal)
+                arnold.AiNodeSetVec(node, "coat_normal", *standard_surface.coat_normal)
                 arnold.AiNodeSetFlt(node, "coat_affect_color", standard_surface.coat_affect_color)
                 arnold.AiNodeSetFlt(node, "coat_affect_roughness", standard_surface.coat_affect_roughness)
                 arnold.AiNodeSetFlt(node, "opacity", standard_surface.opacity)
