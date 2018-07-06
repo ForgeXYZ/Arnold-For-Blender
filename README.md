@@ -6,6 +6,9 @@ Arnold integration with Blender, updated to work with Arnold 5.1 and Blender 2.7
 
 Join the Discord channel for discussions/help/updates/feature requests/talk about water coolers: https://discord.gg/WNdNXzZ
 
+```
+Barnold v1.0 Roadmap                   [##                         ] 5% Complete
+```
 ### Needs Fixing
 - Fix rendered viewport
 - Fix node system (Don't use nodes for now, just use the materials panel for changing materials until the node system is fixed)
