@@ -108,7 +108,7 @@ class Shaders:
         self._data = data
 
         self._shaders = {}
-        self._default = None  # default shader, if used
+        self._default = arnold.AiNode('lambert')  # default shader, if used
 
         self._Name = _CleanNames("M", itertools.count())
 

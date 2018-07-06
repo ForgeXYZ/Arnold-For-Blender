@@ -95,11 +95,11 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
 
     arnold.AiBegin()
     try:
-        # arnold.AiMsgSetConsoleFlags(arnold.AI_LOG_ALL)
-        # arnold.AiMsgSetConsoleFlags(0x000E)
+        arnold.AiMsgSetConsoleFlags(arnold.AI_LOG_ALL)
+        arnold.AiMsgSetConsoleFlags(0x000E)
 
-        # from pprint import pprint as pp
-        # pp(data)
+        from pprint import pprint as pp
+        pp(data)
 
         ## Nodes
         for node in data['nodes']:
@@ -121,7 +121,6 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
         arnold.AiNodeSetStr(filter, "name", "__filter")
         driver = arnold.AiNode("driver_display_callback")
         arnold.AiNodeSetStr(driver, "name", "__driver")
-        arnold.AiNodeSetBool(driver, "color_packing", False)
         outputs_aovs = (
             b"RGBA RGBA __filter __driver",
         )
@@ -138,15 +137,15 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
         rect = _rect(mmap_name, *mmap_size)
 
         def _callback(x, y, width, height, buffer, data):
-            #print("+++ _callback:", x, y, width, height, ctypes.cast(buffer, ctypes.c_void_p))
+            print("+++ _callback:", x, y, width, height, ctypes.cast(buffer, ctypes.c_void_p))
             if buffer:
                 try:
                     if new_data.poll():
                         arnold.AiRenderInterrupt()
                     else:
-                        #print("+++ _callback: tile", x, y, width, height)
-                        _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_ubyte))
-                        a = numpy.ctypeslib.as_array(_buffer, shape=(height, width, 4))
+                        print("+++ _callback: tile", x, y, width, height)
+                        _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
+                        a = numpy.ctypeslib.as_array(buffer, shape=(height, width, 4))
                         rect[y : y + height, x : x + width] = a
                         redraw_event.set()
                     return
@@ -177,15 +176,15 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
                 if res != arnold.AI_SUCCESS:
                     break
             if state.value == ABORT:
-                #print("+++ _worker: abort")
+                print("+++ _worker: abort")
                 break;
 
             data = _Dict()
             _data = new_data.recv()
             while _data is not None:
-                # from pprint import pprint as pp
-                # print("+++ _worker: data")
-                # pp(_data)
+                from pprint import pprint as pp
+                print("+++ _worker: data")
+                pp(_data)
                 data.update(_data)
                 if not new_data.poll():
                     _nodes = data.get('nodes')
@@ -216,9 +215,9 @@ def _main():
     import bpy
     _mp.set_executable(bpy.app.binary_path_python)
 
-    # import logging
-    # logger = _mp.log_to_stderr()
-    # logger.setLevel(logging.INFO)
+    import logging
+    logger = _mp.log_to_stderr()
+    logger.setLevel(logging.INFO)
 
     global _engine_, _data_, _width_, _height_, _mmap_size_, _mmap_
 
