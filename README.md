@@ -10,8 +10,7 @@ Join the Discord channel for discussions/help/updates/feature requests/talk abou
 Barnold v1.0 Roadmap                   [##                         ] 5% Complete
 ```
 ### Needs Fixing
-- Fix rendered viewport
-- Fix node system (Don't use nodes for now, just use the materials panel for changing materials until the node system is fixed)
+- Fix IPR (rendered viewport)
 
 ### Installation
 #### Windows
