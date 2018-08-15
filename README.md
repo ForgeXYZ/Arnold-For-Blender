@@ -15,7 +15,7 @@ Barnold v1.0 Roadmap                   [##                         ] 5% Complete
 ### Installation
 #### Windows
 - Download this repository.
-- Download the Arnold 5.2.0.0 SDK here: https://www.solidangle.com/arnold/download/
+- Download the Arnold 5.2.0.0 SDK here: https://www.solidangle.com/arnold/download/product-download/?id=2395
 - Add environment variable to "PATH" -> `path\to\blender\2.79\scripts\modules\Arnold-5.2.0.0-windows\bin` 
   ##### If you don't know how to set environment variables in Windows:
   - In Search, search for and then select: System (Control Panel)
