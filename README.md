@@ -29,7 +29,8 @@ Barnold v1.0 Roadmap                   [##                         ] 5% Complete
 - Add `barnold` directory to `path\to\blender\2.79\scripts\addons`
 - Edit line 22 of `path\to\blender\2.79\scripts\addons\barnold\engine\__init__.py` to `sys.path.append(r"path\to\blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\python")`
 - Open the `Arnold SDK Adjustments for Windows\plugins` folder the `driver_display_callback.dll` file needs to be placed inside the `Arnold-5.1.1.0-windows\plugins` folder.
-- Open the `Arnold SDK Adjustments for Windows\arnold` folder, the `ai_drivers.py` file needs to be placed inside the `Arnold-5.1.1.0-windows\python\arnold` folder, overwriting the existing file. 
+- Open the `Arnold SDK Adjustments for Windows\arnold` folder, the `ai_drivers.py` file needs to be placed inside the `Arnold-5.1.1.0-windows\python\arnold` folder, overwriting the existing file.
+- Open the `Arnold SDK Adjustments for Windows\arnold` folder, the `ai_universe.py` file needs to be placed inside the `Arnold-5.1.1.0-windows\python\arnold` folder, overwriting the existing file. 
 - Enable "Auto Run Python Scripts" in blender by going to File>User Preferences>File tab 
 - Enable the plugin in blender by going to File>User Preferences>Add-ons tab>Search for 'arnold' in the search bar, and clicking the checkbox next to `Render: Barnold` to enable this plugin.
 
