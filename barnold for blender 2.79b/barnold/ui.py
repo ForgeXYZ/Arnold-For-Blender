@@ -648,6 +648,14 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                     col.prop(standard_surface, "coat_ior")
                     col.prop(standard_surface, "coat_normal")
 
+                # Sheen
+                sublayout = _subpanel(layout, "Sheen", standard_surface.ui_sheen,
+                                      path_from_id, "ui_sheen", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    col.prop(standard_surface, "sheen")
+                    col.prop(standard_surface, "sheen_color")
+                    col.prop(standard_surface, "sheen_roughness")
 
                 # Emission
                 sublayout = _subpanel(layout, "Emission", standard_surface.ui_emission,

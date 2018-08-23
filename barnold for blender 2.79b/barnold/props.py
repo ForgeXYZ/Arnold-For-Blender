@@ -181,7 +181,7 @@ class ArnoldOptions(PropertyGroup):
     )
     initial_sampling_level = IntProperty(
         name="Inital Sampling Level",
-        min=-10, max=0,
+        min=-10, max=-1,
         default = -3
     )
     ipr_bucket_size = IntProperty(
@@ -981,7 +981,7 @@ class ArnoldLight(PropertyGroup):
             ('point_light', "Point", "Point light", 0),
             ('distant_light', "Distant", "Distant light", 1),
             ('spot_light', "Spot", "Spot light", 2),
-            ('skydome_light', "Skydom", "Skydom light", 3),
+            ('skydome_light', "Skydome", "Skydome light", 3),
             ('cylinder_light', "Cylinder", "Cylinder light", 4),
             ('disk_light', "Disk", "Disk light", 5),
             ('mesh_light', "Mesh", "Mesh light", 6),
@@ -1219,6 +1219,9 @@ class ArnoldShaderStandardSurface(PropertyGroup):
     )
     ui_coat = BoolProperty(
         name="Coat"
+    )
+    ui_sheen = BoolProperty(
+        name="Sheen"
     )
     ui_thinfilm = BoolProperty(
         name="Thin Coat"
@@ -1565,6 +1568,28 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         subtype='FACTOR',
         min=0, max=3.5,
         default=1.5
+    )
+    sheen = FloatProperty(
+        name="Weight",
+        description="An energy-conserving sheen layer that can be used to approximate microfiber, cloth-like surfaces such as velvet and satin of varying roughness.",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=0
+    )
+    sheen_color = FloatVectorProperty(
+        name="Color",
+        description="The color of the fibers. Tints the color of the sheen contribution.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    sheen_roughness = FloatProperty(
+        name="Roughness",
+        description="Modulates how much the microfibers diverge from the surface normal direction.",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=0.3
     )
 
 

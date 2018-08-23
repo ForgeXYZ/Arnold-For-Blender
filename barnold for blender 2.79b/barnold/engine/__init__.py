@@ -19,7 +19,7 @@ import bpy
 import bgl
 from mathutils import Matrix, Vector, geometry
 
-sys.path.append(r"C:\Program Files\Blender Foundation\Blender\2.79\scripts\modules\Arnold-5.1.1.0-windows\python")
+sys.path.append(r"C:\Program Files\Blender Foundation\Blender\2.79\scripts\modules\Arnold-5.2.0.0-windows\python")
 import arnold
 
 from ..nodes import (
@@ -200,6 +200,9 @@ class Shaders:
                 arnold.AiNodeSetFlt(node, "thin_film_thickness", standard_surface.thin_film_thickness)
                 arnold.AiNodeSetFlt(node, "thin_film_ior", standard_surface.thin_film_ior)
                 # arnold.AiNodeSetRGB(node, "aov_id(1-8)", standard_surface.aov_id(1-8))
+                arnold.AiNodeSetFlt(node, "sheen", standard_surface.sheen)
+                arnold.AiNodeSetRGB(node, "sheen_color", *standard_surface.sheen_color)
+                arnold.AiNodeSetFlt(node, "sheen_roughness", standard_surface.sheen_roughness)
                 # TODO: other standard_surface node parmas
             elif shader.type == 'utility':
                 utility = shader.utility
@@ -1006,7 +1009,7 @@ def render(engine, scene):
             else:
                 result = engine.begin_result(_x, _y, width, height)
                 # TODO: sometimes highlighted tiles become empty
-                engine.update_result(result)
+                #engine.update_result(result)
                 _htiles[(_x, _y)] = result
 
             if engine.test_break():
@@ -1234,7 +1237,8 @@ def view_update(engine, context):
 
 
 def view_draw(engine, context):
-    print(">>> view_draw [%f]:" % time.clock(), engine)
+    #print(">>> view_draw [%f]:" % time.clock(), engine)
+
     try:
         region = context.region
         v3d = context.space_data
@@ -1290,8 +1294,8 @@ def view_draw(engine, context):
         vh = v[3]
         bgl.glRasterPos2f(0, vh - 1.0)
         bgl.glPixelZoom(vw / width, -vh / height)
-        bgl.glDrawPixels(width, height, bgl.GL_RGBA, bgl.GL_FLOAT,
-                         bgl.Buffer(bgl.GL_FLOAT, len(rect), rect))
+        bgl.glDrawPixels(width, height, bgl.GL_RGBA, bgl.GL_UNSIGNED_BYTE,
+                         bgl.Buffer(bgl.GL_BYTE, len(rect), rect))
         bgl.glPixelZoom(1.0, 1.0)
         bgl.glRasterPos2f(0, 0)
     except:

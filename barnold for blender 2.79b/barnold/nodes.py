@@ -273,8 +273,9 @@ class ArnoldNodeOutput(_NodeOutput, Node):
 
     def init(self, context):
         super().init(context)
-        self.inputs.new("NodeSocketShader", "Surface Shader", "surface")
-        self.inputs.new("NodeSocketShader", "Volume Shader", "volume")
+        self.inputs.new("NodeSocketShader", "Shader", "shader")
+        # self.inputs.new("NodeSocketShader", "Surface Shader", "surface")
+        # self.inputs.new("NodeSocketShader", "Volume Shader", "volume")
 
 
 @ArnoldRenderEngine.register_class
@@ -318,8 +319,8 @@ class ArnoldNodeLambert(ArnoldNode):
 
     def init(self, context):
         self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("ArnoldNodeSocketColor", "Diffuse", "base_color")
-        self.inputs.new("NodeSocketFloat", "Weight", "base").default_value = 0.7
+        self.inputs.new("ArnoldNodeSocketColor", "Diffuse", "Kd_color")
+        self.inputs.new("NodeSocketFloat", "Weight", "Kd").default_value = 0.7
         self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
 
 @ArnoldRenderEngine.register_class
@@ -449,6 +450,9 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         self.inputs.new("NodeSocketFloat", "Coat", "coat")
         self.inputs.new("ArnoldNodeSocketColor", "Coat Color", "coat_color")
         self.inputs.new("NodeSocketFloat", "Coat Roughness", "coat_roughness").default_value=.1
+        self.inputs.new("NodeSocketFloat", "Sheen Weight", "sheen").default_value = 0
+        self.inputs.new("ArnoldNodeSocketColor", "Sheen Color", "sheen_color").default_value=(1,1,1)
+        self.inputs.new("NodeSocketFloat", "Sheen Roughness", "sheen_roughness").default_value=0.3
         self.inputs.new("NodeSocketFloat", "Emission", "emission")
         self.inputs.new("ArnoldNodeSocketColor", "Emission Color", "emission_color")
         self.inputs.new("NodeSocketFloat", "Opacity", "opacity")
