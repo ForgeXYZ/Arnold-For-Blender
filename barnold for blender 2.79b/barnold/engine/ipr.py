@@ -103,6 +103,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
 
         ## Nodes
         for node in data['nodes']:
+            print("WEEEEEEEEEEEEEEEEEEE")
             nt, np = node
             anode = arnold.AiNode(nt)
             for n, (t, v) in np.items():
@@ -121,7 +122,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
         arnold.AiNodeSetStr(filter, "name", "__filter")
         driver = arnold.AiNode("driver_display_callback")
         arnold.AiNodeSetStr(driver, "name", "__driver")
-        arnold.AiNodeSetBool(driver, "rgba_packing", False)
+        #arnold.AiNodeSetBool(driver, "rgba_packing", False)
         outputs_aovs = (
             b"RGBA RGBA __filter __driver",
         )
@@ -138,13 +139,13 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
         rect = _rect(mmap_name, *mmap_size)
 
         def _callback(x, y, width, height, buffer, data):
-            print("+++ _callback:", x, y, width, height, ctypes.cast(buffer, ctypes.c_void_p))
+            #print("+++ _callback:", x, y, width, height, ctypes.cast(buffer, ctypes.c_void_p))
             if buffer:
                 try:
                     if new_data.poll():
                         arnold.AiRenderInterrupt()
                     else:
-                        print("+++ _callback: tile", x, y, width, height)
+                        #print("+++ _callback: tile", x, y, width, height)
                         _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_ubyte))
                         a = numpy.ctypeslib.as_array(_buffer, shape=(height, width, 4))
                         rect[y : y + height, x : x + width] = a
@@ -155,7 +156,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
             elif not new_data.poll():
                 return
             arnold.AiRenderAbort()
-            #print("+++ _callback: abort")
+            print("+++ _callback: abort")
 
         cb = arnold.AtDisplayCallBack(_callback)
         arnold.AiNodeSetPtr(driver, "callback", cb)
@@ -174,14 +175,15 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
             for _sl in range(*sl):
                 arnold.AiNodeSetInt(options, "AA_samples", _sl)
                 res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
-                if res != arnold.AI_SUCCESS:
+                if res == arnold.AI_SUCCESS:
                     break
             if state.value == ABORT:
-                print("+++ _worker: abort")
+                #print("+++ _worker: abort")
                 break;
 
             data = _Dict()
             _data = new_data.recv()
+            print(_data)
             while _data is not None:
                 # from pprint import pprint as pp
                 # print("+++ _worker: data")

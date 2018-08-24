@@ -105,6 +105,7 @@ def _AiNode(node, prefix, nodes):
 
 class Shaders:
     def __init__(self, data):
+        print("LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL")
         self._data = data
 
         self._shaders = {}
@@ -135,6 +136,7 @@ class Shaders:
 
     def _export(self, mat):
         if mat.use_nodes:
+            print("SHEEENOOONAANAA")
             for n in mat.node_tree.nodes:
                 if isinstance(n, ArnoldNodeOutput) and n.is_active:
                     input = n.inputs[0]
@@ -159,7 +161,7 @@ class Shaders:
                 arnold.AiNodeSetFlt(node, "specular", mat.specular_intensity)
                 arnold.AiNodeSetRGB(node, "specular_color", *mat.specular_color)
                 arnold.AiNodeSetFlt(node, "specular_roughness", standard_surface.specular_roughness)
-                arnold.AiNodeSetFlt(node, "specular_ior", standard_surface.specular_ior)
+                #arnold.AiNodeSetFlt(node, "specular_ior", standard_surface.specular_ior)
                 arnold.AiNodeSetFlt(node, "specular_anisotropy", standard_surface.specular_anisotropy)
                 arnold.AiNodeSetFlt(node, "specular_rotation", standard_surface.specular_rotation)
                 arnold.AiNodeSetFlt(node, "emission", mat.emit)
@@ -172,7 +174,7 @@ class Shaders:
                 arnold.AiNodeSetFlt(node, "transmission_dispersion", standard_surface.transmission_dispersion)
                 arnold.AiNodeSetFlt(node, "transmission_extra_roughness", standard_surface.transmission_extra_roughness)
                 arnold.AiNodeSetBool(node, "transmit_aovs", standard_surface.transmit_aovs)
-                arnold.AiNodeSetFlt(node, "sss_synopsis", standard_surface.sss_synopsis)
+                #arnold.AiNodeSetFlt(node, "sss_synopsis", standard_surface.sss_synopsis)
                 arnold.AiNodeSetFlt(node, "subsurface", standard_surface.subsurface)
                 arnold.AiNodeSetRGB(node, "subsurface_color", *standard_surface.subsurface_color)
                 arnold.AiNodeSetRGB(node, "subsurface_radius", *standard_surface.subsurface_radius)
@@ -185,11 +187,11 @@ class Shaders:
                 arnold.AiNodeSetFlt(node, "coat", standard_surface.coat)
                 arnold.AiNodeSetRGB(node, "coat_color", *standard_surface.coat_color)
                 arnold.AiNodeSetFlt(node, "coat_roughness", standard_surface.coat_roughness)
-                arnold.AiNodeSetFlt(node, "coat_ior", standard_surface.coat_ior)
+                #arnold.AiNodeSetFlt(node, "coat_ior", standard_surface.coat_ior)
                 arnold.AiNodeSetVec(node, "coat_normal", *standard_surface.coat_normal)
                 arnold.AiNodeSetFlt(node, "coat_affect_color", standard_surface.coat_affect_color)
                 arnold.AiNodeSetFlt(node, "coat_affect_roughness", standard_surface.coat_affect_roughness)
-                arnold.AiNodeSetFlt(node, "opacity", standard_surface.opacity)
+                #arnold.AiNodeSetFlt(node, "opacity", standard_surface.opacity)
                 arnold.AiNodeSetBool(node, "caustics", standard_surface.caustics)
                 arnold.AiNodeSetBool(node, "internal_reflections", standard_surface.internal_reflections)
                 arnold.AiNodeSetBool(node, "exit_to_background", standard_surface.exit_to_background)
@@ -198,7 +200,7 @@ class Shaders:
                 # arnold.AiNodeSetStr(node, "sss_set_name", standard_surface.sss_set_name)
                 # arnold.AiNodeSetStr(node, "anistropy_tangent", standard_surface.anistropy_tangent)
                 arnold.AiNodeSetFlt(node, "thin_film_thickness", standard_surface.thin_film_thickness)
-                arnold.AiNodeSetFlt(node, "thin_film_ior", standard_surface.thin_film_ior)
+                #arnold.AiNodeSetFlt(node, "thin_film_ior", standard_surface.thin_film_ior)
                 # arnold.AiNodeSetRGB(node, "aov_id(1-8)", standard_surface.aov_id(1-8))
                 arnold.AiNodeSetFlt(node, "sheen", standard_surface.sheen)
                 arnold.AiNodeSetRGB(node, "sheen_color", *standard_surface.sheen_color)
@@ -268,6 +270,7 @@ class Shaders:
 
 
 def _AiPolymesh(mesh, shaders):
+    print("YEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
     pc = time.perf_counter()
 
     verts = mesh.vertices
@@ -511,6 +514,7 @@ def _export(data, scene, camera, xres, yres, session=None):
     duplicators = []
     duplicator_parent = False
 
+    print("NEEEEENEEEENEEEEEEENEEEENEEEEEEEEE")
     shaders = Shaders(data)
 
     opts = scene.arnold
@@ -587,6 +591,7 @@ def _export(data, scene, camera, xres, yres, session=None):
 
             with _Mesh(ob) as mesh:
                 if mesh is not None:
+                    print("NEVERRRRRRRRRRRRRRRRRRRRR")
                     node = _AiPolymesh(mesh, shaders)
                     arnold.AiNodeSetStr(node, "name", name)
                     arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
@@ -634,7 +639,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                     arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
                 elif light.type == 'disk_light':
                     arnold.AiNodeSetFlt(node, "radius", lamp.size / 2)
-                    arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
+                    #arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
                 elif light.type == 'quad_light':
                     x = lamp.size / 2
                     y = lamp.size_y / 2 if lamp.shape == 'RECTANGLE' else x
@@ -645,7 +650,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                     arnold.AiArraySetVec(verts, 3, arnold.AtVector(x, -y, 0))
                     arnold.AiNodeSetArray(node, "vertices", verts)
                     arnold.AiNodeSetInt(node, "resolution", light.quad_resolution)
-                    arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
+                    #arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
                 elif light.type == 'photometric_light':
                     arnold.AiNodeSetStr(node, "filename", bpy.path.abspath(light.filename))
                     matrix *= _MR
@@ -688,9 +693,9 @@ def _export(data, scene, camera, xres, yres, session=None):
             arnold.AiNodeSetRGB(node, "shadow_color", *light.shadow_color)
             arnold.AiNodeSetInt(node, "samples", light.samples)
             arnold.AiNodeSetBool(node, "normalize", light.normalize)
-            arnold.AiNodeSetBool(node, "affect_diffuse", light.affect_diffuse)
-            arnold.AiNodeSetBool(node, "affect_specular", light.affect_specular)
-            arnold.AiNodeSetBool(node, "affect_volumetrics", light.affect_volumetrics)
+            #arnold.AiNodeSetBool(node, "affect_diffuse", light.affect_diffuse)
+            # arnold.AiNodeSetBool(node, "affect_specular", light.affect_specular)
+            # arnold.AiNodeSetBool(node, "affect_volumetrics", light.affect_volumetrics)
             arnold.AiNodeSetFlt(node, "diffuse", light.diffuse)
             arnold.AiNodeSetFlt(node, "specular", light.specular)
             arnold.AiNodeSetFlt(node, "sss", light.sss)
@@ -719,6 +724,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                         arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
                         with _Mesh(ob) as mesh:
                             if mesh is not None:
+                                print("TEEEEEEEHEEEEEEEEE")
                                 node = _AiPolymesh(mesh, shaders)
                                 arnold.AiNodeSetStr(node, "name", _Name(ob.name))
                                 arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix))
@@ -750,6 +756,7 @@ def _export(data, scene, camera, xres, yres, session=None):
             arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
             with _Mesh(ob) as mesh:
                 if mesh is not None:
+                    print("LOLOLOLOLOLOLOLOLOLOL")
                     node = _AiPolymesh(mesh, shaders)
                     arnold.AiNodeSetStr(node, "name", _Name(ob.name))
                     arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
@@ -768,7 +775,7 @@ def _export(data, scene, camera, xres, yres, session=None):
     options = arnold.AiUniverseGetOptions()
     arnold.AiNodeSetInt(options, "xres", xres)
     arnold.AiNodeSetInt(options, "yres", yres)
-    arnold.AiNodeSetFlt(options, "aspect_ratio", aspect_y / aspect_x)
+    #arnold.AiNodeSetFlt(options, "aspect_ratio", aspect_y / aspect_x)
     if render.use_border:
         xoff = int(xres * render.border_min_x)
         yoff = int(yres * render.border_min_y)
@@ -816,13 +823,13 @@ def _export(data, scene, camera, xres, yres, session=None):
     arnold.AiNodeSetInt(options, "texture_autotile", opts.texture_autotile)
     arnold.AiNodeSetBool(options, "texture_accept_untiled", opts.texture_accept_untiled)
     arnold.AiNodeSetBool(options, "texture_accept_unmipped", opts.texture_accept_unmipped)
-    arnold.AiNodeSetFlt(options, "texture_specular_blur", opts.texture_specular_blur)
-    arnold.AiNodeSetFlt(options, "texture_diffuse_blur", opts.texture_diffuse_blur)
+    #arnold.AiNodeSetFlt(options, "texture_specular_blur", opts.texture_specular_blur)
+    #arnold.AiNodeSetFlt(options, "texture_diffuse_blur", opts.texture_diffuse_blur)
     arnold.AiNodeSetFlt(options, "low_light_threshold", opts.low_light_threshold)
     arnold.AiNodeSetInt(options, "GI_sss_samples", opts.GI_sss_samples)
     arnold.AiNodeSetBool(options, "sss_use_autobump", opts.sss_use_autobump)
     arnold.AiNodeSetInt(options, "GI_volume_samples", opts.GI_volume_samples)
-    arnold.AiNodeSetInt(options, "max_subdivisions", opts.max_subdivisions)
+    arnold.AiNodeSetByte(options, "max_subdivisions", opts.max_subdivisions)
     arnold.AiNodeSetStr(options, "procedural_searchpath", opts.procedural_searchpath)
     arnold.AiNodeSetStr(options, "plugin_searchpath", opts.plugin_searchpath)
     # TODO: DELETE? arnold.AiNodeSetFlt(options, "texture_gamma", opts.texture_gamma)
@@ -932,8 +939,8 @@ def _export(data, scene, camera, xres, yres, session=None):
 
     display = arnold.AiNode("driver_display_callback")
     arnold.AiNodeSetStr(display, "name", "__driver")
-    arnold.AiNodeSetFlt(display, "gamma", opts.display_gamma)
-    arnold.AiNodeSetBool(display, "rgba_packing", False)
+    #arnold.AiNodeSetFlt(display, "gamma", opts.display_gamma)
+    #arnold.AiNodeSetBool(display, "rgba_packing", False)
 
     # TODO: unusable, camera flipped (top to buttom) for tiles hightlighting
     #png = arnold.AiNode("driver_png")
@@ -952,6 +959,7 @@ def _export(data, scene, camera, xres, yres, session=None):
         session["display"] = display
         session["offset"] = xoff, yoff
         if opts.progressive_refinement:
+            print("YOU HAVE CHOOSEN TO BE PROGRESSIVE! WOO!")
             isl = opts.initial_sampling_level
             session["ipr"] = (isl, AA_samples + 1)
             AA_samples = isl
@@ -970,6 +978,7 @@ def export_ass(data, scene, camera, xres, yres, filepath, open_procs, binary):
 
 
 def update(engine, data, scene):
+    print("LAUGHLAUGHLAUGH")
     engine.use_highlight_tiles = True
     engine._session = {}
     arnold.AiBegin()
@@ -1027,14 +1036,14 @@ def render(engine, scene):
         arnold.AiNodeSetPtr(session['display'], "callback", cb)
 
         res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
-        if res == arnold.AI_SUCCESS:
+        if res != arnold.AI_SUCCESS:
             ipr = session.get("ipr")
             if ipr:
                 options = arnold.AiUniverseGetOptions()
                 for sl in range(*ipr):
                     arnold.AiNodeSetInt(options, "AA_samples", sl)
                     res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
-                    if res != arnold.AI_SUCCESS:
+                    if res == arnold.AI_SUCCESS:
                         break
                     engine.update_stats("", "Mem: %.2fMb, SL: %d" % (session.get("mem", "NA"), sl))
         if res != arnold.AI_SUCCESS:
@@ -1180,13 +1189,13 @@ def view_update(engine, context):
                 'texture_autotile': ('INT', opts.texture_autotile),
                 'texture_accept_untiled': ('BOOL', opts.texture_accept_untiled),
                 'texture_accept_unmipped': ('BOOL', opts.texture_accept_unmipped),
-                'texture_specular_blur': ('FLOAT', opts.texture_specular_blur),
-                'texture_diffuse_blur': ('FLOAT', opts.texture_diffuse_blur),
+                # 'texture_specular_blur': ('FLOAT', opts.texture_specular_blur),
+                # 'texture_diffuse_blur': ('FLOAT', opts.texture_diffuse_blur),
                 'low_light_threshold': ('FLOAT', opts.low_light_threshold),
                 'GI_sss_samples': ('INT', opts.GI_sss_samples),
                 'sss_use_autobump': ('BOOL', opts.sss_use_autobump),
                 'GI_volume_samples': ('INT', opts.GI_volume_samples),
-                'max_subdivisions': ('INT', opts.max_subdivisions),
+                'max_subdivisions': ('BYTE', opts.max_subdivisions),
                 'procedural_searchpath': ('STRING', opts.procedural_searchpath),
                 'plugin_searchpath': ('STRING', opts.plugin_searchpath),
                 # TODO: DELETE? 'texture_gamma': ('FLOAT', opts.texture_gamma),
@@ -1215,9 +1224,9 @@ def view_update(engine, context):
                                 if node:
                                     options[input.identifier] = ('NODE', node)
 
-            #from pprint import pprint as pp
-            #pp(options)
-            #pp(nodes)
+            # from pprint import pprint as pp
+            # pp(options)
+            # pp(nodes)
 
             ipr = _IPR(engine, {
                 'options': options,
