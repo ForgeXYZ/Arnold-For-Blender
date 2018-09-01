@@ -19,7 +19,8 @@ import bpy
 import bgl
 from mathutils import Matrix, Vector, geometry
 
-sys.path.append(os.path.join(os.environ["ARNOLD_HOME"],"python"))
+#sys.path.append(os.path.join(os.environ["ARNOLD_HOME"],"python"))
+sys.path.append(r"C:\Program Files\Blender Foundation\Blender\2.79\scripts\modules\Arnold-5.2.0.0-windows\python")
 import arnold
 
 from ..nodes import (
