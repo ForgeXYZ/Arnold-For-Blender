@@ -19,7 +19,7 @@ import bpy
 import bgl
 from mathutils import Matrix, Vector, geometry
 
-sys.path.append(r"C:\Program Files\Blender Foundation\Blender\2.79\scripts\modules\Arnold-5.2.0.0-windows\python")
+sys.path.append(os.path.join(os.environ["ARNOLD_HOME"],"python"))
 import arnold
 
 from ..nodes import (
@@ -105,7 +105,7 @@ def _AiNode(node, prefix, nodes):
 
 class Shaders:
     def __init__(self, data):
-        print("LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOL")
+        print("Shader Init")
         self._data = data
 
         self._shaders = {}
@@ -136,7 +136,7 @@ class Shaders:
 
     def _export(self, mat):
         if mat.use_nodes:
-            print("SHEEENOOONAANAA")
+            print("Exporting")
             for n in mat.node_tree.nodes:
                 if isinstance(n, ArnoldNodeOutput) and n.is_active:
                     input = n.inputs[0]
@@ -270,7 +270,7 @@ class Shaders:
 
 
 def _AiPolymesh(mesh, shaders):
-    print("YEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+    print("AiPolymesh triggered")
     pc = time.perf_counter()
 
     verts = mesh.vertices
@@ -514,7 +514,7 @@ def _export(data, scene, camera, xres, yres, session=None):
     duplicators = []
     duplicator_parent = False
 
-    print("NEEEEENEEEENEEEEEEENEEEENEEEEEEEEE")
+    # print("NEEEEENEEEENEEEEEEENEEEENEEEEEEEEE")
     shaders = Shaders(data)
 
     opts = scene.arnold
@@ -591,7 +591,7 @@ def _export(data, scene, camera, xres, yres, session=None):
 
             with _Mesh(ob) as mesh:
                 if mesh is not None:
-                    print("NEVERRRRRRRRRRRRRRRRRRRRR")
+                    # print("NEVERRRRRRRRRRRRRRRRRRRRR")
                     node = _AiPolymesh(mesh, shaders)
                     arnold.AiNodeSetStr(node, "name", name)
                     arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
@@ -959,7 +959,7 @@ def _export(data, scene, camera, xres, yres, session=None):
         session["display"] = display
         session["offset"] = xoff, yoff
         if opts.progressive_refinement:
-            print("YOU HAVE CHOOSEN TO BE PROGRESSIVE! WOO!")
+            # print("YOU HAVE CHOOSEN TO BE PROGRESSIVE! WOO!")
             isl = opts.initial_sampling_level
             session["ipr"] = (isl, AA_samples + 1)
             AA_samples = isl
@@ -978,7 +978,7 @@ def export_ass(data, scene, camera, xres, yres, filepath, open_procs, binary):
 
 
 def update(engine, data, scene):
-    print("LAUGHLAUGHLAUGH")
+    print("Arnold Engine Updating...")
     engine.use_highlight_tiles = True
     engine._session = {}
     arnold.AiBegin()
