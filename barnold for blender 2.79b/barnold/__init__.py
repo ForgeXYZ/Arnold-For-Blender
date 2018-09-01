@@ -14,7 +14,8 @@ bl_info = {
 }
 
 import bpy
-
+import sys
+import os
 
 class ArnoldRenderEngine(bpy.types.RenderEngine):
     bl_idname = "ARNOLD_RENDER"
@@ -133,18 +134,29 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
         engine.free(self)
 
 
-from . import engine
-from . import props
-from . import nodes
-from . import ops
-from . import ui
-
-
 def register():
+    from . import addon_preferences
+    addon_preferences.register()
+
+    from . import props
+    from . import nodes
+    from . import ops
+    from . import ui
+    from . import engine
+    from . import addon_preferences
+
     bpy.utils.register_class(ArnoldRenderEngine)
     nodes.register()
 
 
 def unregister():
+    from . import addon_preferences
+    from . import props
+    from . import nodes
+    from . import ops
+    from . import ui
+    from . import engine
+    from . import addon_preferences
+    addon_preferences.unregister()
     bpy.utils.unregister_class(ArnoldRenderEngine)
     nodes.unregister()
