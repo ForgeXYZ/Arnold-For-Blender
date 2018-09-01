@@ -6,6 +6,7 @@ __email__ = "nildar@users.sourceforge.net"
 import sys
 import numpy
 import mmap
+import platform
 
 ABORT = 1
 UPDATE = 2
@@ -133,10 +134,17 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
 
         del nodes, nptrs, links, data
 
-        _rect = lambda n, w, h: numpy.frombuffer(
-            mmap.mmap(-1, w * h * 4 * 4, n), dtype=numpy.float32
-        ).reshape([h, w, 4])
-        rect = _rect(mmap_name, *mmap_size)
+        if platform.system() == "Darwin" or "Linux":
+            _rect = lambda w, h: numpy.frombuffer(
+                mmap.mmap(-1, w * h * 4 * 4), dtype=numpy.float32
+            ).reshape([h, w, 4])
+            rect = _rect(*mmap_size)
+
+        if platform.system() == "Windows":
+            _rect = lambda n, w, h: numpy.frombuffer(
+                mmap.mmap(-1, w * h * 4 * 4, n), dtype=numpy.float32
+            ).reshape([h, w, 4])
+            rect = _rect(mmap_name, *mmap_size)
 
         def _callback(x, y, width, height, buffer, data):
             #print("+++ _callback:", x, y, width, height, ctypes.cast(buffer, ctypes.c_void_p))
@@ -225,7 +233,12 @@ def _main():
     global _engine_, _data_, _width_, _height_, _mmap_size_, _mmap_
 
     _mmap_name = "blender/barnold/ipr/pid-%d" % id(_engine_)
-    _mmap_ = mmap.mmap(-1, 64 * 1024 * 1024, _mmap_name)  # 64Mb
+
+    if platform.system() == "Darwin" or "Linux":
+        _mmap_ = mmap.mmap(-1, 64 * 1024 * 1024)  # 64Mb
+
+    if platform.system() == "Windows":
+        _mmap_ = mmap.mmap(-1, 64 * 1024 * 1024, _mmap_name)  # 64Mb
 
     state = _mp.Value('i', 0)
     redraw_event = _mp.Event()
@@ -248,7 +261,13 @@ def _main():
         else:
             w = _width_
             h = _height_
-        _mmap_ = mmap.mmap(-1, w * h * 4 * 4, _mmap_name)
+
+        if platform.system() == "Darwin" or "Linux":
+            _mmap_ = mmap.mmap(-1, w * h * 4 * 4)
+
+        if platform.system() == "Windows":
+            _mmap_ = mmap.mmap(-1, w * h * 4 * 4, _mmap_name)
+
         opts['xres'] = ('INT', w)
         opts['yres'] = ('INT', h)
         return w, h
