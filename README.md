@@ -39,7 +39,7 @@ Barnold v1.0 Roadmap                   [###                         ] 10% Comple
 - Download the Arnold 5.2.0.0 SDK here: https://www.solidangle.com/arnold/download/product-download/?id=2397
 - Add Arnold as an environment variable.
 - Add `barnold` directory to `path\to\blender\2.79\scripts\addons`
-- Uncomment line 22 `sys.path.append(os.path.join(os.environ["ARNOLD_HOME"],"python"))` and comment out `sys.path.append(r"C:\Program Files\Blender Foundation\Blender\2.79\scripts\modules\Arnold-5.2.0.0-darwin\python")`
+- Uncomment line 22 `sys.path.append(os.path.join(os.environ["ARNOLD_HOME"],"python"))` and comment out `sys.path.append(r"C:\Program Files\Blender Foundation\Blender\2.79\scripts\modules\Arnold-5.2.0.0-windows\python")`
 - Open the `Arnold SDK Adjustments for Windows\arnold` folder, the `ai_drivers.py` file needs to be placed inside the `Arnold-5.2.0.0-darwin\python\arnold` folder, overwriting the existing file.
 - Open the `Arnold SDK Adjustments for Windows\arnold` folder, the `ai_universe.py` file needs to be placed inside the `Arnold-5.2.0.0-darwin\python\arnold` folder, overwriting the existing file. 
 - Enable "Auto Run Python Scripts" in blender by going to File>User Preferences>File tab 
