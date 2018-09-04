@@ -7,7 +7,7 @@ Arnold integration with Blender, updated to work with the latest versions of Arn
 Join the Discord channel for discussions/help/updates/feature requests/talk about water coolers: https://discord.gg/WNdNXzZ
 
 ```
-Barnold v1.0 Roadmap                   [###                         ] 10% Complete
+Barnold v1.0 Roadmap                   [####                        ] 11% Complete
 ```
 ### Currently In Development: 
 - Fixing the IPR (rendered viewport)
