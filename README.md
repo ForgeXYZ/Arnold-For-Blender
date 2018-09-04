@@ -9,8 +9,8 @@ Join the Discord channel for discussions/help/updates/feature requests/talk abou
 ```
 Barnold v1.0 Roadmap                   [###                         ] 10% Complete
 ```
-### Needs Fixing
-- Fix IPR (rendered viewport)
+### Currently In Development: 
+- Fixing the IPR (rendered viewport)
 
 ### Installation (Windows, macOS, and Linux)
 - Download this repository.
