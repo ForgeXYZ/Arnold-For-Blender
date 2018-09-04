@@ -17,7 +17,7 @@ Barnold v1.0 Roadmap                   [###                         ] 10% Comple
 - Download the Arnold 5.2.0.0 SDK here: https://www.solidangle.com/arnold/download/product-download/?id=2395
 - Add a new environment variable `ARNOLD_HOME` and add the path of the downloaded arnold SDK from the previous step. 
 - Add `barnold` directory to `path\to\blender\2.79\scripts\addons`
-- Open the `Arnold SDK Adjustments\plugins` folder the `driver_display_callback.dll` file needs to be placed inside the `ARNOLDSDK\plugins` folder.
+- Open the `Arnold SDK Adjustments\plugins` folder the `driver_display_callback.dll` (Windows) or `libbarnold_display_callback.dylib` (macOS/Linux) file needs to be placed inside the `ARNOLDSDK\plugins` folder.
 - Open the `Arnold SDK Adjustments\arnold` folder, the `ai_drivers.py` file needs to be placed inside the `ARNOLDSDK\python\arnold` folder, overwriting the existing file.
 - Open the `Arnold SDK Adjustments\arnold` folder, the `ai_universe.py` file needs to be placed inside the `ARNOLDSDK\python\arnold` folder, overwriting the existing file. 
 - Enable "Auto Run Python Scripts" in blender by going to File>User Preferences>File tab 
