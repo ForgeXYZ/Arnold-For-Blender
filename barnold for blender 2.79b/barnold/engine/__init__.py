@@ -606,7 +606,7 @@ def _export(data, scene, camera, xres, yres, session=None):
             lamp = ob.data
             light = lamp.arnold
             matrix = ob.matrix_world.copy()
-            if lamp.type == 'VECTOR':
+            if lamp.type == 'POINT':
                 node = arnold.AiNode("point_light")
                 arnold.AiNodeSetFlt(node, "radius", light.radius)
                 arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
