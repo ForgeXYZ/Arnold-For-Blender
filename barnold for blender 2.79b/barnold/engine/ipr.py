@@ -54,6 +54,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
     import arnold
 
     nodes = {}
+    lights = {}
     nptrs = []  # nodes linked by AiNodeSetPtr
     links = []  # nodes linked by AiNodeLink
 
@@ -104,12 +105,17 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
 
         ## Nodes
         for node in data['nodes']:
-            print("WEEEEEEEEEEEEEEEEEEE")
             nt, np = node
             anode = arnold.AiNode(nt)
             for n, (t, v) in np.items():
                 _AiNodeSet[t](anode, n, v)
             nodes[id(node)] = anode
+        for light in data['lights']:
+            nt, np = light
+            anode = arnold.AiNode(nt)
+            for n, (t, v) in np.items():
+                _AiNodeSet[t](anode, n, v)
+            lights[id(light)] = anode
         options = arnold.AiUniverseGetOptions()
         for n, (t, v) in data['options'].items():
             _AiNodeSet[t](options, n, v)
@@ -154,7 +160,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
                         arnold.AiRenderInterrupt()
                     else:
                         #print("+++ _callback: tile", x, y, width, height)
-                        _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_ubyte))
+                        _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_uint8))
                         a = numpy.ctypeslib.as_array(_buffer, shape=(height, width, 4))
                         rect[y : y + height, x : x + width] = a
                         redraw_event.set()

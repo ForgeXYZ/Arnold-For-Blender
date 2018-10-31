@@ -1069,6 +1069,7 @@ def view_update(engine, context):
             rv3d = context.region_data
 
             nodes = []
+            lights = []
             _nodes = {}
 
             @contextmanager
@@ -1117,8 +1118,10 @@ def view_update(engine, context):
                 if ob.is_visible(scene) and ob.type in _CT:
                     with _to_mesh(ob) as mesh:
                         if mesh is not None:
+                            shaders = Shaders(blend_data)
                             verts = mesh.vertices
                             polygons = mesh.polygons
+                            npolygons = len(polygons)
                             loops = mesh.loops
                             vlist = numpy.ndarray(len(verts) * 3, dtype=numpy.float32)
                             verts.foreach_get("co", vlist)
@@ -1126,14 +1129,188 @@ def view_update(engine, context):
                             polygons.foreach_get("loop_total", nsides)
                             vidxs = numpy.ndarray(len(loops), dtype=numpy.uint32)
                             polygons.foreach_get("vertices", vidxs)
+                            if mesh.materials:
+                                ## Add Shader data
+                                # a = numpy.ndarray(npolygons, dtype=numpy.uint8)
+                                # polygons.foreach_get("material_index", a)
+                                mat = mesh.materials[0]
+
+                                mat = mesh.materials[0]
+                                node = shaders.get(mat)
+                                a = numpy.ndarray(npolygons, dtype=numpy.uint8)
+                                polygons.foreach_get("material_index", a)
+                                mm = collections.OrderedDict()
+
+                                shader = mat.arnold
+                                if mat.type == 'SURFACE':
+                                    if shader.type == 'lambert':
+                                        node = arnold.AiNode('polymesh')
+                                        nodes.append(('lambert', {
+                                            'name': ('STRING', ob.name),
+                                            'Kd': ('FLOAT', (mat.diffuse_intensity)),
+                                            'Kd_color': ('RGBA', (arnold.AI_TYPE_RGBA, *mat.diffuse_color)),
+                                        }))
+                                for i in numpy.unique(a):
+                                    mn = shaders.get(mesh.materials[i])
+                                    print(mn)
+                                    mi = mm.setdefault(id(mn), (mn, []))[1]
+                                    mi.append(i)
+                                for i, (mn, mi) in enumerate(mm.values()):
+                                    a[numpy.in1d(a, numpy.setdiff1d(mi, i))] = i
+                                    if mm:
+                                        nmm = len(mm)
+                                        t = mm.popitem(False)
+                                        if mm:
+                                            shader = arnold.AiArrayAllocate(nmm, 1, arnold.AI_TYPE_POINTER)
+                                            arnold.AiArraySetPtr(shader, 0, t[1][0])
+                                            i = 1
+                                            while mm:
+                                                arnold.AiArraySetPtr(shader, i, mm.popitem(False)[1][0])
+                                                i += 1
+                                            shidxs = arnold.AiArrayConvert(len(a), 1, arnold.AI_TYPE_BYTE, ctypes.c_void_p(a.ctypes.data))
+                                            arnold.AiNodeSetArray(node, "shader", shader)
+                                            arnold.AiNodeSetArray(node, "shidxs", shidxs)
+                                        else:
+                                            arnold.AiNodeSetPtr(node, "shader", t[1][0])
+
+                            def index_containing_substring(the_list, substring):
+                                for i, s in enumerate(the_list):
+                                    if substring in s:
+                                        return i
+                                return -1
+
+                            index = index_containing_substring(nodes, ob.name)
+
                             nodes.append(('polymesh', {
                                 'name': ('STRING', "O::" + ob.name),
                                 'matrix': ('MATRIX', numpy.reshape(ob.matrix_world.transposed(), -1)),
                                 'vlist': ('ARRAY', (arnold.AI_TYPE_VECTOR, vlist)),
                                 'nsides': ('ARRAY', (arnold.AI_TYPE_UINT, nsides)),
                                 'vidxs': ('ARRAY', (arnold.AI_TYPE_UINT, vidxs)),
+                                'shader':('NODE', (nodes[index])),
                                 #'smoothing': ('BOOL', True),
                             }))
+                                ## TODO: Assign Shader data to polymesh...
+                                # Create an array based version of _AiPolymesh?
+                _Name = _CleanNames("O", itertools.count())
+
+                if ob.type == 'LAMP':
+                    lamp = ob.data
+                    light = lamp.arnold
+                    matrix = ob.matrix_world.copy()
+                    if lamp.type == 'POINT':
+                        node = "point_light"
+                        lights.append((node, {
+                            'radius': ('FLOAT', (light.radius)),
+                            'decay_type': ('STRING', light.decay_type),
+                        }))
+                    elif lamp.type == 'SUN':
+                        node = "distant_light"
+                        lights.append((node, {
+                            'angle': ('FLOAT', (light.angle)),
+                        }))
+                    elif lamp.type == 'SPOT':
+                        node = "spot_light"
+                        lights.append((node, {
+                            'radius': ('FLOAT', (light.radius)),
+                            'lens_radius': ('FLOAT', (light.lens_radius)),
+                            'cone_angle': ('FLOAT', (math.degrees(lamp.spot_size))),
+                            'penumbra_angle': ('FLOAT', (light.penumbra_angle)),
+                            'aspect_ratio': ('FLOAT', (light.aspect_ratio)),
+                            'decay_type': ('STRING', (light.decay_type)),
+                        }))
+                    elif lamp.type == 'HEMI':
+                        node = "skydome_light"
+                        lights.append((node, {
+                            'resolution': ('INT', (light.resolution)),
+                            'format': ('STRING', (light.format)),
+                        }))
+                    elif lamp.type == 'AREA':
+                        node = light.type
+                        if light.type == 'cylinder_light':
+                            top = arnold.AiArray(1, 1, arnold.AI_TYPE_VECTOR, arnold.AtVector(0, lamp.size_y / 2, 0))
+                            # arnold.AiNodeSetArray(node, "top", top)
+                            bottom = arnold.AiArray(1, 1, arnold.AI_TYPE_VECTOR, arnold.AtVector(0, -lamp.size_y / 2, 0))
+                            # arnold.AiNodeSetArray(node, "bottom", bottom)
+                            # arnold.AiNodeSetFlt(node, "radius", lamp.size / 2)
+                            # arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
+                            lights.append((node, {
+                                #TODO: Fix top/bottom
+                                # 'top': ('ARRAY', (arnold.AI_TYPE_VECTOR, top)),
+                                # 'bottom': ('ARRAY', (arnold.AI_TYPE_VECTOR, bottom)),
+                                'radius': ('FLOAT', (lamp.size / 2)),
+                                'decay_type': ('STRING', (light.decay_type)),
+                            }))
+                        elif light.type == 'disk_light':
+                            lights.append((node, {
+                                'radius': ('FLOAT', (lamp.size / 2)),
+                                #'decay_type': ('STRING', (light.decay_type)),
+                            }))
+                        elif light.type == 'quad_light':
+                            x = lamp.size / 2
+                            y = lamp.size_y / 2 if lamp.shape == 'RECTANGLE' else x
+                            verts = arnold.AiArrayAllocate(4, 1, arnold.AI_TYPE_VECTOR)
+                            arnold.AiArraySetVec(verts, 0, arnold.AtVector(-x, -y, 0))
+                            arnold.AiArraySetVec(verts, 1, arnold.AtVector(-x, y, 0))
+                            arnold.AiArraySetVec(verts, 2, arnold.AtVector(x, y, 0))
+                            arnold.AiArraySetVec(verts, 3, arnold.AtVector(x, -y, 0))
+                            numpy.ndarray(len(verts) * 3, dtype=numpy.float32)
+                            verts.foreach_get("co", vlist)
+                            # arnold.AiNodeSetArray(node, "vertices", verts)
+                            # arnold.AiNodeSetInt(node, "resolution", light.quad_resolution)
+                            #arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
+                            lights.append((node, {
+                                'vertices': ('ARRAY', (verts)),
+                                'resolution': ('INT', (light.quad_resolution)),
+                            }))
+                        elif light.type == 'photometric_light':
+                            arnold.AiNodeSetStr(node, "filename", bpy.path.abspath(light.filename))
+                            matrix *= _MR
+                        elif light.type == 'mesh_light':
+                            arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
+                            if light.mesh:
+                                mesh_lights.append((node, light.mesh))
+                    else:
+                        arnold.AiMsgDebug(b"    skip (unsupported)")
+                        continue
+
+                    name = _Name(ob.name)
+                    color_node = None
+                    if color_node is None:
+                        for tuple in lights:
+                            if tuple[0] == node:
+                                tuple[1]['color'] = ('RGBA', (arnold.AI_TYPE_RGBA, *lamp.color))
+                    else:
+                        arnold.AiNodeLink(color_node, "color", node) #TODO: Refactor for Dict()
+                    for tuple in lights:
+                        i = 1
+                        j = 0
+                        if tuple[j] == node:
+                            if 'matrix' not in str(tuple):
+                                tuple[i]['matrix'] = ('MATRIX', numpy.reshape(ob.matrix_world.transposed(), -1))
+                                tuple[i]['intensity']=('FLOAT', light.intensity)
+                                tuple[i]['exposure']=('FLOAT', light.exposure)
+                                tuple[i]['cast_shadows']=('BOOL', light.cast_shadows)
+                                tuple[i]['cast_volumetric_shadows']=('BOOL', light.cast_volumetric_shadows)
+                                tuple[i]['shadow_density']=('FLOAT', light.shadow_density)
+                                tuple[i]['shadow_color']=('RGBA', (arnold.AI_TYPE_RGBA, *light.shadow_color))
+                                tuple[i]['samples']=('INT', light.samples)
+                                tuple[i]['normalize']=('BOOL', light.normalize)
+                                tuple[i]['affect_diffuse']=('BOOL', light.affect_diffuse)
+                                tuple[i]['affect_specular']=('BOOL', light.affect_specular)
+                                tuple[i]['affect_volumetrics']=('BOOL', light.affect_volumetrics)
+                                tuple[i]['diffuse']=('FLOAT', light.diffuse)
+                                tuple[i]['specular']=('FLOAT', light.specular)
+                                tuple[i]['sss']=('FLOAT', light.sss)
+                                tuple[i]['indirect']=('FLOAT', light.indirect)
+                                tuple[i]['max_bounces']=('INT', light.max_bounces)
+                                tuple[i]['volume_samples']=('INT', light.volume_samples)
+                                tuple[i]['volume']=('FLOAT', light.volume)
+                                break
+                            j += 1
+                else:
+                    arnold.AiMsgDebug(b"    skip (unsupported)")
+
 
             #####################################
             ## camera
@@ -1232,6 +1409,7 @@ def view_update(engine, context):
             ipr = _IPR(engine, {
                 'options': options,
                 'nodes': nodes,
+                'lights': lights,
                 'sl': (opts.initial_sampling_level, opts.AA_samples)
             }, region.width, region.height)
 
