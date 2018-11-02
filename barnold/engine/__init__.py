@@ -311,7 +311,7 @@ def _AiPolymesh(mesh, shaders):
     arnold.AiNodeSetArray(node, "nidxs", nidxs)
 
     # uv
-    for i, uvt in enumerate(mesh.uv_textures):
+    for i, uvt in enumerate(mesh.uv_layers):
         if uvt.active_render:
             uvd = mesh.uv_layers[i].data
             nuvs = len(uvd)
@@ -484,14 +484,14 @@ def _export_object_properties(ob, node):
         arnold.AiNodeSetBool(node, "subdiv_smooth_derivs", props.subdiv_smooth_derivs)
 
 
-def _export(data, scene, camera, xres, yres, session=None):
+def _export(data, depsgraph, camera, xres, yres, session=None):
     """
     """
 
     @contextmanager
     def _Mesh(ob):
         pc = time.perf_counter()
-        mesh = ob.to_mesh(scene, True, 'RENDER', False)
+        mesh = ob.to_mesh(depsgraph, apply_modifiers=True,calc_undeformed=False)
         if mesh is not None:
             try:
                 mesh.calc_normals_split()
@@ -505,8 +505,8 @@ def _export(data, scene, camera, xres, yres, session=None):
     _Name = _CleanNames("O", itertools.count())
 
     # enabled scene layers
-    layers = [i for i, j in enumerate(scene.layers) if j]
-    in_layers = lambda o: any(o.layers[i] for i in layers)
+    # layers = [i for i, j in enumerate(scene.layers) if j]
+    # in_layers = lambda o: any(o.layers[i] for i in layers)
     # nodes cache
     nodes = {}  # {Object: AiNode}
     inodes = {}  # {Object.data: AiNode}
@@ -518,7 +518,7 @@ def _export(data, scene, camera, xres, yres, session=None):
     # print("NEEEEENEEEENEEEEEEENEEEENEEEEEEEEE")
     shaders = Shaders(data)
 
-    opts = scene.arnold
+    opts = bpy.context.scene.arnold
     arnold.AiMsgSetConsoleFlags(opts.get("console_log_flags", 0))
     arnold.AiMsgSetMaxWarnings(opts.max_warnings)
     arnold.AiMsgDebug(b"BARNOLD: >>>")
@@ -528,10 +528,10 @@ def _export(data, scene, camera, xres, yres, session=None):
 
     ##############################
     ## objects
-    for ob in scene.objects:
+    for ob in depsgraph.objects:
         arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
 
-        if ob.hide_render or not in_layers(ob):
+        if ob.hide_render: # or not in_layers(ob)
             arnold.AiMsgDebug(b"    skip (hidden)")
             continue
 
@@ -577,7 +577,7 @@ def _export(data, scene, camera, xres, yres, session=None):
             if name is None:
                 name = _Name(ob.name)
 
-            modified = ob.is_modified(scene, 'RENDER')
+            modified = ob.is_modified(bpy.context.scene, 'RENDER')
             if not modified:
                 inode = inodes.get(ob.data)
                 if inode is not None:
@@ -602,7 +602,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                         inodes[ob.data] = node
                     # cache for duplicators
                     nodes[ob] = node
-        elif ob.type == 'LAMP':
+        elif ob.type == 'LIGHT':
             lamp = ob.data
             light = lamp.arnold
             matrix = ob.matrix_world.copy()
@@ -764,7 +764,7 @@ def _export(data, scene, camera, xres, yres, session=None):
                     nodes[ob] = node
         arnold.AiNodeSetPtr(light_node, "mesh", node)
 
-    render = scene.render
+    render = bpy.context.scene.render
     aspect_x = render.pixel_aspect_x
     aspect_y = render.pixel_aspect_y
     # offsets for border render
@@ -785,7 +785,7 @@ def _export(data, scene, camera, xres, yres, session=None):
         arnold.AiNodeSetInt(options, "region_max_x", int(xres * render.border_max_x) - 1)
         arnold.AiNodeSetInt(options, "region_max_y", int(yres * render.border_max_y) - 1)
     if not opts.lock_sampling_pattern:
-        arnold.AiNodeSetInt(options, "AA_seed", scene.frame_current)
+        arnold.AiNodeSetInt(options, "AA_seed", bpy.context.scene.frame_current)
     if opts.clamp_sample_values:
         arnold.AiNodeSetFlt(options, "AA_sample_clamp", opts.AA_sample_clamp)
         arnold.AiNodeSetBool(options, "AA_sample_clamp_affects_aovs", opts.AA_sample_clamp_affects_aovs)
@@ -898,7 +898,7 @@ def _export(data, scene, camera, xres, yres, session=None):
 
     ##############################
     ## world
-    world = scene.world
+    world = bpy.context.scene.world
     if world:
         if world.use_nodes:
             for _node in world.node_tree.nodes:
@@ -1007,7 +1007,7 @@ def render(engine, scene):
                     result = _htiles.pop((_x, _y), None)
                     if result is None:
                         result = engine.begin_result(_x, _y, width, height)
-                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_ubyte))
+                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_uint8))
                     rect = numpy.ctypeslib.as_array(_buffer, shape=(width * height, 4))
                     # TODO: gamma correction. need??? kick is darker
                     # set 1/2.2 the driver_display node by default
@@ -1030,7 +1030,7 @@ def render(engine, scene):
 
             mem = session["mem"] = arnold.AiMsgUtilGetUsedMemory() / 1048576  # 1024*1024
             peak = session["peak"] = max(session["peak"], mem)
-            engine.update_memory_stats(mem, peak)
+            engine.update_memory_stats(memory_used=mem, memory_peak=peak)
 
         # display callback must be a variable
         cb = arnold.AtDisplayCallBack(display_callback)
@@ -1051,7 +1051,7 @@ def render(engine, scene):
             engine.error_set("Render status: %d" % res)
     except:
         # cancel render on error
-        engine.end_result(None, True)
+        engine.end_result(None, cancel=True)
     finally:
         del engine._session
         arnold.AiEnd()
@@ -1063,7 +1063,7 @@ def view_update(engine, context):
         ipr = getattr(engine, "_ipr", None)
         if ipr is None:
             blend_data = context.blend_data
-            scene = context.scene
+            depsgraph = context.depsgraph
             region = context.region
             v3d = context.space_data
             rv3d = context.region_data
@@ -1075,7 +1075,7 @@ def view_update(engine, context):
             @contextmanager
             def _to_mesh(ob):
                 pc = time.perf_counter()
-                mesh = ob.to_mesh(scene, True, 'PREVIEW', False)
+                mesh = ob.to_mesh(depsgraph, apply_modifiers=True, calc_undeformed=False)
                 if mesh is not None:
                     try:
                         mesh.calc_normals_split()
@@ -1114,8 +1114,8 @@ def view_update(engine, context):
                     nodes.append(anode)
                 return anode
 
-            for ob in scene.objects:
-                if ob.is_visible(scene) and ob.type in _CT:
+            for ob in context.scene.objects:
+                if ob.type in _CT: # and ob.is_visible(scene)
                     with _to_mesh(ob) as mesh:
                         if mesh is not None:
                             shaders = Shaders(blend_data)
@@ -1135,21 +1135,20 @@ def view_update(engine, context):
                                 # polygons.foreach_get("material_index", a)
                                 mat = mesh.materials[0]
 
-                                mat = mesh.materials[0]
                                 node = shaders.get(mat)
                                 a = numpy.ndarray(npolygons, dtype=numpy.uint8)
                                 polygons.foreach_get("material_index", a)
                                 mm = collections.OrderedDict()
 
                                 shader = mat.arnold
-                                if mat.type == 'SURFACE':
-                                    if shader.type == 'lambert':
-                                        node = arnold.AiNode('polymesh')
-                                        nodes.append(('lambert', {
-                                            'name': ('STRING', ob.name),
-                                            'Kd': ('FLOAT', (mat.diffuse_intensity)),
-                                            'Kd_color': ('RGBA', (arnold.AI_TYPE_RGBA, *mat.diffuse_color)),
-                                        }))
+                                #if bpy.types.Material.arnold == 'SURFACE':
+                                if shader.type == 'lambert':
+                                    node = arnold.AiNode('polymesh')
+                                    nodes.append(('lambert', {
+                                        'name': ('STRING', ob.name),
+                                        'Kd': ('FLOAT', (1.0)),
+                                        'Kd_color': ('RGBA', (arnold.AI_TYPE_RGBA, *mat.diffuse_color)),
+                                    }))
                                 for i in numpy.unique(a):
                                     mn = shaders.get(mesh.materials[i])
                                     print(mn)
@@ -1194,7 +1193,7 @@ def view_update(engine, context):
                                 # Create an array based version of _AiPolymesh?
                 _Name = _CleanNames("O", itertools.count())
 
-                if ob.type == 'LAMP':
+                if ob.type == 'LIGHT':
                     lamp = ob.data
                     light = lamp.arnold
                     matrix = ob.matrix_world.copy()
@@ -1331,7 +1330,7 @@ def view_update(engine, context):
 
             #####################################
             ## options
-            opts = scene.arnold
+            opts = context.scene.arnold
             options = {
                 'camera': ('NODE', camera),
                 'thread_priority': ('STRING', opts.thread_priority),
@@ -1392,7 +1391,7 @@ def view_update(engine, context):
 
             #####################################
             ## world
-            world = scene.world
+            world = context.scene.world
             if world and world.use_nodes:
                 for _node in world.node_tree.nodes:
                     if isinstance(_node, ArnoldNodeWorldOutput) and _node.is_active:
@@ -1480,12 +1479,12 @@ def view_draw(engine, context):
         bgl.glGetFloatv(bgl.GL_VIEWPORT, v)
         vw = v[2]
         vh = v[3]
-        bgl.glRasterPos2f(0, vh - 1.0)
-        bgl.glPixelZoom(vw / width, -vh / height)
-        bgl.glDrawPixels(width, height, bgl.GL_RGBA, bgl.GL_UNSIGNED_BYTE,
-                         bgl.Buffer(bgl.GL_BYTE, len(rect), rect))
-        bgl.glPixelZoom(1.0, 1.0)
-        bgl.glRasterPos2f(0, 0)
+        #bgl.glRasterPos2f(0, vh - 1.0)
+        #bgl.glPixelZoom(vw / width, -vh / height)
+        # bgl.glDrawPixels(width, height, bgl.GL_RGBA, bgl.GL_FLOAT,
+        #                  bgl.Buffer(bgl.GL_FLOAT, len(rect), rect))
+        # bgl.glPixelZoom(1.0, 1.0)
+        # bgl.glRasterPos2f(0, 0)
     except:
         print("~" * 30)
         traceback.print_exc()

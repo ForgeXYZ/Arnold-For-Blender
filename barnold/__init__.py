@@ -8,7 +8,7 @@ bl_info = {
     "description"   : "Solid Angle's Arnold Renderer for Blender",
     "author"        : "Tyler Furby <tyler@tylerfurby.com>", "N.Ildar <nildar@users.sourceforge.net>"
     "version"       : (0, 0, 2),
-    "blender"       : (2, 79, 0),
+    "blender"       : (2, 80, 0),
     "location"      : "Info header, render engine menu",
     "category"      : "Render"
 }
@@ -27,7 +27,7 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
 
     _COMPATIBLE_PANELS = (
         ("properties_render", ((
-            "RENDER_PT_render",
+            "RENDER_PT_context",
             "RENDER_PT_dimensions",
             "RENDER_PT_output",
             "RENDER_PT_post_processing",
@@ -36,10 +36,10 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
             "WORLD_PT_context_world",
             "WORLD_PT_custom_props",
         ), False)),
-        ("properties_data_lamp", ((
-            "DATA_PT_context_lamp",
+        ("properties_data_light", ((
+            "DATA_PT_context_light",
             #"DATA_PT_area",
-            "DATA_PT_custom_props_lamp",
+            "DATA_PT_custom_props_light",
         ), False)),
         ("properties_material", ((
             "MATERIAL_PT_context_material",
@@ -56,7 +56,7 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
         #    "TEXTURE_PT_mapping",
         #    #"TEXTURE_PT_influence",
         #), False)),
-        ("properties_render_layer", None),
+        # ("properties_render_layer", None),
         ("properties_scene", None),
         ("properties_data_camera", None),
         ("properties_data_mesh", None),
@@ -87,13 +87,13 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
                                 ce.remove(cls.bl_idname)
                             else:
                                 ce.add(cls.bl_idname)
-            else:
-                for c in classes:
-                    ce = getattr(mod, c).COMPAT_ENGINES
-                    if remove:
-                        ce.remove(cls.bl_idname)
-                    else:
-                        ce.add(cls.bl_idname)
+            # else:
+            #     for c in classes:
+            #         # ce = getattr(mod, c).COMPAT_ENGINES
+            #         if remove:
+            #             ce.remove(cls.bl_idname)
+            #         else:
+            #             ce.add(cls.bl_idname)
 
     @classmethod
     def register_class(cls, _cls):
@@ -118,8 +118,8 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
     def is_active(cls, context):
         return context.scene.render.engine == cls.bl_idname
 
-    def update(self, data, scene):
-        engine.update(self, data, scene)
+    def update(self, data, depsgraph):
+        engine.update(self, data, depsgraph)
 
     def render(self, scene):
         engine.render(self, scene)

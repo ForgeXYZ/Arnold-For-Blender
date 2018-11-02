@@ -49,36 +49,39 @@ _SPACE_TYPES = [
 
 @ArnoldRenderEngine.register_class
 class ArnoldOptions(PropertyGroup):
-    ui_sampling = BoolProperty(
+    ui_sampling: BoolProperty(
         name="Sampling",
         default=True
     )
-    ui_ray_depth = BoolProperty(
+    ui_ray_depth: BoolProperty(
         name="Ray Depth"
     )
-    ui_light = BoolProperty(
+    ui_light: BoolProperty(
         name="Light"
     )
-    ui_gamma = BoolProperty(
+    ui_gamma: BoolProperty(
         name="Gamma Correction"
     )
-    ui_textures = BoolProperty(
+    ui_textures: BoolProperty(
         name="Textures"
     )
-    ui_render = BoolProperty(
+    ui_render: BoolProperty(
         name="Render Settings",
         default=True
     )
-    ui_ipr = BoolProperty(
+    ui_ipr: BoolProperty(
         name="IPR",
         default=True
     )
-    ui_paths = BoolProperty(
+    ui_paths: BoolProperty(
         name="Search paths"
     )
-    ui_licensing = BoolProperty(
+    ui_licensing: BoolProperty(
         name="Licensing"
     )
+
+    #########################
+    #TODO: FIX THESE OPTIONS:
     ui_log = BoolProperty(
         name="Log",
         default=True
@@ -122,7 +125,10 @@ class ArnoldOptions(PropertyGroup):
     clamp_sample_values = BoolProperty(
         name="Clamp Sample Values"
     )
-    sample_filter_type = EnumProperty(
+
+    #############################
+
+    sample_filter_type: EnumProperty(
         name="Type",
         items=[
             ('blackman_harris_filter', "Blackman-Harris", "Blackman-Harris"),
@@ -145,6 +151,9 @@ class ArnoldOptions(PropertyGroup):
         ],
         default='gaussian_filter'
     )
+
+    ################################
+    #TODO: FIX THESE OPTIONS PART 2:
     sample_filter_width = FloatProperty(
         name="Width",
         default=2
@@ -181,7 +190,7 @@ class ArnoldOptions(PropertyGroup):
     )
     initial_sampling_level = IntProperty(
         name="Inital Sampling Level",
-        min=-10, max=0,
+        min=-10, max=-1,
         default = -3
     )
     ipr_bucket_size = IntProperty(
@@ -503,6 +512,8 @@ class ArnoldOptions(PropertyGroup):
     )
     #parallel_node_init
 
+    #####################################
+
     @classmethod
     def register(cls):
         Scene.arnold = PointerProperty(type=cls)
@@ -514,42 +525,42 @@ class ArnoldOptions(PropertyGroup):
 
 @ArnoldRenderEngine.register_class
 class ArnoldCamera(PropertyGroup):
-    enable_dof = BoolProperty(
+    enable_dof: BoolProperty(
         name="Enable DOF"
     )
     # far_clip with plane if True or with sphere
-    #plane_distance = BoolProperty(
+    #plane_distance: BoolProperty(
     #    name="Plane Distance",
     #    default=True
     #)
-    aperture_size = FloatProperty(
+    aperture_size: FloatProperty(
         name="Aperture: Size"
     )
-    aperture_blades = IntProperty(
+    aperture_blades: IntProperty(
         name="Aperture: Blades"
     )
-    aperture_rotation = FloatProperty(
+    aperture_rotation: FloatProperty(
         name="Aperture: Rotation"
     )
-    aperture_blade_curvature = FloatProperty(
+    aperture_blade_curvature: FloatProperty(
         name="Aperture: Blade Curvature"
     )
-    aperture_aspect_ratio = FloatProperty(
+    aperture_aspect_ratio: FloatProperty(
         name="Aperture: Aspect Ratio",
         default=1
     )
     # dof flat of sphere
-    #flat_field_focus = BoolProperty(
+    #flat_field_focus: BoolProperty(
     #    name="Flat Field Focus",
     #    default=True
     #)
-    shutter_start = FloatProperty(
+    shutter_start: FloatProperty(
         name="Shutter: Start"
     )
-    shutter_end = FloatProperty(
+    shutter_end: FloatProperty(
         name="Shutter: Stop"
     )
-    shutter_type = EnumProperty(
+    shutter_type: EnumProperty(
         name="Shutter Type",
         items=[
             ('box', "Box", "Box"),
@@ -559,7 +570,7 @@ class ArnoldCamera(PropertyGroup):
         default='box'
     )
     #shutter_curve
-    rolling_shutter = EnumProperty(
+    rolling_shutter: EnumProperty(
         name="Rolling Shutter",
         items=[
             ('off', "Off", "Off"),
@@ -570,12 +581,12 @@ class ArnoldCamera(PropertyGroup):
         ],
         default='off'
     )
-    rolling_shutter_duration = FloatProperty(
+    rolling_shutter_duration: FloatProperty(
         name="Rolling Shutter: Duration"
     )
     #handedness (right, left)
     #time_samples
-    exposure = FloatProperty(
+    exposure: FloatProperty(
         name="Exposure"
     )
 
@@ -601,7 +612,7 @@ class ArnoldShape(PropertyGroup):
     #VECTOR[]      nlist                             (empty)
     #POINT2[]      uvlist                            (empty)
     #BOOL          smoothing                         false
-    subdiv_type = EnumProperty(
+    subdiv_type: EnumProperty(
         name="Type",
         items=[
             ('none', "None", "None"),
@@ -610,18 +621,18 @@ class ArnoldShape(PropertyGroup):
         ],
         default='none'
     )
-    subdiv_iterations = IntProperty(
+    subdiv_iterations: IntProperty(
         name="Iterations",
         subtype='UNSIGNED',
         min=0, max=255,
         default=1
     )
-    subdiv_adaptive_error = FloatProperty(
+    subdiv_adaptive_error: FloatProperty(
         name="Adaptive Error",
         default=0
     )
     #NODE          subdiv_dicing_camera              (null)
-    subdiv_adaptive_metric = EnumProperty(
+    subdiv_adaptive_metric: EnumProperty(
         name="Adaptive Metric",
         items=[
             ('auto', "Auto", "Auto"),
@@ -630,12 +641,12 @@ class ArnoldShape(PropertyGroup):
         ],
         default='auto'
     )
-    subdiv_adaptive_space = EnumProperty(
+    subdiv_adaptive_space: EnumProperty(
         name="Adaptive Space",
         items=_SPACE_TYPES,
         default='raster'
     )
-    subdiv_uv_smoothing = EnumProperty(
+    subdiv_uv_smoothing: EnumProperty(
         name="UV Smoothing",
         items=[
             ('pin_corners', "Pin Corners", "Pin Corners"),
@@ -645,7 +656,7 @@ class ArnoldShape(PropertyGroup):
         ],
         default='pin_corners'
     )
-    subdiv_smooth_derivs = BoolProperty(
+    subdiv_smooth_derivs: BoolProperty(
         name="Smooth Tangents"
     )
     #NODE[]        disp_map                          (empty)
@@ -654,33 +665,33 @@ class ArnoldShape(PropertyGroup):
     #FLOAT         disp_zero_value                   0
     #BOOL          disp_autobump                     false
     #BYTE          autobump_visibility               159
-    visibility = IntProperty(
+    visibility: IntProperty(
         name="Visibility",
         default=255
     )
-    sidedness = IntProperty(
+    sidedness: IntProperty(
         name="Sidedness",
         default=255
     )
-    receive_shadows = BoolProperty(
+    receive_shadows: BoolProperty(
         name="Receive shadows",
         default=True
     )
-    self_shadows = BoolProperty(
+    self_shadows: BoolProperty(
         name="Self shadows",
         default=True
     )
-    invert_normals = BoolProperty(
+    invert_normals: BoolProperty(
         name="Invert normals"
     )
     # ray_bias (FLOAT)
-    # matrix (MATRIX[]) = Object.matrix_world
-    # shader (NODE[]) = Object.data.materials
-    opaque = BoolProperty(
+    # matrix (MATRIX[]): Object.matrix_world
+    # shader (NODE[]): Object.data.materials
+    opaque: BoolProperty(
         name="Opaque",
         default=True
     )
-    matte = BoolProperty(
+    matte: BoolProperty(
         name="Matte"
     )
     # use_light_group (BOOL)
@@ -707,27 +718,27 @@ class ArnoldShape(PropertyGroup):
             "set": set
         }
 
-    visibility_camera = BoolProperty(
+    visibility_camera: BoolProperty(
         name="Camera",
         **_visibility(1)
     )
-    visibility_shadow = BoolProperty(
+    visibility_shadow: BoolProperty(
         name="Shadow",
         **_visibility(1 << 1)
     )
-    visibility_reflection = BoolProperty(
+    visibility_reflection: BoolProperty(
         name="Reflection",
         **_visibility(1 << 2)
     )
-    visibility_refraction = BoolProperty(
+    visibility_refraction: BoolProperty(
         name="Refraction",
         **_visibility(1 << 3)
     )
-    visibility_diffuse = BoolProperty(
+    visibility_diffuse: BoolProperty(
         name="Diffuse",
         **_visibility(1 << 4)
     )
-    visibility_glossy = BoolProperty(
+    visibility_glossy: BoolProperty(
         name="Glossy",
         **_visibility(1 << 5)
     )
@@ -747,27 +758,27 @@ class ArnoldShape(PropertyGroup):
             "set": set
         }
 
-    sidedness_camera = BoolProperty(
+    sidedness_camera: BoolProperty(
         name="Camera",
         **_sidedness(1)
     )
-    sidedness_shadow = BoolProperty(
+    sidedness_shadow: BoolProperty(
         name="Shadow",
         **_sidedness(1 << 1)
     )
-    sidedness_reflection = BoolProperty(
+    sidedness_reflection: BoolProperty(
         name="Reflection",
         **_sidedness(1 << 2)
     )
-    sidedness_refraction = BoolProperty(
+    sidedness_refraction: BoolProperty(
         name="Refraction",
         **_sidedness(1 << 3)
     )
-    sidedness_diffuse = BoolProperty(
+    sidedness_diffuse: BoolProperty(
         name="Diffuse",
         **_sidedness(1 << 4)
     )
-    sidedness_glossy = BoolProperty(
+    sidedness_glossy: BoolProperty(
         name="Glossy",
         **_sidedness(1 << 5)
     )
@@ -783,40 +794,40 @@ class ArnoldShape(PropertyGroup):
 
 @ArnoldRenderEngine.register_class
 class ArnoldLight(PropertyGroup):
-    ui_shadow = BoolProperty(
+    ui_shadow: BoolProperty(
         name="Shadow"
     )
-    ui_volume = BoolProperty(
+    ui_volume: BoolProperty(
         name="Volume"
     )
-    ui_contribution = BoolProperty(
+    ui_contribution: BoolProperty(
         name="Contribution"
     )
-    ui_viewport = BoolProperty(
+    ui_viewport: BoolProperty(
         name="Viewport",
     )
-    angle = FloatProperty(
+    angle: FloatProperty(
         name="Angle"
     )
-    radius = FloatProperty(
+    radius: FloatProperty(
         name="Radius",
         min=0, soft_max=10
     )
-    lens_radius = FloatProperty(
+    lens_radius: FloatProperty(
         name="Lens Radius"
     )
-    penumbra_angle = FloatProperty(
+    penumbra_angle: FloatProperty(
         name="Penumbra Angle"
     )
-    aspect_ratio = FloatProperty(
+    aspect_ratio: FloatProperty(
         name="Aspect Ratio",
         default=1
     )
-    resolution = IntProperty(
+    resolution: IntProperty(
         name="Resolution",
         default=1000
     )
-    format = EnumProperty(
+    format: EnumProperty(
         name="Format",
         items=[
             ('mirrored_ball', "Mirrored Ball", "Mirrored Ball"),
@@ -826,7 +837,7 @@ class ArnoldLight(PropertyGroup):
         default='angular'
     )
     # Is not available for Directional, Distant or Skydome lights.
-    decay_type = EnumProperty(
+    decay_type: EnumProperty(
         name="Decay Type",
         items=[
             ('constant', "Constant", "Constant"),
@@ -834,48 +845,48 @@ class ArnoldLight(PropertyGroup):
         ],
         default='quadratic'
     )
-    quad_resolution = IntProperty(
+    quad_resolution: IntProperty(
         name="Resolution",
         default=512
     )
-    filename = StringProperty(
+    filename: StringProperty(
         name="Photometry File",
         subtype='FILE_PATH'
     )
-    mesh = StringProperty(
+    mesh: StringProperty(
         name="Mesh"
     )
     # common parameters
-    intensity = FloatProperty(
+    intensity: FloatProperty(
         name="Intensity",
         description="Intensity controls the brightness of light emitted by the light source by multiplying the color.",
         soft_min=0, soft_max=10,
         default=1.0
     )
-    exposure = FloatProperty(
+    exposure: FloatProperty(
         name="Exposure",
         description="Exposure is an f-stop value which multiplies the intensity by 2 to the power of the f-stop. Increasing the exposure by 1 results in double the amount of light.",
         soft_min=0, soft_max=10
     )
-    cast_shadows = BoolProperty(
+    cast_shadows: BoolProperty(
         name="Cast Shadows",
         default=True
     )
-    cast_volumetric_shadows = BoolProperty(
+    cast_volumetric_shadows: BoolProperty(
         name="Cast Volumetric Shadows",
         default=True
     )
-    shadow_density = FloatProperty(
+    shadow_density: FloatProperty(
         name="Shadow Density",
         default=1.0
     )
-    shadow_color = FloatVectorProperty(
+    shadow_color: FloatVectorProperty(
         name="Shadow Color",
         size=3,
         min=0, max=1,
         subtype='COLOR'
     )
-    samples = IntProperty(
+    samples: IntProperty(
         name="Samples",
         description="Controls the quality of the noise in the soft shadows."
                     " The higher the number of samples, the lower the noise,"
@@ -885,71 +896,71 @@ class ArnoldLight(PropertyGroup):
         soft_min=1, max=100,
         default=1
     )
-    normalize = BoolProperty(
+    normalize: BoolProperty(
         name="Normalize",
         default=True
     )
-    affect_diffuse = BoolProperty(
+    affect_diffuse: BoolProperty(
         name="Emit Diffuse",
         description="Allow the light to affect a material's diffuse component.",
         default=True
     )
-    affect_specular = BoolProperty(
+    affect_specular: BoolProperty(
         name="Emit Specular",
         description="Allow the light to affect a material's specular component.",
         default=True
     )
-    affect_volumetrics = BoolProperty(
+    affect_volumetrics: BoolProperty(
         name="Affect Volumetrics",
         default=True
     )
-    diffuse = FloatProperty(
+    diffuse: FloatProperty(
         name="Diffuse",
         soft_min=0, soft_max=1,
         default=1
     )
-    specular = FloatProperty(
+    specular: FloatProperty(
         name="Specular",
         soft_min=0, soft_max=1,
         default=1
     )
-    sss = FloatProperty(
+    sss: FloatProperty(
         name="SSS",
         soft_min=0, soft_max=1,
         default=1
     )
-    indirect = FloatProperty(
+    indirect: FloatProperty(
         name="Indirect",
         soft_min=0, soft_max=1,
         default=1
     )
-    max_bounces = IntProperty(
+    max_bounces: IntProperty(
         name="Max Bounces",
         default=999
     )
-    volume_samples = IntProperty(
+    volume_samples: IntProperty(
         name="Volume Samples",
         subtype='UNSIGNED',
         default=2
     )
 
-    volume = FloatProperty(
+    volume: FloatProperty(
         name="Volume",
         soft_min=0, soft_max=1,
         default=1
     )
 
     def _types():
-        _lights = ('POINT', 'SUN', 'SPOT', 'HEMI', 'AREA')
+        _lamps = ('POINT', 'SUN', 'SPOT', 'HEMI', 'AREA')
 
         def get(self):
-            light = self.id_data
-            i = _lights.index(light.type)
+            lamp = self.id_data
+            i = _lamps.index(lamp.type)
             if i == 4:  # AREA
                 _t = self.get("_type", 0)
                 if _t == 3:
                     i = 8  # quad_light
-                elif light.shape == 'RECTANGLE':
+                elif lamp.shape == 'RECTANGLE':
                     self["_type"] = 0
                     i = 4  # cylinder_light
                 else:
@@ -957,20 +968,20 @@ class ArnoldLight(PropertyGroup):
             return i
 
         def set(self, value):
-            light = self.id_data
+            lamp = self.id_data
             if value > 4:
-                light.type = 'AREA'
-                light = light.type_recast()
+                lamp.type = 'AREA'
+                lamp = lamp.type_recast()
                 if value != 8:
-                    light.shape = 'SQUARE'
+                    lamp.shape = 'SQUARE'
                 self["_type"] = value - 5
             elif value == 4:
-                light.type = 'AREA'
-                light = light.type_recast()
-                light.shape = 'RECTANGLE'
+                lamp.type = 'AREA'
+                lamp = lamp.type_recast()
+                lamp.shape = 'RECTANGLE'
                 self["_type"] = 0
             else:
-                light.type = _lights[value]
+                lamp.type = _lamps[value]
 
         return {"get": get, "set": set}
 
@@ -981,7 +992,7 @@ class ArnoldLight(PropertyGroup):
             ('point_light', "Point", "Point light", 0),
             ('distant_light', "Distant", "Distant light", 1),
             ('spot_light', "Spot", "Spot light", 2),
-            ('skydome_light', "Skydom", "Skydom light", 3),
+            ('skydome_light', "Skydome", "Skydome light", 3),
             ('cylinder_light', "Cylinder", "Cylinder light", 4),
             ('disk_light', "Disk", "Disk light", 5),
             ('mesh_light', "Mesh", "Mesh light", 6),
@@ -1015,7 +1026,7 @@ class ArnoldLight(PropertyGroup):
 class ArnoldShaderLambert(PropertyGroup):
     #base = Material.diffuse_intensity
     #base_color = Material.base_color
-    opacity = FloatVectorProperty(
+    opacity: FloatVectorProperty(
         name="Opacity",
         description="",
         size=3,
@@ -1025,38 +1036,38 @@ class ArnoldShaderLambert(PropertyGroup):
     )
 @ArnoldRenderEngine.register_class
 class ArnoldShaderStandardHair(PropertyGroup):
-    ui_standardhair_color = BoolProperty(
+    ui_standardhair_color: BoolProperty(
         name="Color",
         default=True
     )
-    ui_standardhair_specular = BoolProperty(
+    ui_standardhair_specular: BoolProperty(
         name="Specular",
         default=True
     )
-    ui_standardhair_tint = BoolProperty(
+    ui_standardhair_tint: BoolProperty(
         name="Tint",
         default=True
     )
-    ui_standardhair_diffuse = BoolProperty(
+    ui_standardhair_diffuse: BoolProperty(
         name="Diffuse",
         default=True
     )
-    ui_standardhair_emission = BoolProperty(
+    ui_standardhair_emission: BoolProperty(
         name="Emission",
         default=True
     )
-    ui_standardhair_advanced = BoolProperty(
+    ui_standardhair_advanced: BoolProperty(
         name="Advanced",
         default=False
     )
-    base = FloatProperty(
+    base: FloatProperty(
         name="Base",
         description="The brightness of the hair, a multiplier for the base color.",
         subtype="FACTOR",
         min=0, max=1,
         default=1
     )
-    base_color = FloatVectorProperty(
+    base_color: FloatVectorProperty(
         name="Base Color",
         description="The base color sets how bright the surface is when lit directly with a white light source (intensity at 100%). It defines which percentage for each component of the RGB spectrum which does not get absorbed when light scatters beneath the surface. Metal normally has a black or very dark base color, however, rusty metal's need some base color. A base color map is usually required.",
         size=3,
@@ -1064,49 +1075,49 @@ class ArnoldShaderStandardHair(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    melanin = FloatProperty(
+    melanin: FloatProperty(
         name="Melanin",
         description="The Melanin parameter is used to generate natural hair colors, by controlling the amount of melanin in hair. Colors will range from blonde around 0.2 to red and brown around 0.5, to black at 1.0.",
         subtype="FACTOR",
         min=0, max=1,
         default=1
     )
-    melanin_redness = FloatProperty(
+    melanin_redness: FloatProperty(
         name="Melanin Redness",
         description="Controls the redness of hair. Higher values increase the proportion of red pheomelanin (as found in red hair), relative to the amount of brown eumelanin.",
         subtype="FACTOR",
         min=0, max=1,
         default=0.5
     )
-    melanin_randomize = FloatProperty(
+    melanin_randomize: FloatProperty(
         name="Melanin Randomize",
         description="Randomizes the amount of melanin in hair fibers, for variation in hair colors.",
         subtype="FACTOR",
         min=0, max=1,
         default=0
     )
-    roughness = FloatProperty(
+    roughness: FloatProperty(
         name="Roughness",
         description="Controls the roughness of hair specular reflections and transmission. Lower values give sharper, brighter specular highlights while higher values give softer highlights.",
         subtype="FACTOR",
         min=0, max=1,
         default=0.2
     )
-    ior = FloatProperty(
+    ior: FloatProperty(
         name="IOR",
         description="Index of refraction. Each hair fiber is modeled as a dielectric cylinder, with hair reflecting off and transmitting into the fiber depending on the IOR. Lower IOR values give stronger forward scattering, and higher values give a stronger reflection. You can use IOR values outside of 1.4-1.6 to render wet hair.",
         subtype="FACTOR",
         min=0, max=3,
         default=1.55
     )
-    shift = FloatProperty(
+    shift: FloatProperty(
         name="Shift",
         description="The angle of scales on the hair fiber, shifting the primary and secondary specular reflections away from the perfect mirror direction. For realistic results for human hair, a small angle between 0° and 10° should be used (values for animal fur may be different). For synthetic hair, such as a nylon wig, use a shift value of 0 since the surface of the fiber is smooth.",
         subtype="FACTOR",
         min=0, max=20,
         default=3
     )
-    specular_tint = FloatVectorProperty(
+    specular_tint: FloatVectorProperty(
         name="Specular Tint",
         description="The scale of the primary specular contribution, which simply multiplies the primary specular color.",
         size=3,
@@ -1114,7 +1125,7 @@ class ArnoldShaderStandardHair(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    specular2_tint = FloatVectorProperty(
+    specular2_tint: FloatVectorProperty(
         name="2nd Specular Tint",
         description="The scale of the secondary specular contribution, which simply multiplies the secondary specular tint. For realistic and clean hair, this color should be set to white to let the base color tint the reflection.",
         size=3,
@@ -1122,7 +1133,7 @@ class ArnoldShaderStandardHair(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    transmission_tint = FloatVectorProperty(
+    transmission_tint: FloatVectorProperty(
         name="Transmission Tint",
         description="The scale of the transmission contribution, which simply multiplies the transmission tint. For realistic and clean hair, this color should be set to white to let the base color tint the transmission.",
         size=3,
@@ -1130,14 +1141,14 @@ class ArnoldShaderStandardHair(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    diffuse = FloatProperty(
+    diffuse: FloatProperty(
         name="Diffuse",
         description="Controls the diffuseness of hair, with 0 giving fully specular scattering, and 1 fully diffuse scattering. For typical realistic hair, no diffuse component is needed. Dirty or damaged hair might be approximated with diffuse scattering.",
         subtype="FACTOR",
         min=0, max=1,
         default=0
     )
-    diffuse_color = FloatVectorProperty(
+    diffuse_color: FloatVectorProperty(
         name="Diffuse Color",
         description="Diffuse scattering color.",
         size=3,
@@ -1145,14 +1156,14 @@ class ArnoldShaderStandardHair(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    emission = FloatProperty(
+    emission: FloatProperty(
         name="Emission",
         description="The multiplier for the emission color.",
         subtype="FACTOR",
         min=0, max=1,
         default=0
     )
-    emission_color = FloatVectorProperty(
+    emission_color: FloatVectorProperty(
         name="Emission Color",
         description="The multiplier for the emission color.",
         size=3,
@@ -1160,7 +1171,7 @@ class ArnoldShaderStandardHair(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    opacity = FloatVectorProperty(
+    opacity: FloatVectorProperty(
         name="Opacity",
         description="The opacity of the hair. This is set to full white by default, which means fully opaque hair, and for best performance, it should be left to the default.",
         size=3,
@@ -1168,28 +1179,28 @@ class ArnoldShaderStandardHair(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    indirect_diffuse = FloatProperty(
+    indirect_diffuse: FloatProperty(
         name="Indirect Diffuse",
         description="The amount of diffuse light received from indirect sources only. Values other than 1 are not physically correct.",
         subtype="FACTOR",
         min=0, max=1,
         default=1
     )
-    indirect_specular = FloatProperty(
+    indirect_specular: FloatProperty(
         name="Indirect Specular",
         description="The amount of specularity received from indirect sources only. Values other than 1 are not physically correct.",
         subtype="FACTOR",
         min=0, max=1,
         default=1
     )
-    extra_depth = FloatProperty(
+    extra_depth: FloatProperty(
         name="Extra Depth",
         description="Adds extra Specular Ray Depth just for this shader. Blonde hair renders correctly by default, without needing to increase the GI_specular_samples first.",
         subtype="FACTOR",
         min=0, max=1,
         default=1
     )
-    extra_samples = FloatProperty(
+    extra_samples: FloatProperty(
         name="Extra Samples",
         description="Adds additional GI samples on a per-shader basis (d'Eon BSDF Specular and Transmission (R, TT, and TRT paths).",
         subtype="FACTOR",
@@ -1198,48 +1209,51 @@ class ArnoldShaderStandardHair(PropertyGroup):
     )
 @ArnoldRenderEngine.register_class
 class ArnoldShaderStandardSurface(PropertyGroup):
-    ui_diffuse = BoolProperty(
+    ui_diffuse: BoolProperty(
         name="Diffuse",
         default=True
     )
-    ui_specular = BoolProperty(
+    ui_specular: BoolProperty(
         name="Specular"
     )
-    ui_reflection = BoolProperty(
+    ui_reflection: BoolProperty(
         name="Reflection"
     )
-    ui_refraction = BoolProperty(
+    ui_refraction: BoolProperty(
         name="Refraction"
     )
-    ui_sss = BoolProperty(
+    ui_sss: BoolProperty(
         name="SSS"
     )
-    ui_emission = BoolProperty(
+    ui_emission: BoolProperty(
         name="Emission"
     )
-    ui_coat = BoolProperty(
+    ui_coat: BoolProperty(
         name="Coat"
     )
-    ui_thinfilm = BoolProperty(
+    ui_sheen: BoolProperty(
+        name="Sheen"
+    )
+    ui_thinfilm: BoolProperty(
         name="Thin Coat"
     )
-    ui_geometry = BoolProperty(
+    ui_geometry: BoolProperty(
         name="Geometry"
     )
-    ui_caustics = BoolProperty(
+    ui_caustics: BoolProperty(
         name="Coustics"
     )
-    ui_advanced = BoolProperty(
+    ui_advanced: BoolProperty(
         name="Advanced"
     )
-    base = FloatProperty(
+    base: FloatProperty(
         name="Base",
         description="The base color weight",
         subtype="FACTOR",
         min=0, max=1,
         default=0.8
     )
-    base_color = FloatVectorProperty(
+    base_color: FloatVectorProperty(
         name="Color",
         description="The base color sets how bright the surface is when lit directly with a white light source (intensity at 100%). It defines which percentage for each component of the RGB spectrum which does not get absorbed when light scatters beneath the surface. Metal normally has a black or very dark base color, however, rusty metal's need some base color. A base color map is usually required.",
         size=3,
@@ -1247,16 +1261,16 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    metalness = FloatProperty(
+    metalness: FloatProperty(
         name="Metalness",
         description="With metalness 1.0 the surface behaves like a metal, using fully specular reflection and complex fresnel.",
         subtype="FACTOR",
         min=0, max=1,
         default=0
     )
-    # base = Material.diffuse_intensity
-    # base_color = Material.diffuse_color
-    diffuse_roughness = FloatProperty(
+    # base: Material.diffuse_intensity
+    # base_color: Material.diffuse_color
+    diffuse_roughness: FloatProperty(
         name="Diffuse Roughness",
         description="The diffuse component follows an Oren-Nayar reflection"
                     " model with surface roughness. A value of 0.0 is"
@@ -1267,14 +1281,14 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         min=0, max=1,
         default= 0
     )
-    specular = FloatProperty(
+    specular: FloatProperty(
         name="Specular",
         description="The specular weight. Influences the brightness of the specular highlight.",
         subtype='FACTOR',
         min=0, max=1,
         default=1
     )
-    specular_color = FloatVectorProperty(
+    specular_color: FloatVectorProperty(
         name="Color",
         description="The color the specular reflection will be modulated with. Use this color to 'tint' the specular highlight. You should only use colored specular for certain metals, whereas non-metallic surfaces usually have a monochromatic specular color. Non-metallic surfaces normally do not have a colored specular.",
         size=3,
@@ -1282,9 +1296,9 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    #specular = Material.specular_intensity
-    #specular_color = Material.specular_color
-    specular_roughness = FloatProperty(
+    #specular: Material.specular_intensity
+    #specular_color: Material.specular_color
+    specular_roughness: FloatProperty(
         name="Roughness",
         description="Controls the glossiness of the specular reflections."
                     " The lower the value, the sharper the reflection. In the"
@@ -1295,7 +1309,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         min=0, max=1,
         default=0.1
     )
-    specular_anisotropy = FloatProperty(
+    specular_anisotropy: FloatProperty(
         name="Anisotropy",
         description="Anisotropy reflects and transmits light with a"
                     " directional bias and causes materials to appear"
@@ -1304,7 +1318,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         min=0, max=1,
         default=0
     )
-    specular_rotation = FloatProperty(
+    specular_rotation: FloatProperty(
         name="Rotation",
         description="The rotation value changes the orientation of the"
                     " anisotropic reflectance in UV space. At 0.0, there is"
@@ -1314,46 +1328,46 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         subtype='FACTOR',
         min=0, max=1
     )
-    transmission = FloatProperty(
+    transmission: FloatProperty(
         name="Weight",
         description="The contribution from reflection rays.",
         subtype='FACTOR',
         min=0, max=1
     )
-    transmission_color = FloatVectorProperty(
+    transmission_color: FloatVectorProperty(
         name="Color",
         description="The color of the reflection ray at the current point.",
         subtype='COLOR',
         default=(1, 1, 1)
     )
     # TODO: Add transmission_depth and transmission_scatter
-    transmission_depth = FloatProperty(
+    transmission_depth: FloatProperty(
         name="Depth",
         description="Controls the depth into the volume at which the transmission color is realized.",
         subtype='FACTOR',
         min=0, max=10
     )
-    transmission_scatter = FloatVectorProperty(
+    transmission_scatter: FloatVectorProperty(
         name="Scatter",
         description="Controls the color of the volume, typically for thick or large bodies of liquid.",
         subtype='COLOR',
         default=(0, 0, 0)
     )
-    transmission_scatter_anisotropy = FloatProperty(
+    transmission_scatter_anisotropy: FloatProperty(
         name="Scatter Anisotropy",
         description="The directional bias, or anisotropy, of the scattering. The default value of zero gives isotropic scattering so that light is scattered evenly in all directions. Positive values bias the scattering effect forwards, in the direction of the light, while negative values bias the scattering backward, toward the light.",
         subtype='FACTOR',
         min=-0.5, max=0.5,
         default=0
     )
-    transmission_dispersion = FloatProperty(
+    transmission_dispersion: FloatProperty(
         name="Dispersion Abbe",
         description="Specifies the Abbe number of the material, which describes how much the index of refraction varies across wavelengths. For glass and diamonds, this is typically in the range of 10 to 70, with lower numbers giving more dispersion. The default value is 0, which turns off dispersion. The chromatic noise can be reduced by either increasing the global Camera (AA) samples or the Refraction samples.",
         subtype='FACTOR',
         min=0, max=100,
         default=0
     )
-    transmission_color = FloatVectorProperty(
+    transmission_color: FloatVectorProperty(
         name="Color",
         description="Transparency color multiplies the refracted result by a"
                     " color. For tinted glass it is best to control the tint"
@@ -1363,75 +1377,75 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         subtype='COLOR',
         default=(1, 1, 1)
     )
-    transmission_extra_roughness = FloatProperty(
+    transmission_extra_roughness: FloatProperty(
         name="Extra Roughness",
         description="Adds some additional blurriness of a refraction computed with an isotropic microfacet BTDF. The range goes from 0 (no roughness) to 1.",
         subtype='FACTOR',
         min=0, max=1,
         default=0
     )
-    sss_synopsis = BoolProperty(
+    sss_synopsis: BoolProperty(
         name="Subsurface Scattering",
         description="Sub-Surface Scattering (SSS) simulates the effect of light entering an object and scattering beneath its surface. Not all light reflects from a surface. Some of it will penetrate below the surface of an illuminated object. There it will be absorbed by the material and scattered internally. Some of this scattered light will make its way back out of the surface and become visible to the camera. This is known as 'sub-surface scattering' or 'SSS'. SSS is necessary for the realistic rendering of materials such as marble, skin, leaves, wax, and milk. The SSS component in this shader is calculated using a brute-force raytracing method.",
         default=False
     )
-    transmit_aovs = BoolProperty(
+    transmit_aovs: BoolProperty(
         name="Extra Roughness",
         description="When enabled, Transmission will pass through AOVs. If the background is transparent, then the transmissive surface will become transparent so that it can be composited over another background. Light path expression AOVs will be passed through so that for example a diffuse surface seen through a transmissive surface will end up in the diffuse AOV. Other AOVs can also be passed straight through (without any opacity blending), which can be used for creating masks for example. ",
         default=False
     )
-    specular_ior = FloatProperty(
+    specular_ior: FloatProperty(
         name="IOR",
         description="The IOR parameter (Index of Refraction) defines the material's Fresnel reflectivity and is by default the angular function used. Effectively the IOR will define the balance between reflections on surfaces facing the viewer and on surface edges. You can see the reflection intensity remains unchanged, but the reflection intensity on the front side changes a lot.",
         subtype='FACTOR',
         min=0, soft_max=3,
         default=1.52
     )
-    subsurface = FloatProperty(
+    subsurface: FloatProperty(
         name="Weight",
         description="The 'blend' between diffuse and subsurface scattering. When set to 1.0, there is only SSS, and when set to 0 it is only Lambert. In most cases, you want this to be 1.0 (full SSS).",
         min=0, max=1,
         subtype='FACTOR',
         default=0
     )
-    subsurface_color = FloatVectorProperty(
+    subsurface_color: FloatVectorProperty(
         name="Subsurface Color",
         description="The color used to determine the subsurface scattering effect. For example, replicating a skin material would mean setting this to a fleshy color.",
         subtype='COLOR',
         default=(1, 1, 1)
     )
-    subsurface_radius = FloatVectorProperty(
+    subsurface_radius: FloatVectorProperty(
         name="Radius",
         description="The approximate distance up to which light can scatter below the surface, also known as “mean free path” (MFP). This parameter affects the average distance that light might propagate below the surface before scattering back out. This effect on the distance can be specified for each color component separately. Higher values will smooth the appearance of the subsurface scattering, while lower values will result in a more opaque look.",
         subtype='COLOR',
         default=(1, 1, 1)
     )
-    subsurface_scale = FloatProperty(
+    subsurface_scale: FloatProperty(
         name="Scale",
         description="Controls the distance that the light is likely to travel under the surface before reflecting back out. It scales the scattering radius and multiplies the SSS Radius Color.",
         subtype='FACTOR',
         min=0,max=10,
         default=1
     )
-    subsurface_anisotropy = FloatProperty(
+    subsurface_anisotropy: FloatProperty(
         name="Anisotropy",
         description="Henyey-Greenstein Anisotropy coefficient between -1 (full back-scatter) and 1 (full forward-scatter). The default is 0 for an isotropic medium, which scatters the light evenly in all directions, giving a uniform effect. Positive values bias the scattering effect forwards, in the direction of the light, while negative values bias the scattering backward, toward the light.",
         subtype='FACTOR',
         min=-1,max=1,
         default=0
     )
-    subsurface_type = StringProperty(
+    subsurface_type: StringProperty(
         name="Type",
         description="Henyey-Greenstein Anisotropy coefficient between -1 (full back-scatter) and 1 (full forward-scatter). The default is 0 for an isotropic medium, which scatters the light evenly in all directions, giving a uniform effect. Positive values bias the scattering effect forwards, in the direction of the light, while negative values bias the scattering backward, toward the light.",
         subtype='BYTE_STRING',
         default='diffusion'
     )
-    thin_walled = BoolProperty(
+    thin_walled: BoolProperty(
         name="Thin Walled",
         description="Thin Walled can also provide the effect of a translucent object being lit from behind (the shading point is 'lit' by the specified fraction of the light hitting the reverse of the object at that point). It is recommended that this only be used with thin objects (single sided geometry) as objects with thickness may render incorrectly.",
         default=False
     )
-    emission = FloatProperty(
+    emission: FloatProperty(
         name="Weight",
         description="Controls the amount of emitted light. It can create"
                     " noise, especially if the source of indirect illumination"
@@ -1439,7 +1453,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
                     " good practise to reduce Diffuse Weight value to 0 when"
                     " using emission."
     )
-    emission_color = FloatVectorProperty(
+    emission_color: FloatVectorProperty(
         name="Color",
         description="The emitted light color.",
         size=3,
@@ -1447,7 +1461,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    normal = FloatVectorProperty(
+    normal: FloatVectorProperty(
         name="Normal Camera",
         description="Connect a Normal map here (usually exported from Mudbox or ZBrush). Normal mapping works by replacing the interpolated surface normal by the one evaluated from an RGB texture, where each channel (Red, Green, Blue) correspond to the X, Y and Z coordinates of the surface normal. It can be faster than bump mapping since bump mapping requires evaluating the shader underneath at least three times.",
         size= 3,
@@ -1455,14 +1469,14 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=(0,0,0),
         subtype="XYZ"
     )
-    coat = FloatProperty(
+    coat: FloatProperty(
         name='Weight',
         description='This attribute is used to coat the material. It acts as a clear-coat layer on top of all other shading effects. The coating is always reflective (with the given roughness) and is assumed to be dielectric. Examples would be the clear-coat layer for car paint or the sheen layer for a skin material. For example, for an extra oily layer or wet skin. Other examples would be objects that have been laminated or a protective film over an aluminum cell phone.',
         subtype='FACTOR',
         min=0,max=1,
         default=0
     )
-    coat_color = FloatVectorProperty(
+    coat_color: FloatVectorProperty(
         name="Color",
         description="This is the color of the coating layer's transparency.",
         size=3,
@@ -1470,21 +1484,21 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=(1, 1, 1),
         subtype='COLOR'
     )
-    coat_roughness = FloatProperty(
+    coat_roughness: FloatProperty(
         name='Roughness',
         description='Controls the glossiness of the specular reflections. The lower the value, the sharper the reflection. In the limit, a value of 0 will give you a perfectly sharp mirror reflection, while 1.0 will create reflections that are close to a diffuse reflection. You should connect a map here to get variation in the coat highlight.',
         subtype='FACTOR',
         min=0,max=1,
         default=0.1
     )
-    coat_ior = FloatProperty(
+    coat_ior: FloatProperty(
         name='IOR',
         description="The IOR parameter (Index of Refraction) defines the material's Fresnel reflectivity and is by default the angular function used. Effectively the IOR will define the balance between reflections on surfaces facing the viewer and on surface edges. You can see the reflection intensity remains unchanged, but the reflection intensity on the front side changes a lot.",
         subtype='FACTOR',
         min=0,max=10,
         default=1.5
     )
-    coat_normal = FloatVectorProperty(
+    coat_normal: FloatVectorProperty(
         name='Normal',
         description="The Coat Normal affects the Fresnel blending of the coat over the base, so depending on the normal, the base will be more or less visible from particular angles. Uses for Coat Normal could be a bumpy coat layer over a smoother base. This could include a rain effect, a carbon fiber shader or a car paint shader where you could use different normals (using e.g. flakes) for the coat layer and base layers.",
         subtype='XYZ',
@@ -1492,21 +1506,21 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         min=0, max=200,
         default=(0, 0, 0)
     )
-    coat_affect_color = FloatProperty(
+    coat_affect_color: FloatProperty(
         name='Affect Color',
         description="In the real world, when a material is coated there is a certain amount of internal reflections on the inside of the coating. This causes light to bounce onto the surface multiple times before escaping, allowing the material's color to have an enhanced effect. An example of this is varnished wood. This effect can be achieved by using Coat Affect Color.",
         subtype='FACTOR',
         min=0, max=1,
         default=0
     )
-    coat_affect_roughness = FloatProperty(
+    coat_affect_roughness: FloatProperty(
         name='Affect Roughness',
         description="This causes the coating's roughness to have an effect on the underlying layer's roughness, simulating the blurring effect of being seen through the top layer.",
         subtype='FACTOR',
         min=0, max=1,
         default=0
     )
-    opacity = FloatProperty(
+    opacity: FloatProperty(
         name="Opacity",
         description="Controls the degree to which light is not allowed to"
                     " travel through it. Unlike transparency, whereby the"
@@ -1518,22 +1532,22 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         min=0, max=1,
         default=1
     )
-    caustics = BoolProperty(
+    caustics: BoolProperty(
         name="Caustics",
         description="This switch in the Standard Surface shader specifies whether specular or transmission bounces behind diffuse bounces are enabled or not. As caustics can be noisy, these are disabled by default.",
         default=False
     )
-    internal_reflections = BoolProperty(
+    internal_reflections: BoolProperty(
         name="Internal Reflections",
         description="Unchecking internal reflections will disable indirect specular and mirror perfect reflection computations when ray refraction depth is bigger than zero (when there has been at least one refraction ray traced in the current ray tree).",
         default=True
     )
-    exit_to_background = BoolProperty(
+    exit_to_background: BoolProperty(
         name="Exit To Background",
         description="This will cause the Standard Surface shader to trace a ray against the background/environment when the maximum GI reflection/refraction depth is met and return the color that is visible in the background/environment in that direction. When the option is disabled, the path is terminated instead and returns black when the maximum depth is reached.",
         default=False
     )
-    indirect_specular = FloatProperty(
+    indirect_specular: FloatProperty(
         name="Indirect Scale",
         description="The amount of specularity received from indirect sources"
                     " only. Values other than 1.0 will cause the materials"
@@ -1543,7 +1557,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         min=0, max=1,
         default=1
     )
-    indirect_diffuse = FloatProperty(
+    indirect_diffuse: FloatProperty(
         name="Indirect Scale",
         description="The amount of diffuse light received from indirect"
                     " sources only.",
@@ -1551,7 +1565,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         min=0, max=1,
         default=1
     )
-    thin_film_thickness = FloatProperty(
+    thin_film_thickness: FloatProperty(
         name="Thickness",
         description="Defines the actual thickness of the film between the specified min and max thickness (0 to 2000 (soft min/max)). This affects the specular, transmission and coat components. Normally this would be something like a noise map to give some variation to the interference effect. If the thickness becomes large like 3000 [nm], the iridescence effect will disappear, which is a physically correct behavior."
                     " sources only.",
@@ -1559,18 +1573,40 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         min=0, max=2000,
         default=0
     )
-    thin_film_ior = FloatProperty(
+    thin_film_ior: FloatProperty(
         name="IOR",
         description="The refractive index of the medium surrounding the material. Normally this is set to 1.0 for air.",
         subtype='FACTOR',
         min=0, max=3.5,
         default=1.5
     )
+    sheen: FloatProperty(
+        name="Weight",
+        description="An energy-conserving sheen layer that can be used to approximate microfiber, cloth-like surfaces such as velvet and satin of varying roughness.",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=0
+    )
+    sheen_color: FloatVectorProperty(
+        name="Color",
+        description="The color of the fibers. Tints the color of the sheen contribution.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    sheen_roughness: FloatProperty(
+        name="Roughness",
+        description="Modulates how much the microfibers diverge from the surface normal direction.",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=0.3
+    )
 
 
 @ArnoldRenderEngine.register_class
 class ArnoldShaderUtility(PropertyGroup):
-    color_mode = EnumProperty(
+    color_mode: EnumProperty(
         name="Color Mode",
         items=[
             ('color', "Color", "Single color output"),
@@ -1600,7 +1636,7 @@ class ArnoldShaderUtility(PropertyGroup):
         ],
         default='color'
     )
-    shade_mode = EnumProperty(
+    shade_mode: EnumProperty(
         name="Shade Mode",
         items=[
             ('ndoteye', "Ndoteye", "Uses a dot product between the Normal and the Eye vector."),
@@ -1611,7 +1647,7 @@ class ArnoldShaderUtility(PropertyGroup):
         ],
         default='ndoteye'
     )
-    overlay_mode = EnumProperty(
+    overlay_mode: EnumProperty(
         name="Overlay Mode",
         items=[
             ('none', "None", "None"),
@@ -1620,7 +1656,7 @@ class ArnoldShaderUtility(PropertyGroup):
         ],
         default='none'
     )
-    color = FloatVectorProperty(
+    color: FloatVectorProperty(
         name="Color",
         description="Color used as the shading mode for the model.",
         get=lambda self: self.id_data.diffuse_color,
@@ -1628,11 +1664,11 @@ class ArnoldShaderUtility(PropertyGroup):
         subtype='COLOR',
         default=(1, 1, 1)
     )
-    opacity = FloatProperty(
+    opacity: FloatProperty(
         name="Opacity",
         default=1.0
     )
-    ao_distance = FloatProperty(
+    ao_distance: FloatProperty(
         name="AO Distance",
         default=100
     )
@@ -1640,7 +1676,7 @@ class ArnoldShaderUtility(PropertyGroup):
 
 @ArnoldRenderEngine.register_class
 class ArnoldShaderFlat(PropertyGroup):
-    color = FloatVectorProperty(
+    color: FloatVectorProperty(
         name="Color",
         description="The input color.",
         get=lambda self: self.id_data.diffuse_color,
@@ -1648,7 +1684,7 @@ class ArnoldShaderFlat(PropertyGroup):
         subtype='COLOR',
         default=(1, 1, 1)
     )
-    opacity = FloatVectorProperty(
+    opacity: FloatVectorProperty(
         name="Opacity",
         description="The input opacity.",
         subtype='COLOR',
@@ -1658,83 +1694,83 @@ class ArnoldShaderFlat(PropertyGroup):
 
 @ArnoldRenderEngine.register_class
 class ArnoldShaderStandardVolume(PropertyGroup):
-    ui_standardvolume_density = BoolProperty(
+    ui_standardvolume_density: BoolProperty(
         name="Volume",
         default=True
     )
-    ui_standardvolume_scatter = BoolProperty(
+    ui_standardvolume_scatter: BoolProperty(
         name="Scatter",
         default=True
     )
-    ui_standardvolume_transparency = BoolProperty(
+    ui_standardvolume_transparency: BoolProperty(
         name="Volume",
         default=True
     )
-    ui_standardvolume_emission = BoolProperty(
+    ui_standardvolume_emission: BoolProperty(
         name="Volume",
         default=True
     )
-    ui_standardvolume_advanced = BoolProperty(
+    ui_standardvolume_advanced: BoolProperty(
         name="Volume",
         default=True
     )
-    density = FloatProperty(
+    density: FloatProperty(
         name="Weight",
         description="The density of the volume, with low density resulting in thin volumes and high density in thick volumes.",
         min=0, max=1,
         default=0.25
     )
-    scatter = FloatProperty(
+    scatter: FloatProperty(
         name="Weight",
         description="The brightness of the volume under illumination.",
         min=0, max=1,
         default=1
     )
-    scatter_color = FloatVectorProperty(
+    scatter_color: FloatVectorProperty(
         name="Color",
         description="The density of the volume, with low density resulting in thin volumes and high density in thick volumes.",
         subtype='COLOR',
         min=0, max=1,
         default=(1, 1, 1)
     )
-    scatter_anisotropy = FloatProperty(
+    scatter_anisotropy: FloatProperty(
         name="Anisotropy",
         description="The directional bias, or anisotropy, of the scattering.",
         min=0, max=1,
         default=0
     )
-    transparent = FloatVectorProperty(
+    transparent: FloatVectorProperty(
         name="Transparent Color",
         description="Additional control over the density of the volume, to tint the color of volume shadows and objects seen through the volume.",
         subtype='COLOR',
         min=0, max=1,
         default=(1, 1, 1)
     )
-    transparent_depth = FloatProperty(
+    transparent_depth: FloatProperty(
         name="Transparent Depth",
         description="Additional control over the density of the volume, to control the depth into the volume at which the transparent color is realized.",
         min=0, max=5,
         default=1
     )
-    emission = FloatProperty(
+    emission: FloatProperty(
         name="Weight",
         description="Emission is the rate at which a volume emits light.",
         min=0, max=5,
         default=1
     )
-    emission_color = FloatVectorProperty(
+    emission_color: FloatVectorProperty(
         name="Color",
         description="A color to tint (multiply to) the emission.",
         subtype='COLOR',
         min=0, max=1,
         default=(1, 1, 1)
     )
-    # emission_mode = FloatStringProperty(
+    # emission_mode: FloatStringProperty(
     #     name="Mode",
     #     description="Method of volume emission",
     #     default="None"
     # )
-    temperature = FloatProperty(
+    temperature: FloatProperty(
         name="Temperature",
         description="If a blackbody channel is used, this acts as a multiplier for the blackbody temperature.",
         min=0,max=1,
@@ -1744,11 +1780,11 @@ class ArnoldShaderStandardVolume(PropertyGroup):
 
 @ArnoldRenderEngine.register_class
 class ArnoldShaderWireframe(PropertyGroup):
-    line_width = FloatProperty(
+    line_width: FloatProperty(
         name="Line Width",
         default=1.0
     )
-    fill_color = FloatVectorProperty(
+    fill_color: FloatVectorProperty(
         name="Fill Color",
         get=lambda self: self.id_data.diffuse_color,
         set=lambda self, value: setattr(self.id_data, "diffuse_color"),
@@ -1756,17 +1792,17 @@ class ArnoldShaderWireframe(PropertyGroup):
         min=0, max=1,
         subtype='COLOR'
     )
-    line_color = FloatVectorProperty(
+    line_color: FloatVectorProperty(
         name="Line Color",
         default=(0, 0, 0),
         min=0, max=1,
         subtype='COLOR'
     )
-    raster_space = BoolProperty(
+    raster_space: BoolProperty(
         name="Raster Space",
         default=True
     )
-    edge_type = EnumProperty(
+    edge_type: EnumProperty(
         name="Color Mode",
         items=[
             ('polygons', "Polygons", "Polygons"),
@@ -1778,7 +1814,7 @@ class ArnoldShaderWireframe(PropertyGroup):
 
 @ArnoldRenderEngine.register_class
 class ArnoldShader(PropertyGroup):
-    type = EnumProperty(
+    type: EnumProperty(
         name="Type",
         items=[
             ('lambert', "Lambert", "Lambert"),
@@ -1789,13 +1825,13 @@ class ArnoldShader(PropertyGroup):
         ],
         default='lambert'
     )
-    lambert = PointerProperty(type=ArnoldShaderLambert)
-    standard_surface = PointerProperty(type=ArnoldShaderStandardSurface)
-    utility = PointerProperty(type=ArnoldShaderUtility)
-    flat = PointerProperty(type=ArnoldShaderFlat)
-    standard_hair = PointerProperty(type=ArnoldShaderStandardHair)
-    wire = PointerProperty(type=ArnoldShaderWireframe)
-    standard_volume = PointerProperty(type=ArnoldShaderStandardVolume)
+    lambert: PointerProperty(type=ArnoldShaderLambert)
+    standard_surface: PointerProperty(type=ArnoldShaderStandardSurface)
+    utility: PointerProperty(type=ArnoldShaderUtility)
+    flat: PointerProperty(type=ArnoldShaderFlat)
+    standard_hair: PointerProperty(type=ArnoldShaderStandardHair)
+    wire: PointerProperty(type=ArnoldShaderWireframe)
+    standard_volume: PointerProperty(type=ArnoldShaderStandardVolume)
 
     @classmethod
     def register(cls):
@@ -1808,21 +1844,21 @@ class ArnoldShader(PropertyGroup):
 
 @ArnoldRenderEngine.register_class
 class ArnoldCurves(PropertyGroup):
-    radius_tip = FloatProperty(
+    radius_tip: FloatProperty(
         name="Tip Radius",
         default=0.0001
     )
-    radius_root = FloatProperty(
+    radius_root: FloatProperty(
         name="Root Radius",
         default=0.001
     )
-    bezier_scale = FloatProperty(
+    bezier_scale: FloatProperty(
         name="Weight",
         min=0, max=1,
         default=0.5,
         subtype='FACTOR'
     )
-    basis = EnumProperty(
+    basis: EnumProperty(
         name="Basis",
         items=[
             ('bezier', "Bezier", "Bezier"),
@@ -1832,7 +1868,7 @@ class ArnoldCurves(PropertyGroup):
         ],
         default='bezier'
     )
-    mode = EnumProperty(
+    mode: EnumProperty(
         name="Mode",
         items=[
             ('ribbon', "Ribbon", "Ribbon"),
@@ -1841,19 +1877,19 @@ class ArnoldCurves(PropertyGroup):
         ],
         default='ribbon'
     )
-    min_pixel_width = FloatProperty(
+    min_pixel_width: FloatProperty(
         name="Min. Pixel Width",
         min=0,
         subtype='UNSIGNED'
     )
-    uvmap = StringProperty(
+    uvmap: StringProperty(
         name="UV Map"
     )
 
 
 @ArnoldRenderEngine.register_class
 class ArnoldPoints(PropertyGroup):
-    mode = EnumProperty(
+    mode: EnumProperty(
         name="Mode",
         items=[
             ('disk', "Disk", "Disk"),
@@ -1862,27 +1898,27 @@ class ArnoldPoints(PropertyGroup):
         ],
         default='disk'
     )
-    aspect = FloatProperty(
+    aspect: FloatProperty(
         name="Aspect",
         default=1.0
     )
-    rotation = FloatProperty(
+    rotation: FloatProperty(
         name="Rotation"
     )
-    min_pixel_width = FloatProperty(
+    min_pixel_width: FloatProperty(
         name="Min. Pixel Width",
         min=0,
         subtype='UNSIGNED'
     )
-    step_size = FloatProperty(
+    step_size: FloatProperty(
         name="Step Size"
     )
 
 
 @ArnoldRenderEngine.register_class
 class ArnoldParticleSystem(PropertyGroup):
-    curves = PointerProperty(type=ArnoldCurves)
-    points = PointerProperty(type=ArnoldPoints)
+    curves: PointerProperty(type=ArnoldCurves)
+    points: PointerProperty(type=ArnoldPoints)
 
     @classmethod
     def register(cls):

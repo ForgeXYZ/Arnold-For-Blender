@@ -146,12 +146,12 @@ class ArnoldWorldNodeTree(NodeTree):
 @ArnoldRenderEngine.register_class
 class ArnoldNodeSocketProperty(NodeSocket):
     # stub
-    default_value = FloatProperty()
+    default_value: FloatProperty()
 
-    path = StringProperty()
-    attr = StringProperty()
-    is_color = BoolProperty()
-    color = FloatVectorProperty(size=4)
+    path: StringProperty()
+    attr: StringProperty()
+    is_color: BoolProperty()
+    color: FloatVectorProperty(size=4)
 
     def draw(self, context, layout, node, text):
         data = node
@@ -175,7 +175,7 @@ class ArnoldNodeSocketProperty(NodeSocket):
 class ArnoldNodeSocketColor(NodeSocket):
     bl_label = "Color"
 
-    default_value = FloatVectorProperty(
+    default_value: FloatVectorProperty(
         name="Color",
         subtype='COLOR',
         default=(1, 1, 1),
@@ -189,7 +189,7 @@ class ArnoldNodeSocketColor(NodeSocket):
             row = layout.row()
             row.alignment = 'LEFT'
             row.prop(self, "default_value", text="")
-            row.label(text)
+            row.label(text=text)
 
     def draw_color(self, context, node):
         # <blender_sources>/source/blender/editors/space_node/drawnode.c:3010 (SOCK_RGBA)
@@ -200,7 +200,7 @@ class ArnoldNodeSocketColor(NodeSocket):
 class ArnoldNodeSocketByte(NodeSocket):
     bl_label = "Value"
 
-    default_value = IntProperty(
+    default_value: IntProperty(
         name="Value",
         subtype='UNSIGNED',
         min=0, max=255
@@ -221,7 +221,7 @@ class ArnoldNodeSocketByte(NodeSocket):
 class ArnoldNodeSocketFilter(NodeSocket):
     bl_label = "Filter"
 
-    default_value = StringProperty(
+    default_value: StringProperty(
         name="Filter"
     )
 
@@ -250,7 +250,7 @@ class _NodeOutput:
             if isinstance(node, _NodeOutput):
                 node.mute = (self != node)
 
-    is_active = BoolProperty(
+    is_active: BoolProperty(
         name="Active",
         description="Active Output",
         get=_get_active,
@@ -273,7 +273,7 @@ class ArnoldNodeOutput(_NodeOutput, Node):
 
     def init(self, context):
         super().init(context)
-        self.inputs.new("NodeSocketShader", "Shader", "shader")
+        self.inputs.new("NodeSocketShader", "Shader", identifier="shader")
         # self.inputs.new("NodeSocketShader", "Surface Shader", "surface")
         # self.inputs.new("NodeSocketShader", "Volume Shader", "volume")
 
@@ -290,9 +290,9 @@ class ArnoldNodeWorldOutput(_NodeOutput, Node):
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeLightOutput(_NodeOutput, Node):
-    bl_icon = 'LAMP'
+    bl_icon = 'LIGHT'
 
-    active_filter_index = IntProperty(
+    active_filter_index: IntProperty(
         default=1
     )
 
@@ -318,10 +318,10 @@ class ArnoldNodeLambert(ArnoldNode):
     ai_name = "lambert"
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("ArnoldNodeSocketColor", "Diffuse", "Kd_color")
-        self.inputs.new("NodeSocketFloat", "Weight", "Kd").default_value = 0.7
-        self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Diffuse", identifier="Kd_color")
+        self.inputs.new(type="NodeSocketFloat", name="Weight", identifier="Kd").default_value = 0.7
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Opacity", identifier="opacity")
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeStandardVolume(ArnoldNode):
@@ -617,7 +617,7 @@ class ArnoldNodeUtility(ArnoldNode):
 
     ai_name = "utility"
 
-    color_mode = EnumProperty(
+    color_mode: EnumProperty(
         name="Color Mode",
         items=[
             ('color', "Color", "Single color output"),
@@ -647,7 +647,7 @@ class ArnoldNodeUtility(ArnoldNode):
         ],
         default='color'
     )
-    shade_mode = EnumProperty(
+    shade_mode: EnumProperty(
         name="Shade Mode",
         items=[
             ('ndoteye', "Ndoteye", "Uses a dot product between the Normal and the Eye vector."),
@@ -658,7 +658,7 @@ class ArnoldNodeUtility(ArnoldNode):
         ],
         default='ndoteye'
     )
-    overlay_mode = EnumProperty(
+    overlay_mode: EnumProperty(
         name="Overlay Mode",
         items=[
             ('none', "None", "None"),
@@ -737,7 +737,7 @@ class ArnoldNodeWireframe(ArnoldNode):
 
     ai_name = "wireframe"
 
-    edge_type = EnumProperty(
+    edge_type: EnumProperty(
         name="Edge Type",
         items=[
             ('polygons', "Polygons", "Polygons"),
@@ -791,17 +791,17 @@ class ArnoldNodeMotionVector(ArnoldNode):
 
     ai_name = "motion_vector"
 
-    raw = BoolProperty(
+    raw: BoolProperty(
         name="Encode Raw Vector"
     )
-    time0 = FloatProperty(
+    time0: FloatProperty(
         name="Start Time"
     )
-    time1 = FloatProperty(
+    time1: FloatProperty(
         name="End time",
         default=1
     )
-    max_displace = FloatProperty(
+    max_displace: FloatProperty(
         name="Max Displace"
     )
 
@@ -850,10 +850,10 @@ class ArnoldNodeStandardHair(ArnoldNode):
 
     ai_name = "standard_hair"
 
-    uparam = StringProperty(
+    uparam: StringProperty(
         name="U"
     )
-    vparam = StringProperty(
+    vparam: StringProperty(
         name="V"
     )
 
@@ -911,11 +911,11 @@ class ArnoldNodeNoise(ArnoldNode):
 
     ai_name = "noise"
 
-    octaves = IntProperty(
+    octaves: IntProperty(
         name="Octaves",
         default=1
     )
-    coord_space = EnumProperty(
+    coord_space: EnumProperty(
         name="Space",
         description="Space Coordinates",
         items=[
@@ -955,11 +955,11 @@ class ArnoldNodeImage(ArnoldNode):
 
     ai_name = "image"
 
-    filename = StringProperty(
+    filename: StringProperty(
         name="Filename",
         subtype='FILE_PATH'
     )
-    filter = EnumProperty(
+    filter: EnumProperty(
         name="Filter",
         items=[
             ('closest', "Closest", "Closest"),
@@ -969,54 +969,54 @@ class ArnoldNodeImage(ArnoldNode):
         ],
         default='smart_bicubic'
     )
-    mipmap_bias = IntProperty(
+    mipmap_bias: IntProperty(
         name="Mipmap Bias"
     )
-    single_channel = BoolProperty(
+    single_channel: BoolProperty(
         name="Single Channel"
     )
-    start_channel = IntProperty(
+    start_channel: IntProperty(
         name="Start Channel",
         subtype='UNSIGNED',
         min=0, max=255
     )
-    swrap = EnumProperty(
+    swrap: EnumProperty(
         name="U wrap",
         items=_WRAP_ITEMS,
         default='periodic'
     )
-    twrap = EnumProperty(
+    twrap: EnumProperty(
         name="V wrap",
         items=_WRAP_ITEMS,
         default='periodic'
     )
-    sscale = FloatProperty(
+    sscale: FloatProperty(
         name="Scale U",
         default=1,
     )
-    tscale = FloatProperty(
+    tscale: FloatProperty(
         name="Scale V",
         default=1,
     )
-    sflip = BoolProperty(
+    sflip: BoolProperty(
         name="Flip U"
     )
-    tflip = BoolProperty(
+    tflip: BoolProperty(
         name="Flip V"
     )
-    soffset = FloatProperty(
+    soffset: FloatProperty(
         name="Offset U"
     )
-    toffset = FloatProperty(
+    toffset: FloatProperty(
         name="Offset V"
     )
-    swap_st = BoolProperty(
+    swap_st: BoolProperty(
         name="Swap UV"
     )
-    uvset = StringProperty(
+    uvset: StringProperty(
         name="UV set"
     )
-    ignore_missing_tiles = BoolProperty(
+    ignore_missing_tiles: BoolProperty(
         name="Ignore Missing Tiles"
     )
 
@@ -1098,15 +1098,15 @@ class ArnoldNodeSky(ArnoldNode):
 
     ai_name = "sky"
 
-    visibility = IntProperty(
+    visibility: IntProperty(
         name="Visibility",
         default=255
     )
-    opaque_alpha = BoolProperty(
+    opaque_alpha: BoolProperty(
         name="Opaque Alpha",
         default=True
     )
-    format = EnumProperty(
+    format: EnumProperty(
         name="Format",
         items=[
             ('mirrored_ball', "Mirrored Ball", "Mirrored Ball"),
@@ -1115,29 +1115,29 @@ class ArnoldNodeSky(ArnoldNode):
         ],
         default='angular'
     )
-    X_angle = FloatProperty(
+    X_angle: FloatProperty(
         name="X",
         description="X angle"
     )
-    Y_angle = FloatProperty(
+    Y_angle: FloatProperty(
         name="Y",
         description="Y angle"
     )
-    Z_angle = FloatProperty(
+    Z_angle: FloatProperty(
         name="Z",
         description="Z angle"
     )
-    X = FloatVectorProperty(
+    X: FloatVectorProperty(
         name="X",
         soft_min=-1, soft_max=1,
         default=(1, 0, 0)
     )
-    Y = FloatVectorProperty(
+    Y: FloatVectorProperty(
         name="Y",
         soft_min=-1, soft_max=1,
         default=(0, 1, 0)
     )
-    Z = FloatVectorProperty(
+    Z: FloatVectorProperty(
         name="Z",
         soft_min=-1, soft_max=1,
         default=(0, 0, 1)
@@ -1158,27 +1158,27 @@ class ArnoldNodeSky(ArnoldNode):
             "set": set
         }
 
-    visibility_camera = BoolProperty(
+    visibility_camera: BoolProperty(
         name="Camera",
         **_visibility(1)
     )
-    visibility_shadow = BoolProperty(
+    visibility_shadow: BoolProperty(
         name="Shadow",
         **_visibility(1 << 1)
     )
-    visibility_reflection = BoolProperty(
+    visibility_reflection: BoolProperty(
         name="Reflection",
         **_visibility(1 << 2)
     )
-    visibility_refraction = BoolProperty(
+    visibility_refraction: BoolProperty(
         name="Refraction",
         **_visibility(1 << 3)
     )
-    visibility_diffuse = BoolProperty(
+    visibility_diffuse: BoolProperty(
         name="Diffuse",
         **_visibility(1 << 4)
     )
-    visibility_glossy = BoolProperty(
+    visibility_glossy: BoolProperty(
         name="Glossy",
         **_visibility(1 << 5)
     )
@@ -1243,61 +1243,61 @@ class ArnoldNodePhysicalSky(ArnoldNode):
 
     ai_name = "physical_sky"
 
-    turbidity = FloatProperty(
+    turbidity: FloatProperty(
         name="Turbidity",
         default=3
     )
-    ground_albedo = FloatVectorProperty(
+    ground_albedo: FloatVectorProperty(
         name="Ground Albedo",
         subtype='COLOR',
         min=0, max=1,
         default=(0.1, 0.1, 0.1)
     )
     #use_degrees (true)
-    elevation = FloatProperty(
+    elevation: FloatProperty(
         name="Elevation",
         default=45
     )
-    azimuth = FloatProperty(
+    azimuth: FloatProperty(
         name="Azimuth",
         default=90
     )
     #sun_direction (0, 1, 0)
-    enable_sun = BoolProperty(
+    enable_sun: BoolProperty(
         name="Enable Sun",
         default=True
     )
-    sun_size = FloatProperty(
+    sun_size: FloatProperty(
         name="Sun Size",
         default=0.51
     )
-    sun_tint = FloatVectorProperty(
+    sun_tint: FloatVectorProperty(
         name="Sun Tint",
         subtype='COLOR',
         min=0, max=1,
         default=(1, 1, 1)
     )
-    sky_tint = FloatVectorProperty(
+    sky_tint: FloatVectorProperty(
         name="Sky Tint",
         subtype='COLOR',
         min=0, max=1,
         default=(1, 1, 1)
     )
-    intensity = FloatProperty(
+    intensity: FloatProperty(
         name="Intensity",
         default=1
     )
-    X = FloatVectorProperty(
+    X: FloatVectorProperty(
         name="X",
         soft_min=0, soft_max=1,
         default=(1, 0, 0)
     )
-    Y = FloatVectorProperty(
+    Y: FloatVectorProperty(
         name="Y",
         soft_min=0, soft_max=1,
         default=(0, 1, 0)
     )
-    Z = FloatVectorProperty(
+    Z: FloatVectorProperty(
         name="Z",
         soft_min=0, soft_max=1,
         default=(0, 0, 1)
@@ -1366,7 +1366,7 @@ class ArnoldNodeVolumeScattering(ArnoldNode):
 
     ai_name = "volume_scattering"
 
-    samples = IntProperty(
+    samples: IntProperty(
         name="Samples",
         default=5
     )
@@ -1411,59 +1411,59 @@ class ArnoldNodeFog(ArnoldNode):
 @ArnoldRenderEngine.register_class
 class ArnoldNodeBarndoor(ArnoldNode):
     bl_label = "Barn Door"
-    bl_icon = 'LAMP'
+    bl_icon = 'LIGHT'
 
     ai_name = "barndoor"
 
-    top_left = FloatProperty(
+    top_left: FloatProperty(
         name="Left",
         soft_min=0, soft_max=1
     )
-    top_right = FloatProperty(
+    top_right: FloatProperty(
         name="Right",
         soft_min=0, soft_max=1
     )
-    top_edge = FloatProperty(
+    top_edge: FloatProperty(
         name="Edge",
         soft_min=0, soft_max=1
     )
-    right_top = FloatProperty(
+    right_top: FloatProperty(
         name="Top",
         soft_min=0, soft_max=1,
         default=1
     )
-    right_bottom = FloatProperty(
+    right_bottom: FloatProperty(
         name="Bottom",
         soft_min=0, soft_max=1,
         default=1
     )
-    right_edge = FloatProperty(
+    right_edge: FloatProperty(
         name="Edge",
         soft_min=0, soft_max=1
     )
-    bottom_left = FloatProperty(
+    bottom_left: FloatProperty(
         name="Left",
         soft_min=0, soft_max=1,
         default=1
     )
-    bottom_right = FloatProperty(
+    bottom_right: FloatProperty(
         name="Right",
         soft_min=0, soft_max=1,
         default=1
     )
-    bottom_edge = FloatProperty(
+    bottom_edge: FloatProperty(
         name="Edge",
         soft_min=0, soft_max=1
     )
-    left_top = FloatProperty(
+    left_top: FloatProperty(
         name="Top",
         soft_min=0, soft_max=1
     )
-    left_bottom = FloatProperty(
+    left_bottom: FloatProperty(
         name="Bottom",
         soft_min=0, soft_max=1
     )
-    left_edge = FloatProperty(
+    left_edge: FloatProperty(
         name="Edge",
         soft_min=0, soft_max=1
     )
@@ -1518,24 +1518,24 @@ class ArnoldNodeBarndoor(ArnoldNode):
 @ArnoldRenderEngine.register_class
 class ArnoldNodeGobo(ArnoldNode):
     bl_label = "Gobo"
-    bl_icon = 'LAMP'
+    bl_icon = 'LIGHT'
 
     ai_name = "gobo"
 
-    rotate = FloatProperty(
+    rotate: FloatProperty(
         name="Rotate",
         description="Rotate the texture image."
     )
-    offset = FloatVectorProperty(
+    offset: FloatVectorProperty(
         name="Offset",
         description="UV coordinate values used to offset the direction of the slide map.",
         size=2
     )
-    density = FloatProperty(
+    density: FloatProperty(
         name="Density"
     )
     # TODO: add filter modes
-    filter_mode = EnumProperty(
+    filter_mode: EnumProperty(
         name="Mode",
         description="Filter Mode",
         items=[
@@ -1547,20 +1547,20 @@ class ArnoldNodeGobo(ArnoldNode):
         ],
         default='blend'
     )
-    scale_s = FloatProperty(
+    scale_s: FloatProperty(
         name="Scale U",
         default=1
     )
-    scale_t = FloatProperty(
+    scale_t: FloatProperty(
         name="Scale V",
         default=1
     )
-    wrap_s = EnumProperty(
+    wrap_s: EnumProperty(
         name="Wrap U",
         items=_WRAP_ITEMS,
         default='clamp'
     )
-    wrap_t = EnumProperty(
+    wrap_t: EnumProperty(
         name="Wrap V",
         items=_WRAP_ITEMS,
         default='clamp'
@@ -1597,7 +1597,7 @@ class ArnoldNodeGobo(ArnoldNode):
     def ai_properties(self):
         return {
             "rotate": ('FLOAT', self.rotate),
-            "offset": ('POINT2', self.offset),
+            "offset": ('VECTOR2', self.offset),
             "density": ('FLOAT', self.density),
             "filter_mode": ('STRING', self.filter_mode),
             "scale_s": ('FLOAT', self.scale_s),
@@ -1610,29 +1610,29 @@ class ArnoldNodeGobo(ArnoldNode):
 @ArnoldRenderEngine.register_class
 class ArnoldNodeLightDecay(ArnoldNode):
     bl_label = "Light Decay"
-    bl_icon = 'LAMP'
+    bl_icon = 'LIGHT'
 
     ai_name = "light_decay"
 
-    use_near_atten = BoolProperty(
+    use_near_atten: BoolProperty(
         name="Use Near Attenuation"
     )
-    use_far_atten = BoolProperty(
+    use_far_atten: BoolProperty(
         name="Use Far Attenuation"
     )
-    near_start = FloatProperty(
+    near_start: FloatProperty(
         name="Start",
         description="Near Start"
     )
-    near_end = FloatProperty(
+    near_end: FloatProperty(
         name="End",
         description="Near End"
     )
-    far_start = FloatProperty(
+    far_start: FloatProperty(
         name="Start",
         description="Far Start"
     )
-    far_end = FloatProperty(
+    far_end: FloatProperty(
         name="End",
         description="Far End"
     )
@@ -1670,11 +1670,11 @@ class ArnoldNodeLightDecay(ArnoldNode):
 @ArnoldRenderEngine.register_class
 class ArnoldNodeLightBlocker(ArnoldNode):
     bl_label = "Light Blocker"
-    bl_icon = 'LAMP'
+    bl_icon = 'LIGHT'
 
     ai_name = "light_blocker"
 
-    geometry_type = EnumProperty(
+    geometry_type: EnumProperty(
         name="Type",
         description="Geometry Type",
         items=[
@@ -1685,46 +1685,46 @@ class ArnoldNodeLightBlocker(ArnoldNode):
         ],
         default='box'
     )
-    #geometry_matrix = FloatVectorProperty(
+    #geometry_matrix: FloatVectorProperty(
     #    name="Matrix",
     #    subtype='MATRIX',
     #    size=16
     #)
-    geometry_matrix_object = StringProperty(
+    geometry_matrix_object: StringProperty(
         name="Object"
     )
-    geometry_matrix_scale = FloatVectorProperty(
+    geometry_matrix_scale: FloatVectorProperty(
         name="Scale",
         subtype='XYZ',
         default=(1, 1, 1)
     )
-    geometry_matrix_rotation = FloatVectorProperty(
+    geometry_matrix_rotation: FloatVectorProperty(
         name="Rotation",
         subtype='XYZ',
         unit='ROTATION'
     )
-    geometry_matrix_translation = FloatVectorProperty(
+    geometry_matrix_translation: FloatVectorProperty(
         name="Translation",
         subtype='XYZ'
     )
-    #density = FloatProperty(
+    #density: FloatProperty(
     #    name="Density"
     #)
-    roundness = FloatProperty(
+    roundness: FloatProperty(
         name="Roundness"
     )
-    width_edge = FloatProperty(
+    width_edge: FloatProperty(
         name="Width",
         description="Width Edge"
     )
-    height_edge = FloatProperty(
+    height_edge: FloatProperty(
         name="Height",
         description="Height Edge"
     )
-    ramp = FloatProperty(
+    ramp: FloatProperty(
         name="Ramp"
     )
-    axis = EnumProperty(
+    axis: EnumProperty(
         name="Axis",
         items=[
             ('x', "X", "X"),
@@ -1791,7 +1791,7 @@ class ArnoldNodeDensity(ArnoldNode):
 
     ai_name = "density"
 
-    interpolation = EnumProperty(
+    interpolation: EnumProperty(
         name="Interpolation",
         items=[
             ('closest', "closest", "closest"),
@@ -1830,7 +1830,7 @@ class ArnoldNodeMixRGB(ArnoldNode):
 
     ai_name = "BArnoldMixRGB"
 
-    blend_type = EnumProperty(
+    blend_type: EnumProperty(
         name="Blend Type",
         items=[
             ('mix', "Mix", "Mix"),
@@ -1894,7 +1894,7 @@ class ArnoldObjectNodeCategory(ArnoldNodeCategory):
     def poll(cls, context):
         return (
             super().poll(context) and
-            context.object.type != 'LAMP'
+            context.object.type != 'LIGHT'
         )
 
 
@@ -1903,14 +1903,14 @@ class ArnoldLightNodeCategory(ArnoldNodeCategory):
     def poll(cls, context):
         return (
             super().poll(context) and
-            context.object.type == 'LAMP'
+            context.object.type == 'LIGHT'
         )
 
 
 def register():
     from nodeitems_builtins import (
-        #ShaderNewNodeCategory,
-        ShaderOldNodeCategory,
+        #ShaderNodeCategory,
+        ShaderNodeCategory,
         node_group_items
     )
 
@@ -1924,8 +1924,8 @@ def register():
             )
         return _fn
 
-    #ShaderNewNodeCategory.poll = _poll(ShaderNewNodeCategory.poll)
-    ShaderOldNodeCategory.poll = _poll(ShaderOldNodeCategory.poll)
+    #ShaderNodeCategory.poll = _poll(ShaderNodeCategory.poll)
+    ShaderNodeCategory.poll = _poll(ShaderNodeCategory.poll)
 
     node_categories = [
         # world

@@ -4,11 +4,16 @@ __author__ = "Ildar Nikolaev"
 __email__ = "nildar@users.sourceforge.net"
 
 import bpy
+
+from bpy_extras.node_utils import find_node_input
+from bl_operators.presets import PresetMenu
+
 from bpy.types import (
     UIList,
     UI_UL_list,
     Panel,
-    Menu
+    Menu,
+    Operator,
 )
 from . import ArnoldRenderEngine
 
@@ -46,9 +51,9 @@ def _subpanel(layout, title, opened, path, attr, ctx):
     row.alignment = 'LEFT'
     icon = 'TRIA_DOWN' if opened else 'TRIA_RIGHT'
     op = row.operator("barnold.ui_toggle", text=title, icon=icon, emboss=False)
-    op.path = path
-    op.attr = attr
-    op.ctx = ctx
+    # op.path = path
+    # op.attr = attr
+    # op.ctx = ctx
     return col.box() if opened else None
 
 ##
@@ -71,7 +76,7 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
         sublayout = _subpanel(layout, "Sampling", opts.ui_sampling, opts_path, "ui_sampling", "scene")
         if sublayout:
             col = sublayout.column()
-            col.label("Samples:", icon='SETTINGS')
+            col.label(text="Samples:", icon='SETTINGS')
             col.prop(opts, "AA_samples")
             col.prop(opts, "GI_diffuse_samples")
             col.prop(opts, "GI_specular_samples")
@@ -83,7 +88,7 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
             col.prop(opts, "sss_use_autobump")
 
             col.separator()
-            col.label("Clamping:", icon='SETTINGS')
+            col.label(text="Clamping:", icon='SETTINGS')
             col.prop(opts, "clamp_sample_values")
             subcol = col.column()
             subcol.enabled = opts.clamp_sample_values
@@ -91,7 +96,7 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
             subcol.prop(opts, "AA_sample_clamp")
 
             col.separator()
-            col.label("Filter:", icon='SETTINGS')
+            col.label(text="Filter:", icon='SETTINGS')
             col.prop(opts, "sample_filter_type")
             sft = opts.sample_filter_type
             if sft == 'blackman_harris_filter':
@@ -124,7 +129,7 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
             col.prop(opts, "GI_transmission_depth")
             col.prop(opts, "GI_volume_depth")
             col.separator()
-            col.label("Transparency:", icon='SETTINGS')
+            col.label(text="Transparency:", icon='SETTINGS')
             # TODO: DELETE? col.prop(opts, "auto_transparency_mode")
             col.prop(opts, "auto_transparency_depth")
             # TODO: DELETE? col.prop(opts, "auto_transparency_threshold")
@@ -191,7 +196,7 @@ class ArnoldRenderSystemPanel(RenderButtonsPanel, Panel):
             col = sublayout.column()
             col.prop(opts, "progressive_refinement")
             col.prop(opts, "initial_sampling_level")
-            col.label("Viewport Rendering", icon='SETTINGS')
+            col.label(text="Viewport Rendering", icon='SETTINGS')
             col.prop(opts, "ipr_bucket_size")
 
         sublayout = _subpanel(layout, "Search paths", opts.ui_paths, opts_path, "ui_paths", "scene")
@@ -222,10 +227,10 @@ class ArnoldRenderDiagnosticsPanel(RenderButtonsPanel, Panel):
         sublayout = _subpanel(layout, "Log", opts.ui_log, opts_path, "ui_log", "scene")
         if sublayout:
             col = sublayout.column()
-            col.prop(opts, "logfile")
+            # col.prop(opts, "logfile")
             row = col.row()
-            row.prop_menu_enum(opts, "logfile_flags", text="File Flags (%X)" % opts.get("logfile_flags", 0))
-            row.prop_menu_enum(opts, "console_log_flags", text="Console Flags (%X)" % opts.get("console_log_flags", 0))
+            # row.prop_menu_enum(opts, "logfile_flags", text="File Flags (%X)" % opts.get("logfile_flags", 0))
+            # row.prop_menu_enum(opts, "console_log_flags", text="Console Flags (%X)" % opts.get("console_log_flags", 0))
             col.prop(opts, "max_warnings")
 
         sublayout = _subpanel(layout, "Error Handling", opts.ui_error, opts_path, "ui_error", "scene")
@@ -388,7 +393,7 @@ class ArnoldSubdivisionPanel(_ObjectPanel, Panel):
 ## Lights
 ##
 
-from bl_ui.properties_data_lamp import DataButtonsPanel as LightButtonsPanel
+from bl_ui.properties_data_light import DataButtonsPanel as LightButtonsPanel
 
 
 @ArnoldRenderEngine.register_class
@@ -399,7 +404,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
-        lamp = context.lamp
+        lamp = context.light
         lamp_type = lamp.type
 
         light = lamp.arnold
@@ -460,7 +465,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
                 col.prop(light, "samples")
                 col.prop(light, "normalize")
             elif light_type == 'mesh_light':
-                col.prop_search(light, "mesh", context.scene, "objects", icon='OUTLINER_OB_MESH')
+                col.prop_search(light, "mesh", context.scene, "objects", text="", icon='OUTLINER_OB_MESH')
                 col.prop(light, "samples")
                 col.prop(light, "normalize")
 

@@ -6,6 +6,7 @@ __email__ = "nildar@users.sourceforge.net"
 import traceback
 
 import bpy
+import bl_ui
 from bpy.types import Operator
 from bpy.props import (
     BoolProperty,
@@ -22,9 +23,9 @@ class ArnoldUiToggle(Operator):
     bl_label = "Open / Close"
     bl_description = "Open / close options"
 
-    path = StringProperty()
-    attr = StringProperty()
-    ctx = StringProperty()
+    path: StringProperty()
+    attr: StringProperty()
+    ctx: StringProperty()
 
     def execute(self, context):
         data = getattr(context, self.ctx)
@@ -40,7 +41,7 @@ class ArnoldNodeSocketAdd(Operator):
     bl_options = {'INTERNAL'}
     bl_label = "Create Socket"
 
-    identifier = StringProperty()
+    identifier: StringProperty()
 
     def execute(self, context):
         node = context.node
@@ -59,7 +60,7 @@ class ArnoldLightFilterInputAdd(Operator):
     bl_idname = "barnold.light_filter_add"
     bl_options = {'INTERNAL'}
     bl_label = "Add Filter"
-    bl_description = "Add Filter input"
+    bl_description: "Add Filter input"
 
     def execute(self, context):
         node = context.active_node
@@ -74,7 +75,7 @@ class ArnoldLightFilterInputRemove(Operator):
     bl_idname = "barnold.light_filter_remove"
     bl_options = {'INTERNAL'}
     bl_label = "Remove Filter"
-    bl_description = "Remove Filter input"
+    bl_description: "Remove Filter input"
 
     @classmethod
     def poll(cls, context):
@@ -100,10 +101,10 @@ class ArnoldExportASS(Operator, ExportHelper):
     bl_idname = "barnold.export_ass"
     bl_label = "Export ASS"
 
-    filename_ext = ".ass"
-    filter_glob = StringProperty(default="*.ass", options={'HIDDEN'})
-    binary = BoolProperty(name="Binary-encode ASS File", default=True)
-    open_procs = BoolProperty(name="Expand Procedurals")
+    filename_ext: ".ass"
+    filter_glob: StringProperty(default="*.ass", options={'HIDDEN'})
+    binary: BoolProperty(name="Binary-encode ASS File", default=True)
+    open_procs: BoolProperty(name="Expand Procedurals")
 
     @classmethod
     def poll(cls, context):
@@ -140,4 +141,4 @@ class ArnoldExportASS(Operator, ExportHelper):
             self.layout.operator_context = 'INVOKE_DEFAULT'
             self.layout.operator(cls.bl_idname, text="Arnold Render (.ass)")
 
-        bpy.types.INFO_MT_file_export.append(menu_func)
+        #bl_ui.space_info.INFO_MT_file_export.append(menu_func)
