@@ -19,7 +19,7 @@ Barnold v1.0 Roadmap                   [###########              ] 40% Complete
 
 ### Installation (Windows, macOS, and Linux)
 - Download this repository.
-- Download the Arnold 5.2.0.0 SDK here: https://www.solidangle.com/arnold/download/#arnold-sdk
+- Download the Arnold 5.2.1.0 SDK here: https://www.solidangle.com/arnold/download/#arnold-sdk
 - Add a new environment variable `ARNOLD_HOME` and add the path of the downloaded arnold SDK from the previous step.
 - Add a second environment variable to `PATH` to the arnold SDK `bin` folder.
 - Add `barnold` directory to `path\to\blender\2.79\scripts\addons`
