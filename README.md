@@ -13,6 +13,9 @@ Barnold v1.0 Roadmap                   [###########              ] 40% Complete
 ```
 ### Currently In Development: 
 - Fixing the IPR (rendered viewport)
+- Supporting Blender 2.8
+- Cleaning up UI
+- VDB & AOV Support
 
 ### Installation (Windows, macOS, and Linux)
 - Download this repository.
