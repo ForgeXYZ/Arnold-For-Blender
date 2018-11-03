@@ -432,31 +432,31 @@ class ArnoldNodeStandardSurface(ArnoldNode):
     #     self.create_socket("base")
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("NodeSocketFloat", "Base", "base").default_value = 0.8
-        self.inputs.new("ArnoldNodeSocketColor", "Base Color", "base_color")
-        self.inputs.new("NodeSocketFloat", "Diffuse Roughness", "diffuse_roughness")
-        self.inputs.new("NodeSocketFloat", "Specular", "specular").default_value=1.0
-        self.inputs.new("ArnoldNodeSocketColor", "Specular Color", "specular_color")
-        self.inputs.new("NodeSocketFloat", "Specular Roughness", "specular_roughness").default_value=.1
-        self.inputs.new("NodeSocketFloat", "Transmission", "transmission")
-        self.inputs.new("ArnoldNodeSocketColor", "Transmission Color", "transmission_color")
-        self.inputs.new("NodeSocketFloat", "Transmission Depth", "transmission_depth")
-        self.inputs.new("ArnoldNodeSocketColor", "Transmission Scatter", "transmission_scatter").default_value=(0,0,0)
-        self.inputs.new("NodeSocketFloat", "Transmission Extra Roughness", "transmission_extra_roughness")
-        self.inputs.new("NodeSocketFloat", "Subsurface", "subsurface")
-        self.inputs.new("ArnoldNodeSocketColor", "Subsurface Color", "subsurface_color")
-        self.inputs.new("ArnoldNodeSocketColor", "Subsurface Radius", "subsurface_radius")
-        self.inputs.new("NodeSocketFloat", "Coat", "coat")
-        self.inputs.new("ArnoldNodeSocketColor", "Coat Color", "coat_color")
-        self.inputs.new("NodeSocketFloat", "Coat Roughness", "coat_roughness").default_value=.1
-        self.inputs.new("NodeSocketFloat", "Sheen Weight", "sheen").default_value = 0
-        self.inputs.new("ArnoldNodeSocketColor", "Sheen Color", "sheen_color").default_value=(1,1,1)
-        self.inputs.new("NodeSocketFloat", "Sheen Roughness", "sheen_roughness").default_value=0.3
-        self.inputs.new("NodeSocketFloat", "Emission", "emission")
-        self.inputs.new("ArnoldNodeSocketColor", "Emission Color", "emission_color")
-        self.inputs.new("NodeSocketFloat", "Opacity", "opacity")
-        self.inputs.new("NodeSocketVectorXYZ", "Normal Camera", "normal")
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="NodeSocketFloat", name="Base", identifier="base").default_value = 0.8
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Base Color", identifier="base_color")
+        self.inputs.new(type="NodeSocketFloat", name="Diffuse Roughness", identifier="diffuse_roughness")
+        self.inputs.new(type="NodeSocketFloat", name="Specular", identifier="specular").default_value=1.0
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Specular Color", identifier="specular_color")
+        self.inputs.new(type="NodeSocketFloat", name="Specular Roughness", identifier="specular_roughness").default_value=.1
+        self.inputs.new(type="NodeSocketFloat", name="Transmission", identifier="transmission")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Transmission Color", identifier="transmission_color")
+        self.inputs.new(type="NodeSocketFloat", name="Transmission Depth", identifier="transmission_depth")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Transmission Scatter", identifier="transmission_scatter").default_value=(0,0,0)
+        self.inputs.new(type="NodeSocketFloat", name="Transmission Extra Roughness", identifier="transmission_extra_roughness")
+        self.inputs.new(type="NodeSocketFloat", name="Subsurface", identifier="subsurface")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Subsurface Color", identifier="subsurface_color")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Subsurface Radius", identifier="subsurface_radius")
+        self.inputs.new(type="NodeSocketFloat", name="Coat", identifier="coat")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Coat Color", identifier="coat_color")
+        self.inputs.new(type="NodeSocketFloat", name="Coat Roughness", identifier="coat_roughness").default_value=.1
+        self.inputs.new(type="NodeSocketFloat", name="Sheen Weight", identifier="sheen").default_value = 0
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Sheen Color", identifier="sheen_color").default_value=(1,1,1)
+        self.inputs.new(type="NodeSocketFloat", name="Sheen Roughness", identifier="sheen_roughness").default_value=0.3
+        self.inputs.new(type="NodeSocketFloat", name="Emission", identifier="emission")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Emission Color", identifier="emission_color")
+        self.inputs.new(type="NodeSocketFloat", name="Opacity", identifier="opacity")
+        self.inputs.new(type="NodeSocketVectorXYZ", name="Normal Camera", identifier="normal")
 
     # def init(self, context):
     #     self.outputs.new("NodeSocketShader", "RGB", "output")
