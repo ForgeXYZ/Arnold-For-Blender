@@ -1007,7 +1007,7 @@ def render(engine, scene):
                     result = _htiles.pop((_x, _y), None)
                     if result is None:
                         result = engine.begin_result(_x, _y, width, height)
-                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_ubyte))
+                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_uint16))
                     rect = numpy.ctypeslib.as_array(_buffer, shape=(width * height, 4))
                     # TODO: gamma correction. need??? kick is darker
                     # set 1/2.2 the driver_display node by default
