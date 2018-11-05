@@ -1026,6 +1026,21 @@ class ArnoldLight(PropertyGroup):
 class ArnoldShaderLambert(PropertyGroup):
     #base = Material.diffuse_intensity
     #base_color = Material.base_color
+    Kd: FloatProperty(
+        name="Weight",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1
+    )
+    Kd_color: FloatVectorProperty(
+        name="Color",
+        description="",
+        size=3,
+        subtype='COLOR',
+        min=0, max=1,
+        default=(1,1,1)
+    )
     opacity: FloatVectorProperty(
         name="Opacity",
         description="",
@@ -1241,7 +1256,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         name="Geometry"
     )
     ui_caustics: BoolProperty(
-        name="Coustics"
+        name="Caustics"
     )
     ui_advanced: BoolProperty(
         name="Advanced"
@@ -1390,7 +1405,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=False
     )
     transmit_aovs: BoolProperty(
-        name="Extra Roughness",
+        name="Transmit AOVs",
         description="When enabled, Transmission will pass through AOVs. If the background is transparent, then the transmissive surface will become transparent so that it can be composited over another background. Light path expression AOVs will be passed through so that for example a diffuse surface seen through a transmissive surface will end up in the diffuse AOV. Other AOVs can also be passed straight through (without any opacity blending), which can be used for creating masks for example. ",
         default=False
     )

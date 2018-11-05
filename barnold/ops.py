@@ -60,7 +60,7 @@ class ArnoldLightFilterInputAdd(Operator):
     bl_idname = "barnold.light_filter_add"
     bl_options = {'INTERNAL'}
     bl_label = "Add Filter"
-    bl_description: "Add Filter input"
+    bl_description = "Add Filter input"
 
     def execute(self, context):
         node = context.active_node
@@ -75,7 +75,7 @@ class ArnoldLightFilterInputRemove(Operator):
     bl_idname = "barnold.light_filter_remove"
     bl_options = {'INTERNAL'}
     bl_label = "Remove Filter"
-    bl_description: "Remove Filter input"
+    bl_description = "Remove Filter input"
 
     @classmethod
     def poll(cls, context):

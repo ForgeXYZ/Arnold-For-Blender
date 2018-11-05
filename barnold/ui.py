@@ -17,6 +17,16 @@ from bpy.types import (
 )
 from . import ArnoldRenderEngine
 
+class ArnoldButtonsPanel:
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "render"
+    COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
+
+    @classmethod
+    def poll(cls, context):
+        return context.engine in cls.COMPAT_ENGINES
+
 
 @ArnoldRenderEngine.register_class
 class ArnoldLightFiltersUIList(UIList):
@@ -51,9 +61,9 @@ def _subpanel(layout, title, opened, path, attr, ctx):
     row.alignment = 'LEFT'
     icon = 'TRIA_DOWN' if opened else 'TRIA_RIGHT'
     op = row.operator("barnold.ui_toggle", text=title, icon=icon, emboss=False)
-    # op.path = path
-    # op.attr = attr
-    # op.ctx = ctx
+    op.path = path
+    op.attr = attr
+    op.ctx = ctx
     return col.box() if opened else None
 
 ##
@@ -518,35 +528,120 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
 ## Shaders
 ##
 
-from bl_ui.properties_material import MaterialButtonsPanel
-
-
+#from bl_ui.properties_material import
+# def panel_node_draw(layout, id_data, output_type, input_name):
+#     if not id_data.use_nodes:
+#         layout.operator("arnold.use_shading_nodes", icon='NODETREE')
+#         return False
+#
+#     ntree = id_data.node_tree
+#
+#     node = ntree.get_output_node(ArnoldRenderEngine.bl_idname)
+#     if node:
+#         input = find_node_input(node, input_name)
+#         if input:
+#             layout.template_node_view(ntree, node, input)
+#         else:
+#             layout.label(text="Incompatible output node")
+#     else:
+#         layout.label(text="No output node")
+#
+#     return True
 @ArnoldRenderEngine.register_class
-class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
-    COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
-    bl_label = "Arnold Shader"
+class Arnold_PT_context_material(ArnoldButtonsPanel, Panel):
+    bl_label = ""
+    bl_context = "material"
+    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
-        return super().poll(context) and not context.material.use_nodes
+        if context.active_object and context.active_object.type == 'GPENCIL':
+            return False
+        else:
+            return (context.material or context.object) and ArnoldButtonsPanel.poll(context)
 
     def draw(self, context):
         layout = self.layout
+
+        mat = context.material
+        ob = context.object
+        slot = context.material_slot
+        space = context.space_data
+
+        if ob:
+            is_sortable = len(ob.material_slots) > 1
+            rows = 1
+            if (is_sortable):
+                rows = 4
+
+            row = layout.row()
+
+            row.template_list("MATERIAL_UL_matslots", "", ob, "material_slots", ob, "active_material_index", rows=rows)
+
+            col = row.column(align=True)
+            col.operator("object.material_slot_add", icon='ADD', text="")
+            col.operator("object.material_slot_remove", icon='REMOVE', text="")
+
+            col.menu("MATERIAL_MT_specials", icon='DOWNARROW_HLT', text="")
+
+            if is_sortable:
+                col.separator()
+
+                col.operator("object.material_slot_move", icon='TRIA_UP', text="").direction = 'UP'
+                col.operator("object.material_slot_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
+
+            if ob.mode == 'EDIT':
+                row = layout.row(align=True)
+                row.operator("object.material_slot_assign", text="Assign")
+                row.operator("object.material_slot_select", text="Select")
+                row.operator("object.material_slot_deselect", text="Deselect")
+
+        split = layout.split(factor=0.65)
+
+        if ob:
+            split.template_ID(ob, "active_material", new="material.new")
+            row = split.row()
+
+            if slot:
+                row.prop(slot, "link", text="")
+            else:
+                row.label()
+        elif mat:
+            split.template_ID(space, "pin_id")
+            split.separator()
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
+    COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
+    bl_label = "Arnold Shader"
+    bl_context = "material"
+
+    @classmethod
+    def poll(cls, context):
+        return context.material and ArnoldButtonsPanel.poll(context)
+
+    def draw(self, context):
+        from . import props
+        layout = self.layout
         mat = context.material
         shader = mat.arnold
+        # if not panel_node_draw(layout, mat, 'OUTPUT_MATERIAL', 'Surface'):
+        #     layout.prop(mat, "diffuse_color")
 
-        mat_type = mat.type
-        if mat_type == 'SURFACE':
+        mat_type = mat
+        if mat_type == mat:
             shader_type = shader.type
             layout.prop(shader, "type", expand=True)
             if shader_type == 'lambert':
                 lambert = shader.lambert
                 col = layout.column()
-                col.prop(mat, "diffuse_intensity", text="Weight")
+                col.prop(lambert, "Kd", text="Weight")
                 col.prop(mat, "diffuse_color", text="Color")
                 col.prop(lambert, "opacity")
             elif shader_type == 'standard_surface':
                 standard_surface = shader.standard_surface
+                ss = props.ArnoldShaderStandardSurface
                 path_from_id = standard_surface.path_from_id()
 
                 # Base
@@ -555,8 +650,8 @@ class ArnoldShaderPanel(MaterialButtonsPanel, Panel):
                 if sublayout:
                     col = sublayout.column()
                     #TODO: Fix For Viewport
-                    col.prop(mat, "diffuse_intensity", text="Weight")
-                    col.prop(mat, "diffuse_color", text="Color")
+                    col.prop(standard_surface, "base")
+                    col.prop(standard_surface, "base_color")
                     col.prop(standard_surface, "diffuse_roughness")
                     col.prop(standard_surface, "metalness")
                     # Below is deprecated in Arnold 5

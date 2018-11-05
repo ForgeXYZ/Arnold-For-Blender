@@ -150,13 +150,14 @@ class Shaders:
         if mat.type == 'SURFACE':
             node = arnold.AiNode(shader.type)
             if shader.type == 'lambert':
-                arnold.AiNodeSetFlt(node, "Kd", mat.diffuse_intensity)
-                arnold.AiNodeSetRGB(node, "Kd_color", *mat.diffuse_color)
-                arnold.AiNodeSetRGB(node, "opacity", *shader.lambert.opacity)
+                lambert = shader.lambert
+                arnold.AiNodeSetFlt(node, "Kd", lambert.Kd)
+                arnold.AiNodeSetRGB(node, "Kd_color", *lambert.Kd_color)
+                arnold.AiNodeSetRGB(node, "opacity", *lambert.opacity)
             elif shader.type == 'standard_surface':
                 standard_surface = shader.standard_surface
-                arnold.AiNodeSetFlt(node, "base", mat.diffuse_intensity)
-                arnold.AiNodeSetRGB(node, "base_color", *mat.diffuse_color)
+                arnold.AiNodeSetFlt(node, "base", standard_surface.diffuse_intensity)
+                arnold.AiNodeSetRGB(node, "base_color", *standard_surface.diffuse_color)
                 arnold.AiNodeSetFlt(node, "diffuse_roughness", standard_surface.diffuse_roughness)
                 arnold.AiNodeSetFlt(node, "metalness", standard_surface.metalness)
                 arnold.AiNodeSetFlt(node, "specular", mat.specular_intensity)
@@ -1007,7 +1008,7 @@ def render(engine, scene):
                     result = _htiles.pop((_x, _y), None)
                     if result is None:
                         result = engine.begin_result(_x, _y, width, height)
-                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_uint8))
+                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_uint16))
                     rect = numpy.ctypeslib.as_array(_buffer, shape=(width * height, 4))
                     # TODO: gamma correction. need??? kick is darker
                     # set 1/2.2 the driver_display node by default

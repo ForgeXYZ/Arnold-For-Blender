@@ -163,7 +163,7 @@ class ArnoldNodeSocketProperty(NodeSocket):
             row = layout.row()
             row.alignment = 'LEFT'
             row.prop(data, self.attr, text="")
-            row.label(text)
+            row.label(text=text)
         else:
             layout.prop(data, self.attr, text=text)
 
@@ -184,7 +184,7 @@ class ArnoldNodeSocketColor(NodeSocket):
 
     def draw(self, context, layout, node, text):
         if self.is_output or self.is_linked:
-            layout.label(text)
+            layout.label(text=text)
         else:
             row = layout.row()
             row.alignment = 'LEFT'
@@ -273,7 +273,7 @@ class ArnoldNodeOutput(_NodeOutput, Node):
 
     def init(self, context):
         super().init(context)
-        self.inputs.new("NodeSocketShader", "Shader", identifier="shader")
+        self.inputs.new(type="NodeSocketShader", name="Shader", identifier="shader")
         # self.inputs.new("NodeSocketShader", "Surface Shader", "surface")
         # self.inputs.new("NodeSocketShader", "Volume Shader", "volume")
 
@@ -284,8 +284,8 @@ class ArnoldNodeWorldOutput(_NodeOutput, Node):
 
     def init(self, context):
         super().init(context)
-        self.inputs.new("NodeSocketShader", "Background", "background")
-        self.inputs.new("NodeSocketShader", "Atmosphere", "atmosphere")
+        self.inputs.new(type="NodeSocketShader", name="Background", identifier="background")
+        self.inputs.new(type="NodeSocketShader", name="Atmosphere", identifier="atmosphere")
 
 
 @ArnoldRenderEngine.register_class
@@ -298,16 +298,16 @@ class ArnoldNodeLightOutput(_NodeOutput, Node):
 
     def init(self, context):
         super().init(context)
-        self.inputs.new("NodeSocketShader", "Color", "color")
-        self.inputs.new("ArnoldNodeSocketFilter", "Filter", "filter")
+        self.inputs.new(type="NodeSocketShader", name="Color", identifier="color")
+        self.inputs.new(type="ArnoldNodeSocketFilter", name="Filter", identifier="filter")
 
     def draw_buttons_ext(self, context, layout):
         row = layout.row()
         col = row.column()
         col.template_list("ARNOLD_UL_light_filters", "", self, "inputs", self, "active_filter_index", rows=2)
         col = row.column(align=True)
-        col.operator("barnold.light_filter_add", text="", icon="ZOOMIN")
-        col.operator("barnold.light_filter_remove", text="", icon="ZOOMOUT")
+        col.operator("barnold.light_filter_add", text="", icon="ADD")
+        col.operator("barnold.light_filter_remove", text="", icon="REMOVE")
 
 
 @ArnoldRenderEngine.register_class
@@ -332,19 +332,17 @@ class ArnoldNodeStandardVolume(ArnoldNode):
     ai_name="standard_volume"
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("NodeSocketFloat", "Density", "density").default_value = 1.0
-        self.inputs.new("NodeSocketFloat", "Scatter", "scatter").default_value = 1.0
-        self.inputs.new("ArnoldNodeSocketColor", "Scatter Color", "scatter_color").default_value = (0.5, 0.5, 0.5)
-        self.inputs.new("ArnoldNodeSocketColor", "Transparent", "transparent").default_value = (0.368, 0.368, 0.368)
-        self.inputs.new("NodeSocketFloat", "Transparent Depth", "transparent_depth").default_value = 1.0
-        self.inputs.new("NodeSocketFloat", "Emission", "emission").default_value = 1.0
-        self.inputs.new("ArnoldNodeSocketColor", "Emission Color", "emission_color")
-        self.inputs.new("NodeSocketFloat", "Temperature", "temperature").default_value=1.0
-        self.inputs.new("NodeSocketFloat", "Blackbody Kelvin", "blackbody_kelvin").default_value=5000.000
-        self.inputs.new("NodeSocketFloat", "Blackbody Intensity", "blackbody_intensity").default_value=1.0
-
-
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="NodeSocketFloat", name="Density", identifier="density").default_value = 1.0
+        self.inputs.new(type="NodeSocketFloat", name="Scatter", identifier="scatter").default_value = 1.0
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Scatter Color", identifier="scatter_color").default_value = (0.5, 0.5, 0.5)
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Transparent", identifier="transparent").default_value = (0.368, 0.368, 0.368)
+        self.inputs.new(type="NodeSocketFloat", name="Transparent Depth", identifier="transparent_depth").default_value = 1.0
+        self.inputs.new(type="NodeSocketFloat", name="Emission", identifier="emission").default_value = 1.0
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Emission Color", identifier="emission_color")
+        self.inputs.new(type="NodeSocketFloat", name="Temperature", identifier="temperature").default_value=1.0
+        self.inputs.new(type="NodeSocketFloat", name="Blackbody Kelvin", identifier="blackbody_kelvin").default_value=5000.000
+        self.inputs.new(type="NodeSocketFloat", name="Blackbody Intensity", identifier="blackbody_intensity").default_value=1.0
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeStandardSurface(ArnoldNode):
@@ -354,261 +352,270 @@ class ArnoldNodeStandardSurface(ArnoldNode):
 
     ai_name = "standard_surface"
 
-    # sockets = collections.OrderedDict([
-    #     # Base
-    #     ("base_color"               , ('RGB', "Base Color",     "ext_properties")),
-    #     ("base"                     , ('FLOAT', "Base",     "ext_properties")),
-    #     ("diffuse_roughness"        , ('FLOAT', "Diffuse Roughness", "ext_properties")),
-    #     ("metalness"                , ('FLOAT', "Diffuse Metalness", "ext_properties")),
-    #     # Specular
-    #     ("specular_color"           , ('RGB',   "Specular Color", "ext_properties")),
-    #     ("specular"                 , ('FLOAT', "Specular Scale", "ext_properties")),
-    #     ("specular_roughness"       , ('FLOAT', "Specular Roughness", "ext_properties")),
-    #     ("specular_ior"             , ('FLOAT', "Specular IOR", "ext_properties")),
-    #     ("specular_anisotropy"      , ('FLOAT', "Specular Anisotropy", "ext_properties")),
-    #     ("specular_rotation"        , ('FLOAT', "Specular Rotation", "ext_properties")),
-    #     # Transmission
-    #     ("transmission_color"                 , ('RGB', "Transmission Color", "ext_properties")),
-    #     ("transmission"                       , ('FLOAT', "Transmission", "ext_properties")),
-    #     ("transmission_depth"       , ('FLOAT', "Transmission Depth", "ext_properties")),
-    #     ("transmission_scatter"       , ('RGB', "Transmission Scatter", "ext_properties")),
-    #     ("transmission_scatter_anisotropy", ('FLOAT', "Transmission Anisotropy", "ext_properties")),
-    #     ("transmission_extra_roughness", ('FLOAT', "Transmission Extra Roughness", "ext_properties")),
-    #     ("transmission_dispersion"          , ('FLOAT', "Transmission Abbe", "ext_properties")),
-    #     # Coat
-    #     ("coat"                , ('FLOAT', "Coat", "ext_properties")),
-    #     ("coat_color"          , ('FLOAT', "Coat Color", "ext_properties")),
-    #     ("coat_roughness"     , ('FLOAT', "Coat Roughness", "ext_properties")),
-    #     ("coat_ior"            , ('FLOAT', "Coat IOR", "ext_properties")),
-    #     # Opacity
-    #     ("opacity"                  , ('FLOAT', "Opacity", "ext_properties")),
-    #     # Subsurface
-    #     ("subsurface"               , ('FLOAT', "Subsurface", "ext_properties")),
-    #     ("subsurface_color"         , ('RGB', "Subsurface Color", "ext_properties")),
-    #     ("subsurface_radius"        , ('RGB', "Subsurface Radius", "ext_properties")),
-    #     ("subsurface_scale"         , ('FLOAT', "Subsurface Scale", "ext_properties")),
-    #     ("subsurface_anisotropy"    , ('FLOAT', "Subsurface Anisotropy", "ext_properties")),
-    #     # Emission
-    #     ("emission_color"           , ('RGB', "Emission Color", "")),
-    #     ("emission"                 , ('FLOAT', "Emission", "ext_properties"))
-    # ])
+    sockets = collections.OrderedDict([
+        # Base
+        ("base_color"               , ('RGB',   "Base Color",        "ext_properties")),
+        ("base"                     , ('FLOAT', "Base",              "ext_properties")),
+        ("diffuse_roughness"        , ('FLOAT', "Diffuse Roughness", "ext_properties")),
+        ("metalness"                , ('FLOAT', "Diffuse Metalness", "ext_properties")),
+        # Specular
+        ("specular_color"           , ('RGB',   "Specular Color", "ext_properties")),
+        ("specular"                 , ('FLOAT', "Specular Scale", "ext_properties")),
+        ("specular_roughness"       , ('FLOAT', "Specular Roughness", "ext_properties")),
+        ("specular_ior"             , ('FLOAT', "Specular IOR", "ext_properties")),
+        ("specular_anisotropy"      , ('FLOAT', "Specular Anisotropy", "ext_properties")),
+        ("specular_rotation"        , ('FLOAT', "Specular Rotation", "ext_properties")),
+        # Transmission
+        ("transmission_color"                 , ('RGB', "Transmission Color", "ext_properties")),
+        ("transmission"                       , ('FLOAT', "Transmission", "ext_properties")),
+        ("transmission_depth"       , ('FLOAT', "Transmission Depth", "ext_properties")),
+        ("transmission_scatter"       , ('RGB', "Transmission Scatter", "ext_properties")),
+        ("transmission_scatter_anisotropy", ('FLOAT', "Transmission Anisotropy", "ext_properties")),
+        ("transmission_extra_roughness", ('FLOAT', "Transmission Extra Roughness", "ext_properties")),
+        ("transmission_dispersion"          , ('FLOAT', "Transmission Abbe", "ext_properties")),
+        ("transmit_aovs"                    , ('BOOL',  "Transmit AOVs",     "ext_properties")),
+        # Coat
+        ("coat"                , ('FLOAT', "Coat", "ext_properties")),
+        ("coat_color"          , ('RGB', "Coat Color", "ext_properties")),
+        ("coat_roughness"     , ('FLOAT', "Coat Roughness", "ext_properties")),
+        ("coat_ior"            , ('FLOAT', "Coat IOR", "ext_properties")),
+        ("coat_normal"         ,('VECTOR', "Coat Normal", "ext_properties")),
+        # Thin Film
+        ("thin_film_thickness" ,('FLOAT', "Thin Film Thickness", "ext_properties")),
+        ("thin_film_ior",       ('FLOAT',"Thin Film IOR",        "ext_properties")),
+        # Geometry
+        ("opacity"                  , ('FLOAT', "Opacity",     "ext_properties")),
+        ("thin_walled"              , ('BOOL',  "Thin Walled", "ext_properties")),
+        # Subsurface
+        ("subsurface"               , ('FLOAT', "Subsurface", "ext_properties")),
+        ("subsurface_color"         , ('RGB', "Subsurface Color", "ext_properties")),
+        ("subsurface_radius"        , ('RGB', "Subsurface Radius", "ext_properties")),
+        ("subsurface_scale"         , ('FLOAT', "Subsurface Scale", "ext_properties")),
+        ("subsurface_anisotropy"    , ('FLOAT', "Subsurface Anisotropy", "ext_properties")),
+        ("subsurface_type"          , ('STRING',"Subsurface Type",       "ext_properties")),
+        # Emission
+        ("emission_color"           , ('RGB', "Emission Color", "ext_properties")),
+        ("emission"                 , ('FLOAT', "Emission", "ext_properties"))
+    ])
 
-    # base = FloatProperty(
+    # base: FloatProperty(
     #     name="Scale",
     #     subtype='FACTOR',
     #     min=0, max=1,
     #     default=0.7
     # )
-    # base_color = FloatVectorProperty(
+    # base_color: FloatVectorProperty(
     #     name="Color",
     #     subtype='COLOR',
     #     min=0, max=1,
     #     default=(1, 1, 1)
     # )
-    # specular = FloatProperty(
+    # specular: FloatProperty(
     #     name="Scale",
     #     subtype='FACTOR',
     #     min=0, max=1
     # )
-    # specular_color = FloatVectorProperty(
+    # specular_color: FloatVectorProperty(
     #     name="Color",
     #     subtype='COLOR',
     #     min=0, max=1,
     #     default=(1, 1, 1)
     # )
-    # emission_color = FloatVectorProperty(
+    # emission_color: FloatVectorProperty(
     #     name="Color",
     #     subtype='COLOR',
     #     min=0, max=1,
     #     default=(1,1,1)
     # )
-    # ext_properties = PointerProperty(
-    #     type=props.ArnoldShaderStandardSurface
-    # )
-
-    # def init(self, context):
-    #     self.outputs.new("NodeSocketShader", "RGB", "output")
-    #     self.create_socket("base_color")
-    #     self.create_socket("base")
+    ext_properties: PointerProperty(
+        type=props.ArnoldShaderStandardSurface
+    )
 
     def init(self, context):
         self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
-        self.inputs.new(type="NodeSocketFloat", name="Base", identifier="base").default_value = 0.8
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Base Color", identifier="base_color")
-        self.inputs.new(type="NodeSocketFloat", name="Diffuse Roughness", identifier="diffuse_roughness")
-        self.inputs.new(type="NodeSocketFloat", name="Specular", identifier="specular").default_value=1.0
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Specular Color", identifier="specular_color")
-        self.inputs.new(type="NodeSocketFloat", name="Specular Roughness", identifier="specular_roughness").default_value=.1
-        self.inputs.new(type="NodeSocketFloat", name="Transmission", identifier="transmission")
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Transmission Color", identifier="transmission_color")
-        self.inputs.new(type="NodeSocketFloat", name="Transmission Depth", identifier="transmission_depth")
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Transmission Scatter", identifier="transmission_scatter").default_value=(0,0,0)
-        self.inputs.new(type="NodeSocketFloat", name="Transmission Extra Roughness", identifier="transmission_extra_roughness")
-        self.inputs.new(type="NodeSocketFloat", name="Subsurface", identifier="subsurface")
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Subsurface Color", identifier="subsurface_color")
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Subsurface Radius", identifier="subsurface_radius")
-        self.inputs.new(type="NodeSocketFloat", name="Coat", identifier="coat")
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Coat Color", identifier="coat_color")
-        self.inputs.new(type="NodeSocketFloat", name="Coat Roughness", identifier="coat_roughness").default_value=.1
-        self.inputs.new(type="NodeSocketFloat", name="Sheen Weight", identifier="sheen").default_value = 0
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Sheen Color", identifier="sheen_color").default_value=(1,1,1)
-        self.inputs.new(type="NodeSocketFloat", name="Sheen Roughness", identifier="sheen_roughness").default_value=0.3
-        self.inputs.new(type="NodeSocketFloat", name="Emission", identifier="emission")
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Emission Color", identifier="emission_color")
-        self.inputs.new(type="NodeSocketFloat", name="Opacity", identifier="opacity")
-        self.inputs.new(type="NodeSocketVectorXYZ", name="Normal Camera", identifier="normal")
+        self.create_socket(identifier="base_color")
+        self.create_socket(identifier="base")
+        self.create_socket(identifier="diffuse_roughness")
+        self.create_socket(identifier="specular_color")
+        self.create_socket(identifier="specular")
+        self.create_socket(identifier="specular_roughness")
 
     # def init(self, context):
+    #     self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+    #     self.inputs.new(type="NodeSocketFloat", name="Base", identifier="base").default_value = 0.8
+    #     self.inputs.new(type="ArnoldNodeSocketColor", name="Base Color", identifier=ext_properties)
+    #     self.inputs.new(type="NodeSocketFloat", name="Diffuse Roughness", identifier="diffuse_roughness")
+    #     self.inputs.new(type="NodeSocketFloat", name="Specular", identifier="specular").default_value=1.0
+    #     self.inputs.new(type="ArnoldNodeSocketColor", name="Specular Color", identifier="specular_color")
+    #     self.inputs.new(type="NodeSocketFloat", name="Specular Roughness", identifier="specular_roughness").default_value=.1
+    #     self.inputs.new(type="NodeSocketFloat", name="Transmission", identifier="transmission")
+    #     self.inputs.new(type="ArnoldNodeSocketColor", name="Transmission Color", identifier="transmission_color")
+    #     self.inputs.new(type="NodeSocketFloat", name="Transmission Depth", identifier="transmission_depth")
+    #     self.inputs.new(type="ArnoldNodeSocketColor", name="Transmission Scatter", identifier="transmission_scatter").default_value=(0,0,0)
+    #     self.inputs.new(type="NodeSocketFloat", name="Transmission Extra Roughness", identifier="transmission_extra_roughness")
+    #     self.inputs.new(type="NodeSocketFloat", name="Subsurface", identifier="subsurface")
+    #     self.inputs.new(type="ArnoldNodeSocketColor", name="Subsurface Color", identifier="subsurface_color")
+    #     self.inputs.new(type="ArnoldNodeSocketColor", name="Subsurface Radius", identifier="subsurface_radius")
+    #     self.inputs.new(type="NodeSocketFloat", name="Coat", identifier="coat")
+    #     self.inputs.new(type="ArnoldNodeSocketColor", name="Coat Color", identifier="coat_color")
+    #     self.inputs.new(type="NodeSocketFloat", name="Coat Roughness", identifier="coat_roughness").default_value=.1
+    #     self.inputs.new(type="NodeSocketFloat", name="Sheen Weight", identifier="sheen").default_value = 0
+    #     self.inputs.new(type="ArnoldNodeSocketColor", name="Sheen Color", identifier="sheen_color").default_value=(1,1,1)
+    #     self.inputs.new(type="NodeSocketFloat", name="Sheen Roughness", identifier="sheen_roughness").default_value=0.3
+    #     self.inputs.new(type="NodeSocketFloat", name="Emission", identifier="emission")
+    #     self.inputs.new(type="ArnoldNodeSocketColor", name="Emission Color", identifier="emission_color")
+    #     self.inputs.new(type="NodeSocketFloat", name="Opacity", identifier="opacity")
+    #     self.inputs.new(type="NodeSocketVectorXYZ", name="Normal Camera", identifier="normal")
+     # def init(self, context):
     #     self.outputs.new("NodeSocketShader", "RGB", "output")
     #     self.inputs.new("ArnoldNodeSocketColor", "Diffuse", "base_color")
     #     self.inputs.new("NodeSocketFloat", "Weight", "base").default_value = 0.7
     #     self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
 
-    # def draw_buttons_ext(self, context, layout):
-    #     inputs = self.inputs
-    #     properties = self.ext_properties
-    #
-    #     links = {i.identifier: i.is_linked for i in inputs}
-    #
-    #     # Diffuse
-    #     sublayout = _subpanel(layout, "Diffuse", properties.ui_diffuse,
-    #                           "ext_properties", "ui_diffuse", "node")
-    #     if sublayout:
-    #         col = sublayout.column()
-    #         _draw_property(col, self, "base", links)
-    #         _draw_property(col, self, "base_color", links)
-    #         _draw_property(col, properties, "diffuse_roughness", links)
-    #         _draw_property(col, properties, "metalness", links)
-    #
-    #     # Specular
-    #     sublayout = _subpanel(layout, "Specular", properties.ui_specular,
-    #                           "ext_properties", "ui_specular", "node")
-    #     if sublayout:
-    #         col = sublayout.column()
-    #         _draw_property(col, properties, "specular", links)
-    #         _draw_property(col, properties, "specular_color", links)
-    #         _draw_property(col, properties, "specular_roughness", links)
-    #         _draw_property(col, properties, "specular_ior", links)
-    #         _draw_property(col, properties, "specular_anisotropy", links)
-    #         _draw_property(col, properties, "specular_rotation", links)
-    #
-    #     # Transmission
-    #     sublayout = _subpanel(layout, "Transmission", properties.ui_refraction,
-    #                           "ext_properties", "ui_refraction", "node")
-    #     if sublayout:
-    #         col = sublayout.column()
-    #         _draw_property(col, properties, "transmission", links)
-    #         _draw_property(col, properties, "transmission_color", links)
-    #         _draw_property(col, properties, "transmission_depth", links)
-    #         _draw_property(col, properties, "transmission_scatter", links)
-    #         _draw_property(col, properties, "transmission_scatter_anisotropy", links)
-    #         _draw_property(col, properties, "transmission_dispersion", links)
-    #         _draw_property(col, properties, "transmission_extra_roughness", links)
-    #         _draw_property(col, properties, "transmit_aovs", links)
-    #
-    #     # Subsurface
-    #     sublayout = _subpanel(layout, "Subsurface", properties.ui_sss,
-    #                           "ext_properties", "ui_sss", "node")
-    #     if sublayout:
-    #         col = sublayout.column()
-    #         _draw_property(col, properties, "subsurface", links)
-    #         _draw_property(col, properties, "subsurface_color", links)
-    #         _draw_property(col, properties, "subsurface_radius", links)
-    #         _draw_property(col, properties, "subsurface_scale", links)
-    #         _draw_property(col, properties, "subsurface_type", links)
-    #         _draw_property(col, properties, "subsurface_anisotropy", links)
-    #
-    #     # Coat
-    #     sublayout = _subpanel(layout, "Coat", properties.ui_coat,
-    #                           "ext_properties", "ui_coat", "node")
-    #     if sublayout:
-    #         col = sublayout.column()
-    #         _draw_property(col, properties, "coat", links)
-    #         _draw_property(col, properties, "coat_color", links)
-    #         _draw_property(col, properties, "coat_roughness", links)
-    #         _draw_property(col, properties, "coat_ior", links)
-    #         _draw_property(col, properties, "coat_normal", links)
-    #
-    #
-    #     # Emission
-    #     sublayout = _subpanel(layout, "Emission", properties.ui_emission,
-    #                           "ext_properties", "ui_emission", "node")
-    #     if sublayout:
-    #         col = sublayout.column()
-    #         _draw_property(col, self, "emission", links)
-    #         _draw_property(col, properties, "emission_color", links)
-    #
-    #     # Thin Film
-    #     sublayout = _subpanel(layout, "Thin Film", properties.ui_thinfilm,
-    #                           "ext_properties", "ui_thinfilm", "node")
-    #     if sublayout:
-    #         col = sublayout.column()
-    #         _draw_property(col, properties, "thin_film_thickness", links)
-    #         _draw_property(col, properties, "thin_film_ior", links)
-    #
-    #     # Geometry
-    #     sublayout = _subpanel(layout, "Geometry", properties.ui_geometry,
-    #                           "ext_properties", "ui_geometry", "node")
-    #     if sublayout:
-    #         col = sublayout.column()
-    #         _draw_property(col, properties, "opacity", links)
-    #         _draw_property(col, properties, "thin_walled", links)
-    #
-    #     # Advanced
-    #     sublayout = _subpanel(layout, "Advanced", properties.ui_caustics,
-    #                           "ext_properties", "ui_advanced", "node")
-    #     if sublayout:
-    #         col = sublayout.column()
-    #         _draw_property(col, properties, "caustics", links)
-    #         _draw_property(col, properties, "internal_reflections", links)
-    #         _draw_property(col, properties, "exit_to_background", links)
-    #         _draw_property(col, properties, "indirect_diffuse", links)
-    #         _draw_property(col, properties, "indirect_specular", links)
-    #
-    #
-    # def _find_index(self, identifier):
-    #     ret = 0
-    #     socks = iter(self.sockets)
-    #     for i in self.inputs:
-    #         for s in socks:
-    #             if s == identifier:
-    #                 return ret
-    #             if s == i.identifier:
-    #                 ret += 1
-    #                 break
-    #         else:
-    #             break
-    #     return ret
-    #
-    # def create_socket(self, identifier):
-    #     from_index = len(self.inputs)
-    #     to_index = self._find_index(identifier)
-    #     type, name, path = self.sockets[identifier]
-    #     sock = self.inputs.new("ArnoldNodeSocketProperty", name, identifier)
-    #     sock.path = path
-    #     sock.attr = identifier
-    #     if type in ('RGB', 'RGBA'):
-    #         sock.is_color = True
-    #         sock.color = (0.78, 0.78, 0.16, 1 if type == 'RGB' else 0.5)
-    #     elif type == 'FLOAT':
-    #         sock.color = (0.63, 0.63, 0.63, 1.0)
-    #     if to_index < from_index:
-    #         self.inputs.move(from_index, to_index)
-    #
-    # @property
-    # def ai_properties(self):
-    #     links = [i.identifier for i in self.inputs if i.is_linked]
-    #     props = self.ext_properties
-    #     ret = {
-    #         'exit_to_background': ('BOOL', props.exit_to_background),
-    #         'caustics': ('BOOL', props.caustics),
-    #         'internal_reflections': ('BOOL', props.internal_reflections),
-    #     }
-    #     for i, (t, n, p) in self.sockets.items():
-    #         if i not in links:
-    #             ret[i] = (t, self.path_resolve(p + "." + i if p else i))
-    #     return ret
+    def draw_buttons_ext(self, context, layout):
+        inputs = self.inputs
+        properties = self.ext_properties
 
+        links = {i.identifier: i.is_linked for i in inputs}
+
+        # Diffuse
+        sublayout = _subpanel(layout, "Diffuse", properties.ui_diffuse,
+                              "ext_properties", "ui_diffuse", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "base", links)
+            _draw_property(col, properties, "base_color", links)
+            _draw_property(col, properties, "diffuse_roughness", links)
+            _draw_property(col, properties, "metalness", links)
+
+        # Specular
+        sublayout = _subpanel(layout, "Specular", properties.ui_specular,
+                              "ext_properties", "ui_specular", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "specular", links)
+            _draw_property(col, properties, "specular_color", links)
+            _draw_property(col, properties, "specular_roughness", links)
+            _draw_property(col, properties, "specular_ior", links)
+            _draw_property(col, properties, "specular_anisotropy", links)
+            _draw_property(col, properties, "specular_rotation", links)
+
+        # Transmission
+        sublayout = _subpanel(layout, "Transmission", properties.ui_refraction,
+                              "ext_properties", "ui_refraction", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "transmission", links)
+            _draw_property(col, properties, "transmission_color", links)
+            _draw_property(col, properties, "transmission_depth", links)
+            _draw_property(col, properties, "transmission_scatter", links)
+            _draw_property(col, properties, "transmission_scatter_anisotropy", links)
+            _draw_property(col, properties, "transmission_dispersion", links)
+            _draw_property(col, properties, "transmission_extra_roughness", links)
+            _draw_property(col, properties, "transmit_aovs", links)
+
+        # Subsurface
+        sublayout = _subpanel(layout, "Subsurface", properties.ui_sss,
+                              "ext_properties", "ui_sss", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "subsurface", links)
+            _draw_property(col, properties, "subsurface_color", links)
+            _draw_property(col, properties, "subsurface_radius", links)
+            _draw_property(col, properties, "subsurface_scale", links)
+            _draw_property(col, properties, "subsurface_type", links)
+            _draw_property(col, properties, "subsurface_anisotropy", links)
+
+        # Coat
+        sublayout = _subpanel(layout, "Coat", properties.ui_coat,
+                              "ext_properties", "ui_coat", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "coat", links)
+            _draw_property(col, properties, "coat_color", links)
+            _draw_property(col, properties, "coat_roughness", links)
+            _draw_property(col, properties, "coat_ior", links)
+            _draw_property(col, properties, "coat_normal", links)
+
+
+        # Emission
+        sublayout = _subpanel(layout, "Emission", properties.ui_emission,
+                              "ext_properties", "ui_emission", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "emission", links)
+            _draw_property(col, properties, "emission_color", links)
+
+        # Thin Film
+        sublayout = _subpanel(layout, "Thin Film", properties.ui_thinfilm,
+                              "ext_properties", "ui_thinfilm", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "thin_film_thickness", links)
+            _draw_property(col, properties, "thin_film_ior", links)
+
+        # Geometry
+        sublayout = _subpanel(layout, "Geometry", properties.ui_geometry,
+                              "ext_properties", "ui_geometry", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "opacity", links)
+            _draw_property(col, properties, "thin_walled", links)
+
+        # Advanced
+        sublayout = _subpanel(layout, "Advanced", properties.ui_caustics,
+                              "ext_properties", "ui_advanced", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "caustics", links)
+            _draw_property(col, properties, "internal_reflections", links)
+            _draw_property(col, properties, "exit_to_background", links)
+            _draw_property(col, properties, "indirect_diffuse", links)
+            _draw_property(col, properties, "indirect_specular", links)
+
+
+    def _find_index(self, identifier):
+        ret = 0
+        socks = iter(self.sockets)
+        for i in self.inputs:
+            for s in socks:
+                if s == identifier:
+                    return ret
+                if s == i.identifier:
+                    ret += 1
+                    break
+            else:
+                break
+        return ret
+
+    def create_socket(self, identifier):
+        from_index = len(self.inputs)
+        to_index = self._find_index(identifier)
+        type, name, path = self.sockets[identifier]
+        sock = self.inputs.new(type="ArnoldNodeSocketProperty", name=name, identifier=identifier)
+        sock.path = path
+        sock.attr = identifier
+        if type in ('RGB', 'RGBA'):
+            sock.is_color = True
+            sock.color = (0.78, 0.78, 0.16, 1 if type == 'RGB' else 0.5)
+        elif type == 'FLOAT':
+            sock.color = (0.63, 0.63, 0.63, 1.0)
+        if to_index < from_index:
+            self.inputs.move(from_index, to_index)
+
+    @property
+    def ai_properties(self):
+        links = [i.identifier for i in self.inputs if i.is_linked]
+        props = self.ext_properties
+        ret = {
+            'exit_to_background': ('BOOL', props.exit_to_background),
+            'caustics': ('BOOL', props.caustics),
+            'internal_reflections': ('BOOL', props.internal_reflections),
+        }
+        for i, (t, n, p) in self.sockets.items():
+            if i not in links:
+                ret[i] = (t, self.path_resolve(p + "." + i if p else i))
+        return ret
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeUtility(ArnoldNode):
@@ -669,10 +676,10 @@ class ArnoldNodeUtility(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("ArnoldNodeSocketColor", "Color", "color")
-        self.inputs.new("NodeSocketFloat", "Opacity", "opacity").default_value = 1
-        self.inputs.new("NodeSocketFloat", "AO Distance", "ao_distance").default_value = 100
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="color")
+        self.inputs.new(type="NodeSocketFloat", name="Opacity", identifier="opacity").default_value = 1
+        self.inputs.new(type="NodeSocketFloat", name="AO Distance", identifier="ao_distance").default_value = 100
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "color_mode", text="")
@@ -696,9 +703,9 @@ class ArnoldNodeFlat(ArnoldNode):
     ai_name = "flat"
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("ArnoldNodeSocketColor", "Color", "color")
-        self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="color")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Opacity", identifier="opacity")
 
 
 @ArnoldRenderEngine.register_class
@@ -709,10 +716,10 @@ class ArnoldNodeBump2D(ArnoldNode):
     ai_name = "bump2d"
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGBA", "output")
-        self.inputs.new("NodeSocketFloat", "Map", "bump_map")
-        self.inputs.new("NodeSocketFloat", "Height", "bump_height")
-        self.inputs.new("NodeSocketShader", "Shader", "shader")
+        self.outputs.new(type="NodeSocketShader", name="RGBA", identifier="output")
+        self.inputs.new(type="NodeSocketFloat", name="Map", identifier="bump_map")
+        self.inputs.new(type="NodeSocketFloat", name="Height", identifier="bump_height")
+        self.inputs.new(type="NodeSocketShader", name="Shader", identifier="shader")
 
 
 @ArnoldRenderEngine.register_class
@@ -723,11 +730,11 @@ class ArnoldNodeBump3D(ArnoldNode):
     ai_name = "bump3d"
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGBA", "output")
-        self.inputs.new("NodeSocketFloat", "Map", "bump_map")
-        self.inputs.new("NodeSocketFloat", "Height", "bump_height")
-        self.inputs.new("NodeSocketFloat", "Epsilon", "epsilon")
-        self.inputs.new("NodeSocketShader", "Shader", "shader")
+        self.outputs.new(type="NodeSocketShader", name="RGBA", identifier="output")
+        self.inputs.new(type="NodeSocketFloat", name="Map", identifier="bump_map")
+        self.inputs.new(type="NodeSocketFloat", name="Height", identifier="bump_height")
+        self.inputs.new(type="NodeSocketFloat", name="Epsilon", identifier="epsilon")
+        self.inputs.new(type="NodeSocketShader", name="Shader", identifier="shader")
 
 
 @ArnoldRenderEngine.register_class
@@ -747,11 +754,11 @@ class ArnoldNodeWireframe(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("ArnoldNodeSocketColor", "Fill Color", "fill_color")
-        self.inputs.new("ArnoldNodeSocketColor", "Line Color", "line_color").default_value = (0, 0, 0)
-        self.inputs.new("NodeSocketFloat", "Line Width", "line_width").default_value = 1
-        self.inputs.new("NodeSocketBool", "Raster space", "raster_space").default_value = True
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Fill Color", identifier="fill_color")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Line Color", identifier="line_color").default_value = (0, 0, 0)
+        self.inputs.new(type="NodeSocketFloat", name="Line Width", identifier="line_width").default_value = 1
+        self.inputs.new(type="NodeSocketBool", name="Raster space", identifier="raster_space").default_value = True
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "edge_type", text="")
@@ -771,17 +778,17 @@ class ArnoldNodeAmbientOcclusion(ArnoldNode):
     ai_name = "ambient_occlusion"
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("NodeSocketInt", "Samples", "samples").default_value = 3
-        self.inputs.new("NodeSocketFloat", "Spread", "spread").default_value = 1
-        self.inputs.new("NodeSocketFloat", "Falloff", "falloff")
-        self.inputs.new("NodeSocketFloat", "Near Clip", "near_clip")
-        self.inputs.new("NodeSocketFloat", "Far Clip", "far_clip").default_value = 100
-        self.inputs.new("ArnoldNodeSocketColor", "White", "white")
-        self.inputs.new("ArnoldNodeSocketColor", "Black", "black").default_value = (0, 0, 0)
-        self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
-        self.inputs.new("NodeSocketBool", "Invert Normals", "invert_normals")
-        self.inputs.new("NodeSocketBool", "Self Only", "self_only")
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="NodeSocketInt", name="Samples", identifier="samples").default_value = 3
+        self.inputs.new(type="NodeSocketFloat", name="Spread", identifier="spread").default_value = 1
+        self.inputs.new(type="NodeSocketFloat", name="Falloff", identifier="falloff")
+        self.inputs.new(type="NodeSocketFloat", name="Near Clip", identifier="near_clip")
+        self.inputs.new(type="NodeSocketFloat", name="Far Clip", identifier="far_clip").default_value = 100
+        self.inputs.new(type="ArnoldNodeSocketColor", name="White", identifier="white")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Black", identifier="black").default_value = (0, 0, 0)
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Opacity", identifier="opacity")
+        self.inputs.new(type="NodeSocketBool", name="Invert Normals", identifier="invert_normals")
+        self.inputs.new(type="NodeSocketBool", name="Self Only", identifier="self_only")
 
 
 @ArnoldRenderEngine.register_class
@@ -806,7 +813,7 @@ class ArnoldNodeMotionVector(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
 
     def draw_buttons(self, context, layout):
         col = layout.column()
@@ -833,13 +840,13 @@ class ArnoldNodeRaySwitch(ArnoldNode):
     ai_name = "ray_switch"
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGBA", "output")
-        self.inputs.new("NodeSocketColor", "Camera", "camera").default_value = (1, 1, 1, 1)
-        self.inputs.new("NodeSocketColor", "Shadow", "shadow").default_value = (1, 1, 1, 1)
+        self.outputs.new(type="NodeSocketShader", name="RGBA", identifier="output")
+        self.inputs.new(type="NodeSocketColor", name="Camera", identifier="camera").default_value = (1, 1, 1, 1)
+        self.inputs.new(type="NodeSocketColor", name="Shadow", identifier="shadow").default_value = (1, 1, 1, 1)
         # self.inputs.new("NodeSocketColor", "Reflection", "reflection").default_value = (1, 1, 1, 1)
         # self.inputs.new("NodeSocketColor", "Refraction", "refraction").default_value = (1, 1, 1, 1)
-        self.inputs.new("NodeSocketColor", "Diffuse", "diffuse").default_value = (1, 1, 1, 1)
-        self.inputs.new("NodeSocketColor", "Glossy", "glossy").default_value = (1, 1, 1, 1)
+        self.inputs.new(type="NodeSocketColor", name="Diffuse", identifier="diffuse").default_value = (1, 1, 1, 1)
+        self.inputs.new(type="NodeSocketColor", name="Glossy", identifier="glossy").default_value = (1, 1, 1, 1)
 
 
 @ArnoldRenderEngine.register_class
@@ -858,38 +865,38 @@ class ArnoldNodeStandardHair(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("ArnoldNodeSocketColor", "Root Color", "rootcolor").default_value = (0.1, 0.1, 0.1)
-        self.inputs.new("ArnoldNodeSocketColor", "Tip Color", "tipcolor").default_value = (0.5, 0.5, 0.5)
-        self.inputs.new("NodeSocketFloat", "Ambient diffuse", "ambdiff").default_value = 0.6
-        self.inputs.new("NodeSocketFloat", "Indirect diffuse", "kd_ind")
-        self.inputs.new("NodeSocketBool", "Diffuse cache", "diffuse_cache")
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Root Color", identifier="rootcolor").default_value = (0.1, 0.1, 0.1)
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Tip Color", identifier="tipcolor").default_value = (0.5, 0.5, 0.5)
+        self.inputs.new(type="NodeSocketFloat", name="Ambient diffuse", identifier="ambdiff").default_value = 0.6
+        self.inputs.new(type="NodeSocketFloat", name="Indirect diffuse", identifier="kd_ind")
+        self.inputs.new(type="NodeSocketBool", name="Diffuse cache", identifier="diffuse_cache")
         # Specular #1
-        self.inputs.new("ArnoldNodeSocketColor", "Specular: Color", "spec_color")
-        self.inputs.new("NodeSocketFloat", "Specular: Glossiness", "gloss").default_value = 10
-        self.inputs.new("NodeSocketFloat", "Specular: Weight", "spec").default_value = 1
-        self.inputs.new("NodeSocketFloat", "Specular: Angular shift", "spec_shift")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Specular: Color", identifier="spec_color")
+        self.inputs.new(type="NodeSocketFloat", name="Specular: Glossiness", identifier="gloss").default_value = 10
+        self.inputs.new(type="NodeSocketFloat", name="Specular: Weight", identifier="spec").default_value = 1
+        self.inputs.new(type="NodeSocketFloat", name="Specular: Angular shift", identifier="spec_shift")
         # Specular #2
-        self.inputs.new("ArnoldNodeSocketColor", "Spec. #2: Color", "spec2_color").default_value = (1, 0.4, 0.1)
-        self.inputs.new("NodeSocketFloat", "Spec. #2: Glossiness", "gloss2").default_value = 7
-        self.inputs.new("NodeSocketFloat", "Spec. #2: Weight", "spec2").default_value = 0
-        self.inputs.new("NodeSocketFloat", "Spec. #2: Angular shift", "spec2_shift")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Spec. #2: Color", identifier="spec2_color").default_value = (1, 0.4, 0.1)
+        self.inputs.new(type="NodeSocketFloat", name="Spec. #2: Glossiness", identifier="gloss2").default_value = 7
+        self.inputs.new(type="NodeSocketFloat", name="Spec. #2: Weight", identifier="spec2").default_value = 0
+        self.inputs.new(type="NodeSocketFloat", name="Spec. #2: Angular shift", identifier="spec2_shift")
         # Transmission
-        self.inputs.new("ArnoldNodeSocketColor", "Transmission: Color", "transmission_color").default_value = (1, 0.4, 0.1)
-        self.inputs.new("NodeSocketFloat", "Transmission", "transmission")
-        self.inputs.new("NodeSocketFloat", "Transmission: Spread", "transmission_spread").default_value = 1
-        self.inputs.new("NodeSocketFloat", "Transmission: Depth", "transmission_depth").default_value= 1
-        self.inputs.new("ArnoldNodeSocketColor", "Transmission: Scatter", "transmission_scatter").default_value = (0, 0, 0)
-        self.inputs.new("ArnoldNodeSocketColor", "Opacity", "opacity")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Transmission: Color", identifier="transmission_color").default_value = (1, 0.4, 0.1)
+        self.inputs.new(type="NodeSocketFloat", name="Transmission", identifier="transmission")
+        self.inputs.new(type="NodeSocketFloat", name="Transmission: Spread", identifier="transmission_spread").default_value = 1
+        self.inputs.new(type="NodeSocketFloat", name="Transmission: Depth", identifier="transmission_depth").default_value= 1
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Transmission: Scatter", identifier="transmission_scatter").default_value = (0, 0, 0)
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Opacity", identifier="opacity")
 
     def draw_buttons(self, context, layout):
         col = layout.column()
-        col.label("Remap UV:")
+        col.label(text="Remap UV:")
         row = col.row()
         col = row.column()
         col.alignment = 'LEFT'
-        col.label("U:")
-        col.label("V:")
+        col.label(text="U:")
+        col.label(text="V:")
         col = row.column()
         col.prop(self, "uparam", text="")
         col.prop(self, "vparam", text="")
@@ -927,12 +934,12 @@ class ArnoldNodeNoise(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketFloat", "Value", "output")
-        self.inputs.new("NodeSocketFloat", "Distortion", "distortion")
-        self.inputs.new("NodeSocketFloat", "Lacunarity", "lacunarity").default_value = 1.92
-        self.inputs.new("NodeSocketFloat", "Amplitude", "amplitude").default_value = 1
-        self.inputs.new("NodeSocketVector", "Scale", "scale").default_value = (1, 1, 1)
-        self.inputs.new("NodeSocketVector", "Offset", "offset")
+        self.outputs.new(type="NodeSocketFloat", name="Value", identifier="output")
+        self.inputs.new(type="NodeSocketFloat", name="Distortion", identifier="distortion")
+        self.inputs.new(type="NodeSocketFloat", name="Lacunarity", identifier="lacunarity").default_value = 1.92
+        self.inputs.new(type="NodeSocketFloat", name="Amplitude", identifier="amplitude").default_value = 1
+        self.inputs.new(type="NodeSocketVector", name="Scale", identifier="scale").default_value = (1, 1, 1)
+        self.inputs.new(type="NodeSocketVector", name="Offset", identifier="offset")
 
     def draw_buttons(self, context, layout):
         col = layout.column()
@@ -1021,11 +1028,11 @@ class ArnoldNodeImage(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketColor", "RGBA", "output")
-        self.inputs.new("ArnoldNodeSocketColor", "Multiply", "multiply")
-        self.inputs.new("ArnoldNodeSocketColor", "Offset", "offset").default_value = (0, 0, 0)
-        self.inputs.new("NodeSocketColor", "Missing tile color", "missing_tile_color")
-        self.inputs.new("NodeSocketVector", "UV coords", "uvcoords").hide_value = True
+        self.outputs.new(type="NodeSocketColor", name="RGBA", identifier="output")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Multiply", identifier="multiply")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Offset", identifier="offset").default_value = (0, 0, 0)
+        self.inputs.new(type="NodeSocketColor", name="Missing tile color", identifier="missing_tile_color")
+        self.inputs.new(type="NodeSocketVector", name="UV coords", identifier="uvcoords").hide_value = True
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "filename", text="", icon='IMAGEFILE')
@@ -1184,9 +1191,9 @@ class ArnoldNodeSky(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("ArnoldNodeSocketColor", "Color", "color")
-        self.inputs.new("NodeSocketFloat", "Intensity", "intensity").default_value = 1
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="color")
+        self.inputs.new(type="NodeSocketFloat", name="Intensity", identifier="intensity").default_value = 1
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "format")
@@ -1304,7 +1311,7 @@ class ArnoldNodePhysicalSky(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
 
     def draw_buttons(self, context, layout):
         col = layout.column()
@@ -1372,15 +1379,15 @@ class ArnoldNodeVolumeScattering(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("ArnoldNodeSocketColor", "Color", "rgb_density")
-        self.inputs.new("NodeSocketFloat", "Density", "density")
-        self.inputs.new("ArnoldNodeSocketColor", "Attenuation Color", "rgb_attenuation")
-        self.inputs.new("NodeSocketFloat", "Attenuation", "attenuation")
-        self.inputs.new("NodeSocketFloat", "Anisotropy", "eccentricity")
-        self.inputs.new("NodeSocketFloat", "Camera", "affect_camera").default_value = 1
-        self.inputs.new("NodeSocketFloat", "Diffuse", "affect_diffuse")
-        self.inputs.new("NodeSocketFloat", "Reflection", "affect_reflection").default_value = 1
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="rgb_density")
+        self.inputs.new(type="NodeSocketFloat", name="Density", identifier="density")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Attenuation Color", identifier="rgb_attenuation")
+        self.inputs.new(type="NodeSocketFloat", name="Attenuation", identifier="attenuation")
+        self.inputs.new(type="NodeSocketFloat", name="Anisotropy", identifier="eccentricity")
+        self.inputs.new(type="NodeSocketFloat", name="Camera", identifier="affect_camera").default_value = 1
+        self.inputs.new(type="NodeSocketFloat", name="Diffuse", identifier="affect_diffuse")
+        self.inputs.new(type="NodeSocketFloat", name="Reflection", identifier="affect_reflection").default_value = 1
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "samples")
@@ -1400,12 +1407,12 @@ class ArnoldNodeFog(ArnoldNode):
     ai_name = "fog"
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("ArnoldNodeSocketColor", "Color", "color")
-        self.inputs.new("NodeSocketFloat", "Distance", "distance").default_value = 0.02
-        self.inputs.new("NodeSocketFloat", "Height", "height").default_value = 5
-        self.inputs.new("NodeSocketVector", "Ground Normal", "ground_normal").default_value = (0, 0, 1)
-        self.inputs.new("NodeSocketVectorXYZ", "Ground Point", "ground_point")
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="color")
+        self.inputs.new(type="NodeSocketFloat", name="Distance", identifier="distance").default_value = 0.02
+        self.inputs.new(type="NodeSocketFloat", name="Height", identifier="height").default_value = 5
+        self.inputs.new(type="NodeSocketVector", name="Ground Normal", identifier="ground_normal").default_value = (0, 0, 1)
+        self.inputs.new(type="NodeSocketVectorXYZ", name="Ground Point", identifier="ground_point")
 
 
 @ArnoldRenderEngine.register_class
@@ -1469,7 +1476,7 @@ class ArnoldNodeBarndoor(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketVirtual", "Filter", "filter")
+        self.outputs.new(type="NodeSocketVirtual", name="Filter", identifier="filter")
 
     def draw_buttons(self, context, layout):
         col = layout.column()
@@ -1567,8 +1574,8 @@ class ArnoldNodeGobo(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketVirtual", "Filter", "filter")
-        self.inputs.new("ArnoldNodeSocketColor", "Slidemap", "slidemap")
+        self.outputs.new(type="NodeSocketVirtual", name="Filter", identifier="filter")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Slidemap", identifier="slidemap")
 
     def draw_buttons(self, context, layout):
         col = layout.column()
@@ -1638,7 +1645,7 @@ class ArnoldNodeLightDecay(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketVirtual", "Filter", "filter")
+        self.outputs.new(type="NodeSocketVirtual", name="Filter", identifier="filter")
 
     def draw_buttons(self, context, layout):
         col = layout.column()
@@ -1735,9 +1742,9 @@ class ArnoldNodeLightBlocker(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketVirtual", "Filter", "filter")
-        self.inputs.new("ArnoldNodeSocketColor", "Shader", "shader").default_value = (0, 0, 0)
-        self.inputs.new("NodeSocketFloat", "Density", "density")
+        self.outputs.new(type="NodeSocketVirtual", name="Filter", identifier="filter")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Shader", identifier="shader").default_value = (0, 0, 0)
+        self.inputs.new(type="NodeSocketFloat", name="Density", identifier="density")
 
     def draw_buttons(self, context, layout):
         col = layout.column()
@@ -1802,15 +1809,15 @@ class ArnoldNodeDensity(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("NodeSocketShader", "RGB", "output")
-        self.inputs.new("NodeSocketString", "scatter_channel")
-        self.inputs.new("ArnoldNodeSocketColor", "scatter_color")
-        self.inputs.new("NodeSocketFloat", "scatter_g")
-        self.inputs.new("NodeSocketString", "absorption_channel")
-        self.inputs.new("ArnoldNodeSocketColor", "absorption_color")
-        self.inputs.new("NodeSocketString", "emission_channel")
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="NodeSocketString", identifier="scatter_channel")
+        self.inputs.new(type="ArnoldNodeSocketColor", identifier="scatter_color")
+        self.inputs.new(type="NodeSocketFloat", identifier="scatter_g")
+        self.inputs.new(type="NodeSocketString", identifier="absorption_channel")
+        self.inputs.new(type="ArnoldNodeSocketColor", identifier="absorption_color")
+        self.inputs.new(type="NodeSocketString", identifier="emission_channel")
         # self.inputs.new("ArnoldNodeSocketColor", "emission_color")
-        self.inputs.new("NodeSocketVector", "position_offset")
+        self.inputs.new(type="NodeSocketVector", identifier="position_offset")
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "interpolation", text="")
@@ -1856,10 +1863,10 @@ class ArnoldNodeMixRGB(ArnoldNode):
     )
 
     def init(self, context):
-        self.outputs.new("ArnoldNodeSocketColor", "Color", "output")
-        self.inputs.new("ArnoldNodeSocketColor", "Color #1", "color1").default_value = (0.5, 0.5, 0.5)
-        self.inputs.new("ArnoldNodeSocketColor", "Color #2", "color2").default_value = (0.5, 0.5, 0.5)
-        self.inputs.new("NodeSocketFloat", "Factor", "factor").default_value = 0.5
+        self.outputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="output")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Color #1", identifier="color1").default_value = (0.5, 0.5, 0.5)
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Color #2", identifier="color2").default_value = (0.5, 0.5, 0.5)
+        self.inputs.new(type="NodeSocketFloat", name="Factor", identifier="factor").default_value = 0.5
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "blend_type", text="")
