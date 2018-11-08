@@ -106,7 +106,6 @@ def _AiNode(node, prefix, nodes):
 
 class Shaders:
     def __init__(self, data):
-        print("Shader Init")
         self._data = data
 
         self._shaders = {}
@@ -137,7 +136,6 @@ class Shaders:
 
     def _export(self, mat):
         if mat.use_nodes:
-            print("Exporting")
             for n in mat.node_tree.nodes:
                 if isinstance(n, ArnoldNodeOutput) and n.is_active:
                     input = n.inputs[0]
@@ -272,7 +270,6 @@ class Shaders:
 
 
 def _AiPolymesh(mesh, shaders):
-    print("AiPolymesh triggered")
     pc = time.perf_counter()
 
     verts = mesh.vertices
@@ -516,7 +513,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     duplicators = []
     duplicator_parent = False
 
-    # print("NEEEEENEEEENEEEEEEENEEEENEEEEEEEEE")
     shaders = Shaders(data)
 
     opts = bpy.context.scene.arnold
@@ -593,7 +589,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
 
             with _Mesh(ob) as mesh:
                 if mesh is not None:
-                    # print("NEVERRRRRRRRRRRRRRRRRRRRR")
                     node = _AiPolymesh(mesh, shaders)
                     arnold.AiNodeSetStr(node, "name", name)
                     arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
@@ -632,8 +627,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                 arnold.AiMsgDebug(b"    skydome_light")
             elif lamp.type == 'AREA':
                 node = arnold.AiNode(lamp.type)
-                print("HELLO!")
-                print(light.type)
                 if light.type == 'cylinder_light':
                     top = arnold.AiArray(1, 1, arnold.AI_TYPE_VECTOR, arnold.AtVector(0, lamp.size_y / 2, 0))
                     arnold.AiNodeSetArray(node, "top", top)
@@ -728,7 +721,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     #                     arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
     #                     with _Mesh(ob) as mesh:
     #                         if mesh is not None:
-    #                             print("TEEEEEEEHEEEEEEEEE")
     #                             node = _AiPolymesh(mesh, shaders)
     #                             arnold.AiNodeSetStr(node, "name", _Name(ob.name))
     #                             arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix))
@@ -760,7 +752,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
             arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
             with _Mesh(ob) as mesh:
                 if mesh is not None:
-                    print("LOLOLOLOLOLOLOLOLOLOL")
                     node = _AiPolymesh(mesh, shaders)
                     arnold.AiNodeSetStr(node, "name", _Name(ob.name))
                     arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
@@ -964,7 +955,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
         session["display"] = display
         session["offset"] = xoff, yoff
         if opts.progressive_refinement:
-            # print("YOU HAVE CHOOSEN TO BE PROGRESSIVE! WOO!")
             isl = opts.initial_sampling_level
             session["ipr"] = (isl, AA_samples + 1)
             AA_samples = isl
