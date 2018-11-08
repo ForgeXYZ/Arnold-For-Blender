@@ -8,7 +8,7 @@ import sys
 class ArnoldAddonPreferences(AddonPreferences):
     bl_idname = __package__
 
-    arnold_path = StringProperty(
+    arnold_path: StringProperty(
         name="Arnold Path",
         subtype="DIR_PATH")
 

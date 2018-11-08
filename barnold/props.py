@@ -956,15 +956,20 @@ class ArnoldLight(PropertyGroup):
         def get(self):
             lamp = self.id_data
             i = _lamps.index(lamp.type)
+            print(i)
             if i == 4:  # AREA
                 _t = self.get("_type", 0)
-                if _t == 3:
+                if lamp.shape == 'SQUARE':
+                    self["_type"] = 0
                     i = 8  # quad_light
                 elif lamp.shape == 'RECTANGLE':
                     self["_type"] = 0
                     i = 4  # cylinder_light
+                elif lamp.shape == 'ELLIPSE':
+                    self["_type"] = 0
+                    i = 7 # photometric_light
                 else:
-                    i = _t + 5
+                    i = _t + 5 # disk_light
             return i
 
         def set(self, value):

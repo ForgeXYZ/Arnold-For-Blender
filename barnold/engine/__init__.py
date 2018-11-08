@@ -19,8 +19,13 @@ import bpy
 import bgl
 from mathutils import Matrix, Vector, geometry
 
-#sys.path.append(os.path.join(os.environ["ARNOLD_HOME"],"python"))
-#sys.path.append(r"C:\Program Files\Blender Foundation\Blender\2.79\scripts\modules\Arnold-5.2.0.0-windows\python")
+#solidangle_LICENSE = os.environ.get('solidangle_LICENSE')
+# try:
+#    os.environ["solidangle_LICENSE"]
+# except KeyError:
+#    print("Please set the environment variable solidangle_LICENSE")
+#    sys.exit(1)
+#sys.path.append(r"/Users/furby/xyz/dev/amity/arnold-sdk/python")
 import arnold
 
 from ..nodes import (
@@ -626,7 +631,8 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                 arnold.AiNodeSetStr(node, "format", light.format)
                 arnold.AiMsgDebug(b"    skydome_light")
             elif lamp.type == 'AREA':
-                node = arnold.AiNode(lamp.type)
+                print(light.type)
+                node = arnold.AiNode(light.type)
                 if light.type == 'cylinder_light':
                     top = arnold.AiArray(1, 1, arnold.AI_TYPE_VECTOR, arnold.AtVector(0, lamp.size_y / 2, 0))
                     arnold.AiNodeSetArray(node, "top", top)
@@ -650,7 +656,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                     #arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
                 elif light.type == 'photometric_light':
                     arnold.AiNodeSetStr(node, "filename", bpy.path.abspath(light.filename))
-                    matrix *= _MR
+                    matrix = matrix @ _MR
                 elif light.type == 'mesh_light':
                     arnold.AiNodeSetStr(node, "decay_type", light.decay_type)
                     if light.mesh:

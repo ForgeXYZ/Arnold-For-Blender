@@ -37,15 +37,14 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
             "RENDER_PT_output",
             "RENDER_PT_post_processing",
         ), False)),
-        ("properties_world", ((
-            "WORLD_PT_context_world",
-            "WORLD_PT_custom_props",
-        ), False)),
+        ("properties_view_layer", None),
+        ("properties_world", None),
         ("properties_data_light", ((
             "DATA_PT_context_light",
-            #"DATA_PT_area",
+            "DATA_PT_area",
             "DATA_PT_custom_props_light",
         ), False)),
+        ("properties_constraint", None),
         ("properties_material", ((
             #"MATERIAL_PT_context_material",
             #"MATERIAL_PT_preview",
@@ -70,6 +69,15 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
         ("properties_scene", None),
         ("properties_data_camera", None),
         ("properties_data_mesh", None),
+        ("properties_physics_common", None),
+        ("properties_physics_dynamicpaint", None),
+        ("properties_physics_field", None),
+        ("properties_physics_cloth", None),
+        ("properties_physics_fluid", None),
+        ("properties_physics_rigidbody_constraint", None),
+        ("properties_physics_rigidbody", None),
+        ("properties_physics_smoke", None),
+        ("properties_physics_softbody", None),
         ("properties_particle", None),
     )
 

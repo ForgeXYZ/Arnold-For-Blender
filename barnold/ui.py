@@ -237,10 +237,10 @@ class ArnoldRenderDiagnosticsPanel(RenderButtonsPanel, Panel):
         sublayout = _subpanel(layout, "Log", opts.ui_log, opts_path, "ui_log", "scene")
         if sublayout:
             col = sublayout.column()
-            # col.prop(opts, "logfile")
+            col.prop(opts, "logfile")
             row = col.row()
-            # row.prop_menu_enum(opts, "logfile_flags", text="File Flags (%X)" % opts.get("logfile_flags", 0))
-            # row.prop_menu_enum(opts, "console_log_flags", text="Console Flags (%X)" % opts.get("console_log_flags", 0))
+            row.prop_menu_enum(opts, "logfile_flags", text="File Flags (%X)" % opts.get("logfile_flags", 0))
+            row.prop_menu_enum(opts, "console_log_flags", text="Console Flags (%X)" % opts.get("console_log_flags", 0))
             col.prop(opts, "max_warnings")
 
         sublayout = _subpanel(layout, "Error Handling", opts.ui_error, opts_path, "ui_error", "scene")
@@ -421,7 +421,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
         light_type = light.type
         path_from_id = light.path_from_id()
 
-        layout.prop(light, "type", expand=True)
+        layout.prop(lamp, "type", expand=True)
         #layout.prop(lamp, "type")
 
         col = layout.column()
@@ -435,11 +435,14 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
         col.prop(light, "affect_diffuse")
         col.prop(light, "affect_specular")
 
+        # ob = LightButtonsPanel['DATA_PT_area']
+
         # col=layout.column()
         # if lamp_type == 'AREA':
-        #     layout.prop(light, "type", expand=True)
+        #     layout.prop(ob, "area_shape", text="New Location")
 
         # Area
+        print(light_type)
         col = layout.column()
         if lamp_type in ('POINT', 'SPOT'):
             col.prop(light, "radius")
