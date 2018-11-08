@@ -147,7 +147,7 @@ class Shaders:
             return None
 
         shader = mat.arnold
-        if mat.type == 'SURFACE':
+        if mat == mat:
             node = arnold.AiNode(shader.type)
             if shader.type == 'lambert':
                 lambert = shader.lambert
@@ -156,18 +156,18 @@ class Shaders:
                 arnold.AiNodeSetRGB(node, "opacity", *lambert.opacity)
             elif shader.type == 'standard_surface':
                 standard_surface = shader.standard_surface
-                arnold.AiNodeSetFlt(node, "base", standard_surface.diffuse_intensity)
-                arnold.AiNodeSetRGB(node, "base_color", *standard_surface.diffuse_color)
+                arnold.AiNodeSetFlt(node, "base", standard_surface.base)
+                arnold.AiNodeSetRGB(node, "base_color", *standard_surface.base_color)
                 arnold.AiNodeSetFlt(node, "diffuse_roughness", standard_surface.diffuse_roughness)
                 arnold.AiNodeSetFlt(node, "metalness", standard_surface.metalness)
-                arnold.AiNodeSetFlt(node, "specular", mat.specular_intensity)
-                arnold.AiNodeSetRGB(node, "specular_color", *mat.specular_color)
+                arnold.AiNodeSetFlt(node, "specular", standard_surface.specular)
+                arnold.AiNodeSetRGB(node, "specular_color", *standard_surface.specular_color)
                 arnold.AiNodeSetFlt(node, "specular_roughness", standard_surface.specular_roughness)
                 #arnold.AiNodeSetFlt(node, "specular_ior", standard_surface.specular_ior)
                 arnold.AiNodeSetFlt(node, "specular_anisotropy", standard_surface.specular_anisotropy)
                 arnold.AiNodeSetFlt(node, "specular_rotation", standard_surface.specular_rotation)
-                arnold.AiNodeSetFlt(node, "emission", mat.emit)
-                arnold.AiNodeSetRGB(node, "emission_color", *mat.diffuse_color)
+                arnold.AiNodeSetFlt(node, "emission", standard_surface.emission)
+                arnold.AiNodeSetRGB(node, "emission_color", *standard_surface.emission_color)
                 arnold.AiNodeSetFlt(node, "transmission", standard_surface.transmission)
                 arnold.AiNodeSetRGB(node, "transmission_color", *standard_surface.transmission_color)
                 arnold.AiNodeSetFlt(node, "transmission_depth", standard_surface.transmission_depth)
@@ -631,7 +631,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                 arnold.AiNodeSetStr(node, "format", light.format)
                 arnold.AiMsgDebug(b"    skydome_light")
             elif lamp.type == 'AREA':
-                node = arnold.AiNode(light.type)
+                node = arnold.AiNode(lamp.type)
                 if light.type == 'cylinder_light':
                     top = arnold.AiArray(1, 1, arnold.AI_TYPE_VECTOR, arnold.AtVector(0, lamp.size_y / 2, 0))
                     arnold.AiNodeSetArray(node, "top", top)
@@ -709,41 +709,41 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
             arnold.AiMsgDebug(b"    skip (unsupported)")
 
     ##############################
-    ## duplicators
-    for duplicator in duplicators:
-        i = 0
-        pc = time.perf_counter()
-        arnold.AiMsgDebug(b"[DUPLI:%S:%S] '%S'", duplicator.type,
-                         duplicator.dupli_type, duplicator.name)
-        arnold.AiMsgTab(4)
-        duplicator.dupli_list_create(scene, 'RENDER')
-        try:
-            for d in duplicator.dupli_list:
-                ob = d.object
-                if not ob.hide_render and ob.dupli_type not in {'VERTS', 'FACES'} and ob.type in _CT:
-                    onode = nodes.get(ob)
-                    if onode is None:
-                        arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
-                        with _Mesh(ob) as mesh:
-                            if mesh is not None:
-                                print("TEEEEEEEHEEEEEEEEE")
-                                node = _AiPolymesh(mesh, shaders)
-                                arnold.AiNodeSetStr(node, "name", _Name(ob.name))
-                                arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix))
-                                nodes[ob] = node
-                    else:
-                        node = arnold.AiNode("ginstance")
-                        arnold.AiNodeSetStr(node, "name", _Name(ob.name))
-                        arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix))
-                        arnold.AiNodeSetBool(node, "inherit_xform", False)
-                        arnold.AiNodeSetPtr(node, "node", onode)
-                        i += 1
-                    _export_object_properties(ob, node)
-            arnold.AiMsgDebug(b"instances %d (%f)", ctypes.c_int(i),
-                             ctypes.c_double(time.perf_counter() - pc))
-        finally:
-            arnold.AiMsgTab(-4)
-            duplicator.dupli_list_clear()
+    ## TODO: Fix duplicators for 2.80
+    # for duplicator in duplicators:
+    #     i = 0
+    #     pc = time.perf_counter()
+    #     arnold.AiMsgDebug(b"[DUPLI:%S:%S] '%S'", duplicator.type,
+    #                      duplicator.dupli_type, duplicator.name)
+    #     arnold.AiMsgTab(4)
+    #     duplicator.dupli_list_create(scene, 'RENDER')
+    #     try:
+    #         for d in duplicator.dupli_list:
+    #             ob = d.object
+    #             if not ob.hide_render and ob.dupli_type not in {'VERTS', 'FACES'} and ob.type in _CT:
+    #                 onode = nodes.get(ob)
+    #                 if onode is None:
+    #                     arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
+    #                     with _Mesh(ob) as mesh:
+    #                         if mesh is not None:
+    #                             print("TEEEEEEEHEEEEEEEEE")
+    #                             node = _AiPolymesh(mesh, shaders)
+    #                             arnold.AiNodeSetStr(node, "name", _Name(ob.name))
+    #                             arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix))
+    #                             nodes[ob] = node
+    #                 else:
+    #                     node = arnold.AiNode("ginstance")
+    #                     arnold.AiNodeSetStr(node, "name", _Name(ob.name))
+    #                     arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix))
+    #                     arnold.AiNodeSetBool(node, "inherit_xform", False)
+    #                     arnold.AiNodeSetPtr(node, "node", onode)
+    #                     i += 1
+    #                 _export_object_properties(ob, node)
+    #         arnold.AiMsgDebug(b"instances %d (%f)", ctypes.c_int(i),
+    #                          ctypes.c_double(time.perf_counter() - pc))
+    #     finally:
+    #         arnold.AiMsgTab(-4)
+    #         duplicator.dupli_list_clear()
 
     ##############################
     ## mesh lights

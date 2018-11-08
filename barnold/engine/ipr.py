@@ -160,7 +160,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
                         arnold.AiRenderInterrupt()
                     else:
                         #print("+++ _callback: tile", x, y, width, height)
-                        _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_uint8))
+                        _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_uint16))
                         a = numpy.ctypeslib.as_array(_buffer, shape=(height, width, 4))
                         rect[y : y + height, x : x + width] = a
                         redraw_event.set()

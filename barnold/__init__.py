@@ -27,7 +27,7 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
 
     _COMPATIBLE_PANELS = (
         ("properties_render", ((
-            "RENDER_PT_context",
+            #"RENDER_PT_context",
             "RENDER_PT_dimensions",
             "RENDER_PT_output",
             "RENDER_PT_post_processing",
@@ -42,7 +42,7 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
             "DATA_PT_custom_props_light",
         ), False)),
         ("properties_material", ((
-            "MATERIAL_PT_context_material",
+            #"MATERIAL_PT_context_material",
             #"MATERIAL_PT_preview",
             "MATERIAL_PT_custom_props",
         ), False)),
@@ -87,13 +87,13 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
                                 ce.remove(cls.bl_idname)
                             else:
                                 ce.add(cls.bl_idname)
-            # else:
-            #     for c in classes:
-            #         # ce = getattr(mod, c).COMPAT_ENGINES
-            #         if remove:
-            #             ce.remove(cls.bl_idname)
-            #         else:
-            #             ce.add(cls.bl_idname)
+            else:
+                for c in classes:
+                    ce = getattr(mod, c).COMPAT_ENGINES
+                    if remove:
+                        ce.remove(cls.bl_idname)
+                    else:
+                        ce.add(cls.bl_idname)
 
     @classmethod
     def register_class(cls, _cls):

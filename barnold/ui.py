@@ -422,7 +422,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
         path_from_id = light.path_from_id()
 
         #layout.prop(lamp, "type", expand=True)
-        layout.prop(light, "type")
+        layout.prop(lamp, "type")
 
         col = layout.column()
         col.prop(lamp, "color")
