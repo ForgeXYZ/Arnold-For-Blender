@@ -158,7 +158,7 @@ class ArnoldNodeSocketProperty(NodeSocket):
         if self.path:
             data = node.path_resolve(self.path)
         if self.is_output or self.is_linked:
-            layout.label(text)
+            layout.label(text=text)
         elif self.is_color:
             row = layout.row()
             row.alignment = 'LEFT'
@@ -208,7 +208,7 @@ class ArnoldNodeSocketByte(NodeSocket):
 
     def draw(self, context, layout, node, text):
         if self.is_output or self.is_linked:
-            layout.label(text)
+            layout.label(text=text)
         else:
             layout.prop(self, "default_value", text=text)
 
@@ -226,7 +226,7 @@ class ArnoldNodeSocketFilter(NodeSocket):
     )
 
     def draw(self, context, layout, node, text):
-        layout.label(text)
+        layout.label(text=text)
 
     def draw_color(self, context, node):
         # <blender_sources>/source/blender/editors/space_node/drawnode.c:3010 (SOCK_INT)
@@ -1050,7 +1050,7 @@ class ArnoldNodeImage(ArnoldNode):
         self.inputs.new(type="NodeSocketVector", name="UV coords", identifier="uvcoords").hide_value = True
 
     def draw_buttons(self, context, layout):
-        layout.prop(self, "filename", text="", icon='IMAGEFILE')
+        layout.prop(self, "filename", text="", icon='IMAGE')
 
         col = layout.column()
         col.prop(self, "filter")
@@ -1061,23 +1061,23 @@ class ArnoldNodeImage(ArnoldNode):
         col = layout.column()
         col.prop(self, "uvset")
 
-        col.label("Offset:")
+        col.label(text="Offset:")
         scol = col.column(align=True)
         scol.prop(self, "soffset", text="U")
         scol.prop(self, "toffset", text="V")
 
-        col.label("Weight:")
+        col.label(text="Weight:")
         scol = col.column(align=True)
         scol.prop(self, "sscale", text="U")
         scol.prop(self, "tscale", text="V")
 
         scol = col.column(align=True)
-        scol.label("Wrap:")
+        scol.label(text="Wrap:")
         row = scol.row(align=True)
         sscol = row.column(align=True)
         sscol.alignment = 'LEFT'
-        sscol.label("U:")
-        sscol.label("V:")
+        sscol.label(text="U:")
+        sscol.label(text="V:")
         sscol = row.column(align=True)
         sscol.prop(self, "swrap", text="")
         sscol.prop(self, "twrap", text="")
@@ -1215,7 +1215,7 @@ class ArnoldNodeSky(ArnoldNode):
         layout.prop(self, "opaque_alpha")
 
         col = layout.column()
-        col.label("Visibility:")
+        col.label(text="Visibility:")
         flow = col.column_flow(align=True)
         flow.prop(self, "visibility_camera")
         flow.prop(self, "visibility_shadow")
@@ -1225,19 +1225,19 @@ class ArnoldNodeSky(ArnoldNode):
         flow.prop(self, "visibility_glossy")
 
         col = layout.column()
-        col.label("Angle:")
+        col.label(text="Angle:")
         scol = col.column(align=True)
         scol.prop(self, "X_angle")
         scol.prop(self, "Y_angle")
         scol.prop(self, "Z_angle")
 
-        col.label("Orientation:")
+        col.label(text="Orientation:")
         row = col.row(align=True)
         col = row.column(align=True)
         col.alignment = 'LEFT'
-        col.label("X:")
-        col.label("Y:")
-        col.label("Z:")
+        col.label(text="X:")
+        col.label(text="Y:")
+        col.label(text="Z:")
         col = row.column(align=True)
         col.row(align=True).prop(self, "X", text="", slider=True)
         col.row(align=True).prop(self, "Y", text="", slider=True)
@@ -1334,7 +1334,7 @@ class ArnoldNodePhysicalSky(ArnoldNode):
         row = col.row(align=True)
         row.alignment = 'LEFT'
         row.prop(self, "ground_albedo", text="")
-        row.label("Ground Albedo")
+        row.label(text="Ground Albedo")
         col.prop(self, "elevation")
         col.prop(self, "azimuth")
         col.prop(self, "intensity")
@@ -1343,21 +1343,21 @@ class ArnoldNodePhysicalSky(ArnoldNode):
         row = col.row(align=True)
         row.alignment = 'LEFT'
         row.prop(self, "sky_tint", text="")
-        row.label("Sky Tint")
+        row.label(text="Sky Tint")
         row = col.row(align=True)
         row.alignment = 'LEFT'
         row.prop(self, "sun_tint", text="")
-        row.label("Sun Tint")
+        row.label(text="Sun Tint")
         col.prop(self, "sun_size")
         col.prop(self, "enable_sun")
 
-        col.label("Orientation:")
+        col.label(text="Orientation:")
         row = col.row(align=True)
         col = row.column(align=True)
         col.alignment = 'LEFT'
-        col.label("X:")
-        col.label("Y:")
-        col.label("Z:")
+        col.label(text="X:")
+        col.label(text="Y:")
+        col.label(text="Z:")
         col = row.column(align=True)
         col.row(align=True).prop(self, "X", text="", slider=True)
         col.row(align=True).prop(self, "Y", text="", slider=True)
@@ -1495,25 +1495,25 @@ class ArnoldNodeBarndoor(ArnoldNode):
 
     def draw_buttons(self, context, layout):
         col = layout.column()
-        col.label("Top:")
+        col.label(text="Top:")
         col = col.column(align=True)
         col.prop(self, "top_left")
         col.prop(self, "top_right")
         col.prop(self, "top_edge")
         col = layout.column()
-        col.label("Right:")
+        col.label(text="Right:")
         col = col.column(align=True)
         col.prop(self, "right_top")
         col.prop(self, "right_bottom")
         col.prop(self, "right_edge")
         col = layout.column()
-        col.label("Bottom:")
+        col.label(text="Bottom:")
         col = col.column(align=True)
         col.prop(self, "bottom_left")
         col.prop(self, "bottom_right")
         col.prop(self, "bottom_edge")
         col = layout.column()
-        col.label("Left:")
+        col.label(text="Left:")
         col = col.column(align=True)
         col.prop(self, "left_top")
         col.prop(self, "left_bottom")
@@ -1600,17 +1600,17 @@ class ArnoldNodeGobo(ArnoldNode):
         col.prop(self, "offset")
 
         subcol = col.column(align=True)
-        subcol.label("Weight:")
+        subcol.label(text="Weight:")
         subcol.prop(self, "scale_s", text="U")
         subcol.prop(self, "scale_t", text="V")
 
         subcol = col.column(align=True)
-        subcol.label("Wrap:")
+        subcol.label(text="Wrap:")
         row = subcol.row(align=True)
         col = row.column(align=True)
         col.alignment = 'LEFT'
-        col.label("U:")
-        col.label("V:")
+        col.label(text="U:")
+        col.label(text="V:")
         col = row.column(align=True)
         col.prop(self, "wrap_s", text="")
         col.prop(self, "wrap_t", text="")
@@ -1769,7 +1769,7 @@ class ArnoldNodeLightBlocker(ArnoldNode):
         col.prop(self, "height_edge")
         col.prop(self, "width_edge")
         col.prop(self, "roundness")
-        col.label("Matrix:")
+        col.label(text="Matrix:")
         sub = col.box().column()
         sub.prop_search(self, "geometry_matrix_object", context.scene, "objects", text="")
         sub = sub.column()

@@ -26,8 +26,13 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
     _CLASSES = []  # classes for (un)register
 
     _COMPATIBLE_PANELS = (
-        ("properties_render", ((
-            #"RENDER_PT_context",
+        # ("properties_render", ((
+        #     "RENDER_PT_dimensions",
+        #     "RENDER_PT_output",
+        #     "RENDER_PT_post_processing",
+        # ), False)),
+        ("properties_render", None),
+        ("properties_output", ((
             "RENDER_PT_dimensions",
             "RENDER_PT_output",
             "RENDER_PT_post_processing",
@@ -57,6 +62,11 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
         #    #"TEXTURE_PT_influence",
         #), False)),
         # ("properties_render_layer", None),
+        # ("properties_scene", ((
+        #     "RENDER_PT_dimensions",
+        #     "RENDER_PT_output",
+        #     "RENDER_PT_post_processing",
+        # ), False)),
         ("properties_scene", None),
         ("properties_data_camera", None),
         ("properties_data_mesh", None),
@@ -121,14 +131,14 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
     def update(self, data, depsgraph):
         engine.update(self, data, depsgraph)
 
-    def render(self, scene):
-        engine.render(self, scene)
+    def render(self, depsgraph):
+        engine.render(self, depsgraph)
 
     def view_update(self, context):
         engine.view_update(self, context)
 
     def view_draw(self, context):
-        engine.view_draw(self, context)
+        engine.draw(self, context.depsgraph, context.region, context.space_data, context.region_data)
 
     def __del__(self):
         engine.free(self)

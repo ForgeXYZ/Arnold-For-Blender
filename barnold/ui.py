@@ -535,7 +535,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
 #from bl_ui.properties_material import
 # def panel_node_draw(layout, id_data, output_type, input_name):
 #     if not id_data.use_nodes:
-#         layout.operator("arnold.use_shading_nodes", icon='NODETREE')
+#         layout.operator("barnold.use_shading_nodes", icon='NODETREE')
 #         return False
 #
 #     ntree = id_data.node_tree
@@ -645,7 +645,7 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
                 col.prop(lambert, "opacity")
             elif shader_type == 'standard_surface':
                 standard_surface = shader.standard_surface
-                ss = props.ArnoldShaderStandardSurface
+                #ss = props.ArnoldShaderStandardSurface
                 path_from_id = standard_surface.path_from_id()
 
                 # Base
@@ -658,11 +658,6 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
                     col.prop(standard_surface, "base_color")
                     col.prop(standard_surface, "diffuse_roughness")
                     col.prop(standard_surface, "metalness")
-                    # Below is deprecated in Arnold 5
-                        # col.prop(standard_surface, "Fresnel_affect_diff")
-                        # col.prop(standard_surface, "Kb")
-                        # col.prop(standard_surface, "direct_diffuse")
-                        # col.prop(standard_surface, "indirect_diffuse")
 
                 # Specular
                 sublayout = _subpanel(layout, "Specular", standard_surface.ui_specular,
@@ -676,34 +671,6 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
                     col.prop(standard_surface, "specular_ior")
                     col.prop(standard_surface, "specular_anisotropy")
                     col.prop(standard_surface, "specular_rotation")
-                    # Below is deprecated in Arnold 5
-                        # col.prop(standard_surface, "direct_specular")
-                        # col.prop(standard_surface, "indirect_specular")
-                        # col.label("Fresnel", icon='SETTINGS')
-                        # box = col.box()
-                        # box.prop(standard_surface, "specular_Fresnel")
-                        # sub = box.row()
-                        # sub.enabled = standard_surface.specular_Fresnel
-                        # sub.prop(standard_surface, "Ksn")
-
-
-                # # (Reflection) - DEPRECATED IN ARNOLD 5
-                # sublayout = _subpanel(layout, "Transmission", standard_surface.ui_reflection,
-                #                       path_from_id, "ui_reflection", "material")
-                # if sublayout:
-                #     col = sublayout.column()
-                #     col.prop(standard_surface, "transmission_color")
-                #     col.prop(standard_surface, "transmission")
-                #     col.label("Fresnel:", icon='SETTINGS')
-                #     box = col.box()
-                #     box.prop(standard_surface, "Fresnel")
-                #     sub = box.row()
-                #     sub.enabled = standard_surface.Fresnel
-                #     sub.prop(standard_surface, "Krn")
-                #     col.label("Exit Color:", icon='SETTINGS')
-                #     box = col.box()
-                #     box.prop(standard_surface, "reflection_exit_use_environment")
-                #     box.row().prop(standard_surface, "reflection_exit_color")
 
                 # Transmission
                 sublayout = _subpanel(layout, "Transmission", standard_surface.ui_refraction,

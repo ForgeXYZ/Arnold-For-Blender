@@ -1020,7 +1020,7 @@ def render(engine, scene):
                 arnold.AiRenderAbort()
                 while _htiles:
                     (_x, _y), result = _htiles.popitem()
-                    engine.end_result(result, True)
+                    engine.end_result(result, cancel=True)
 
             mem = session["mem"] = arnold.AiMsgUtilGetUsedMemory() / 1048576  # 1024*1024
             peak = session["peak"] = max(session["peak"], mem)
