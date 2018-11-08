@@ -82,47 +82,47 @@ class ArnoldOptions(PropertyGroup):
 
     #########################
     #TODO: FIX THESE OPTIONS:
-    ui_log = BoolProperty(
+    ui_log: BoolProperty(
         name="Log",
         default=True
     )
-    ui_error = BoolProperty(
+    ui_error: BoolProperty(
         name="Error Handling"
     )
-    ui_overrides = BoolProperty(
+    ui_overrides: BoolProperty(
         name="Feature overrides",
         default=True
     )
-    ui_subdivisions = BoolProperty(
+    ui_subdivisions: BoolProperty(
         name="Subdivision"
     )
-    logfile = StringProperty(
+    logfile: StringProperty(
         name="Filename",
         subtype='FILE_PATH',
         options=set()
     )
-    logfile_flags = EnumProperty(
+    logfile_flags: EnumProperty(
         name="File flags",
         items=_LOG_FLAGS,
         options={'ENUM_FLAG'}
     )
-    console_log_flags = EnumProperty(
+    console_log_flags: EnumProperty(
         name="Console flags",
         items=_LOG_FLAGS,
         options={'ENUM_FLAG'}
     )
-    max_warnings = IntProperty(
+    max_warnings: IntProperty(
         name="Max. Warnings",
         default=5
     )
-    auto_threads = BoolProperty(
+    auto_threads: BoolProperty(
         name="Autodetect Threads",
         default=True
     )
-    lock_sampling_pattern = BoolProperty(
+    lock_sampling_pattern: BoolProperty(
         name="Lock Sampling Pattern"
     )
-    clamp_sample_values = BoolProperty(
+    clamp_sample_values: BoolProperty(
         name="Clamp Sample Values"
     )
 
@@ -154,19 +154,19 @@ class ArnoldOptions(PropertyGroup):
 
     ################################
     #TODO: FIX THESE OPTIONS PART 2:
-    sample_filter_width = FloatProperty(
+    sample_filter_width: FloatProperty(
         name="Width",
         default=2
     )
-    sample_filter_bh_width = FloatProperty(
+    sample_filter_bh_width: FloatProperty(
         name="Width",
         default=3
     )
-    sample_filter_sinc_width = FloatProperty(
+    sample_filter_sinc_width: FloatProperty(
         name="Width",
         default=6
     )
-    sample_filter_domain = EnumProperty(
+    sample_filter_domain: EnumProperty(
         name="Domain",
         items=[
             ('first_hit', "First Hit", "First Hit"),
@@ -174,31 +174,31 @@ class ArnoldOptions(PropertyGroup):
         ],
         default='first_hit'
     )
-    sample_filter_min = FloatProperty(
+    sample_filter_min: FloatProperty(
         name="Minimum"
     )
-    sample_filter_max = FloatProperty(
+    sample_filter_max: FloatProperty(
         name="Maximum",
         default=1.0,
     )
-    sample_filter_scalar_mode = BoolProperty(
+    sample_filter_scalar_mode: BoolProperty(
         name="Scalar Mode"
     )
-    progressive_refinement = BoolProperty(
+    progressive_refinement: BoolProperty(
         name="Progressive Refinement",
         default=False
     )
-    initial_sampling_level = IntProperty(
+    initial_sampling_level: IntProperty(
         name="Inital Sampling Level",
         min=-10, max=-1,
         default = -3
     )
-    ipr_bucket_size = IntProperty(
+    ipr_bucket_size: IntProperty(
         name="Bucket Size",
         min=16, soft_max=1024,
         default=64,
     )
-    display_gamma = FloatProperty(
+    display_gamma: FloatProperty(
         name="Display Driver",
         default=1  # / 2.2  # TODO: inspect gamma correction
     )
@@ -218,30 +218,30 @@ class ArnoldOptions(PropertyGroup):
 
     ####
     # options node
-    AA_samples = IntProperty(
+    AA_samples: IntProperty(
         name="Camera (AA)",
         min=0, max=100,
         soft_min=1, soft_max=10,
         default=3
     )
     #AA_seed = scene.frame_current
-    AA_sample_clamp = FloatProperty(
+    AA_sample_clamp: FloatProperty(
         name="Max Value",
         soft_min=0.001, soft_max=100.0,
         default=10.0,
         options=set()
     )
-    AA_sample_clamp_affects_aovs = BoolProperty(
+    AA_sample_clamp_affects_aovs: BoolProperty(
         name="Affect AOVs",
         options=set()
     )
-    threads = IntProperty(
+    threads: IntProperty(
         name="Threads",
         min=1,
         options=set(),
         subtype='UNSIGNED'
     )
-    thread_priority = EnumProperty(
+    thread_priority: EnumProperty(
         name="Thread Priority",
         items=[
             ('lowest', "Lowest", "Lowest"),
@@ -252,7 +252,7 @@ class ArnoldOptions(PropertyGroup):
         default='lowest',
         options=set()
     )
-    pin_threads = EnumProperty(
+    pin_threads: EnumProperty(
         name="Pin Threads",
         items=[
             ('off', "Off", "Off"),
@@ -262,38 +262,38 @@ class ArnoldOptions(PropertyGroup):
         default='auto',
         options=set()
     )
-    abort_on_error = BoolProperty(
+    abort_on_error: BoolProperty(
         name="Abort on Error",
         default=True,
         options=set()
     )
-    abort_on_license_fail = BoolProperty(
+    abort_on_license_fail: BoolProperty(
         name="Abort on License fail",
         options=set()
     )
-    skip_license_check = BoolProperty(
+    skip_license_check: BoolProperty(
         name="Skip License Check",
         options=set()
     )
-    error_color_bad_texture = FloatVectorProperty(
+    error_color_bad_texture: FloatVectorProperty(
         name="Texture Error Color",
         default=(1, 0, 0),
         min=0, max=1,
         subtype='COLOR'
     )
-    error_color_bad_pixel = FloatVectorProperty(
+    error_color_bad_pixel: FloatVectorProperty(
         name="Pixel Error Color",
         default=(0, 0, 1),
         min=0, max=1,
         subtype='COLOR'
     )
-    error_color_bad_shader = FloatVectorProperty(
+    error_color_bad_shader: FloatVectorProperty(
         name="Shader Error Color",
         default=(1, 0, 1),
         min=0, max=1,
         subtype='COLOR'
     )
-    bucket_size = IntProperty(
+    bucket_size: IntProperty(
         name="Bucket Size",
         #min=16,
         #soft_max = 256,
@@ -302,7 +302,7 @@ class ArnoldOptions(PropertyGroup):
         get=_get_bucket_size,
         set=_set_bucket_size
     )
-    bucket_scanning = EnumProperty(
+    bucket_scanning: EnumProperty(
         name="Bucket Scanning",
         items=[
             ('top', "Top", "Top"),
@@ -318,43 +318,43 @@ class ArnoldOptions(PropertyGroup):
         default='spiral',
         options=set()
     )
-    ignore_textures = BoolProperty(
+    ignore_textures: BoolProperty(
         name="Ignore Textures"
     )
-    ignore_shaders = BoolProperty(
+    ignore_shaders: BoolProperty(
         name="Ignore Shaders"
     )
-    ignore_atmosphere = BoolProperty(
+    ignore_atmosphere: BoolProperty(
         name="Ignore Atmosphere"
     )
-    ignore_lights = BoolProperty(
+    ignore_lights: BoolProperty(
         name="Ignore Lights"
     )
-    ignore_shadows = BoolProperty(
+    ignore_shadows: BoolProperty(
         name="Ignore Shadows"
     )
     # TODO: DELETE? ignore_direct_lighting = BoolProperty(
     #     name="Ignore Direct Lighting"
     # )
-    ignore_subdivision = BoolProperty(
+    ignore_subdivision: BoolProperty(
         name="Ignore Subdivision"
     )
-    ignore_displacement = BoolProperty(
+    ignore_displacement: BoolProperty(
         name="Ignore Displacement"
     )
-    ignore_bump = BoolProperty(
+    ignore_bump: BoolProperty(
         name="Ignore Bump"
     )
-    ignore_motion_blur = BoolProperty(
+    ignore_motion_blur: BoolProperty(
         name="Ignore Motion Blur"
     )
-    ignore_dof = BoolProperty(
+    ignore_dof: BoolProperty(
         name="Ignore DOF"
     )
-    ignore_smoothing = BoolProperty(
+    ignore_smoothing: BoolProperty(
         name="Ignore Normal Smoothing"
     )
-    ignore_sss = BoolProperty(
+    ignore_sss: BoolProperty(
         name="Ignore SSS"
     )
     #enable_fast_opacity
@@ -367,7 +367,7 @@ class ArnoldOptions(PropertyGroup):
     #     ],
     #     default='always'
     # )
-    auto_transparency_depth = IntProperty(
+    auto_transparency_depth: IntProperty(
         name="Depth",
         default=10
     )
@@ -375,42 +375,42 @@ class ArnoldOptions(PropertyGroup):
     #     name="Threshold",
     #     default=0.99
     # )
-    texture_max_open_files = IntProperty(
+    texture_max_open_files: IntProperty(
         name="Max Open Files",
         default=0
     )
-    texture_max_memory_MB = FloatProperty(
+    texture_max_memory_MB: FloatProperty(
         name="Max Cache Size (MB)",
         default=1024
     )
     #texture_per_file_stats
-    texture_searchpath = StringProperty(
+    texture_searchpath: StringProperty(
         name="Texture",
         subtype='DIR_PATH'
     )
-    texture_automip = BoolProperty(
+    texture_automip: BoolProperty(
         name="Auto mipmap",
         default=True
     )
-    texture_autotile = IntProperty(
+    texture_autotile: IntProperty(
         name="Auto-Tile",
         default=64
     )
-    texture_accept_untiled = BoolProperty(
+    texture_accept_untiled: BoolProperty(
         name="Accept Untiled",
         default=True
     )
-    texture_accept_unmipped = BoolProperty(
+    texture_accept_unmipped: BoolProperty(
         name="Accept Unmipped",
         default=True
     )
     #texture_failure_retries
     #texture_conservative_lookups
-    texture_specular_blur = FloatProperty(
+    texture_specular_blur: FloatProperty(
         name="Glossy Blur",
         default=0.015625
     )
-    texture_diffuse_blur = FloatProperty(
+    texture_diffuse_blur: FloatProperty(
         name="Diffuse Blur",
         default=0.03125
     )
@@ -420,27 +420,27 @@ class ArnoldOptions(PropertyGroup):
     #bump_multiplier
     #bump_space
     #luminaire_bias
-    low_light_threshold = FloatProperty(
+    low_light_threshold: FloatProperty(
         name="Low Light Threshold",
         default=0.001
     )
     #shadow_terminator_fix
     #shadows_obey_light_linking
     #skip_background_atmosphere
-    sss_use_autobump = BoolProperty(
+    sss_use_autobump: BoolProperty(
         name="Use Autobump in SSS"
     )
     #reference_time
     #CCW_points
-    max_subdivisions = IntProperty(
+    max_subdivisions: IntProperty(
         name="Max. Subdivisions",
         default=999
     )
-    procedural_searchpath = StringProperty(
+    procedural_searchpath: StringProperty(
         name="Procedural",
         subtype='DIR_PATH'
     )
-    plugin_searchpath = StringProperty(
+    plugin_searchpath: StringProperty(
         name="Shader",
         subtype='DIR_PATH'
     )
@@ -458,11 +458,11 @@ class ArnoldOptions(PropertyGroup):
     #    name="Shaders",
     #    default=1
     #)
-    GI_diffuse_depth = IntProperty(
+    GI_diffuse_depth: IntProperty(
         name="Diffuse",
         default=1
     )
-    GI_specular_depth = IntProperty(
+    GI_specular_depth: IntProperty(
         name="Specular",
         default=1
     )
@@ -470,35 +470,35 @@ class ArnoldOptions(PropertyGroup):
     #      name="Reflection",
     #      default=2
     # )
-    GI_transmission_depth = IntProperty(
+    GI_transmission_depth: IntProperty(
         name="Transmission",
         default=8
     )
-    GI_volume_depth = IntProperty(
+    GI_volume_depth: IntProperty(
         name="Volume"
     )
-    GI_total_depth = IntProperty(
+    GI_total_depth: IntProperty(
         name="Total",
         default=10,
     )
-    GI_diffuse_samples = IntProperty(
+    GI_diffuse_samples: IntProperty(
         name="Diffuse",
         default=2
     )
-    GI_specular_samples = IntProperty(
+    GI_specular_samples: IntProperty(
         name="Specular",
         default=2
     )
-    GI_transmission_samples = IntProperty(
+    GI_transmission_samples: IntProperty(
         name="Transmission",
         default=2
     )
-    GI_sss_samples = IntProperty(
+    GI_sss_samples: IntProperty(
         name="SSS",
         default=2
     )
     #GI_single_scatter_samples
-    GI_volume_samples = IntProperty(
+    GI_volume_samples: IntProperty(
         name="Volume Indirect",
         default=2
     )
@@ -507,7 +507,7 @@ class ArnoldOptions(PropertyGroup):
     #enable_displacement_derivs
     #enable_threaded_procedurals
     #enable_procedural_cache
-    procedural_force_expand = BoolProperty(
+    procedural_force_expand: BoolProperty(
         name="Expand procedurals"
     )
     #parallel_node_init
@@ -985,7 +985,7 @@ class ArnoldLight(PropertyGroup):
 
         return {"get": get, "set": set}
 
-    type = EnumProperty(
+    type: EnumProperty(
         name="Type",
         description="Light Type",
         items=[
@@ -1002,12 +1002,12 @@ class ArnoldLight(PropertyGroup):
         **_types()
     )
 
-    ui_size = FloatProperty(
+    ui_size: FloatProperty(
         name="Radius",
         get=lambda s: s.id_data.size / 2,
         set=lambda s, v: setattr(s.id_data, "size", v * 2)
     )
-    ui_size_y = FloatProperty(
+    ui_size_y: FloatProperty(
         name="Height",
         get=lambda s: s.id_data.size_y / 2,
         set=lambda s, v: setattr(s.id_data, "size_y", v * 2)

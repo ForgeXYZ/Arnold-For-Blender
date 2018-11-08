@@ -421,8 +421,8 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
         light_type = light.type
         path_from_id = light.path_from_id()
 
-        #layout.prop(lamp, "type", expand=True)
-        layout.prop(lamp, "type")
+        layout.prop(light, "type", expand=True)
+        #layout.prop(lamp, "type")
 
         col = layout.column()
         col.prop(lamp, "color")
@@ -434,6 +434,10 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
             col.prop(light, "decay_type")
         col.prop(light, "affect_diffuse")
         col.prop(light, "affect_specular")
+
+        # col=layout.column()
+        # if lamp_type == 'AREA':
+        #     layout.prop(light, "type", expand=True)
 
         # Area
         col = layout.column()
@@ -488,7 +492,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
             col.prop(light, "penumbra_angle")
 
         sublayout = _subpanel(layout, "Shadow", light.ui_shadow,
-                              path_from_id, "ui_shadow", "lamp")
+                              path_from_id, "ui_shadow", "light")
         if sublayout:
             col = sublayout.column()
             col.prop(light, "cast_shadows")
@@ -496,7 +500,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
             col.prop(light, "shadow_density")
 
         sublayout = _subpanel(layout, "Volume", light.ui_volume,
-                              path_from_id, "ui_volume", "lamp")
+                              path_from_id, "ui_volume", "light")
         if sublayout:
             col = sublayout.column()
             col.prop(light, "affect_volumetrics")
@@ -504,7 +508,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
             col.prop(light, "volume_samples")
 
         sublayout = _subpanel(layout, "Contribution", light.ui_contribution,
-                              path_from_id, "ui_contribution", "lamp")
+                              path_from_id, "ui_contribution", "light")
         if sublayout:
             col = sublayout.column()
             col.prop(light, "diffuse")
@@ -516,7 +520,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
 
         if lamp_type == 'SPOT':
             sublayout = _subpanel(layout, "Viewport", light.ui_viewport,
-                                  path_from_id, "ui_viewport", "lamp")
+                                  path_from_id, "ui_viewport", "light")
             if sublayout:
                 col = sublayout.column()
                 col.prop(lamp, "distance")

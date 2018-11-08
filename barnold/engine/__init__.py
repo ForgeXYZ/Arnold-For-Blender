@@ -632,6 +632,8 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                 arnold.AiMsgDebug(b"    skydome_light")
             elif lamp.type == 'AREA':
                 node = arnold.AiNode(lamp.type)
+                print("HELLO!")
+                print(light.type)
                 if light.type == 'cylinder_light':
                     top = arnold.AiArray(1, 1, arnold.AI_TYPE_VECTOR, arnold.AtVector(0, lamp.size_y / 2, 0))
                     arnold.AiNodeSetArray(node, "top", top)
@@ -748,7 +750,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     ##############################
     ## mesh lights
     for light_node, name in mesh_lights:
-        ob = scene.objects.get(name)
+        ob = bpy.context.scene.objects.get(name)
         if ob is None:
             continue
         node = nodes.get(ob)
@@ -792,6 +794,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
         arnold.AiNodeSetBool(options, "AA_sample_clamp_affects_aovs", opts.AA_sample_clamp_affects_aovs)
     if not opts.auto_threads:
         arnold.AiNodeSetInt(options, "threads", opts.threads)
+    print(opts.thread_priority)
     arnold.AiNodeSetStr(options, "thread_priority", opts.thread_priority)
     arnold.AiNodeSetStr(options, "pin_threads", opts.pin_threads)
     arnold.AiNodeSetBool(options, "abort_on_error", opts.abort_on_error)
