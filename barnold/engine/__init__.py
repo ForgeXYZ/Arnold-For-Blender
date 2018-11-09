@@ -437,7 +437,7 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
 def _AiPointsPS(scene, ob, ps, pss, frame_current, shaders):
     """Create arnold points node from a particle system"""
     pc = time.perf_counter()
-    ps.set_resolution(scene, ob, 'RENDER')
+    #ps.set_resolution(scene, ob, 'RENDER')
     try:
         p = _BLA.psys_get_points(ps, pss, frame_current)
         if p is not None:
@@ -464,7 +464,8 @@ def _AiPointsPS(scene, ob, ps, pss, frame_current, shaders):
                     arnold.AiNodeSetPtr(node, "shader", shaders.get(slots[m - 1].material))
                 return node
     finally:
-        ps.set_resolution(scene, ob, 'PREVIEW')
+        #ps.set_resolution(scene, ob, 'PREVIEW')
+        print("hi")
     return None
 
 
@@ -562,13 +563,13 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                 use_render_emitter = False
                 for mod, ps in particle_systems:
                     pss = ps.settings
-                    if pss.use_render_emitter:
-                        use_render_emitter = True
+                    # if pss.use_render_emitter:
+                    #     use_render_emitter = True
                     node = None
                     if pss.type == 'HAIR' and pss.render_type == 'PATH':
-                        node = _AiCurvesPS(scene, ob, mod, ps, pss, shaders)
+                        node = _AiCurvesPS(bpy.context.scene, ob, mod, ps, pss, shaders)
                     elif pss.type == 'EMITTER' and pss.render_type in {'HALO', 'LINE', 'PATH'}:
-                        node = _AiPointsPS(scene, ob, ps, pss, scene.frame_current, shaders)
+                        node = _AiPointsPS(bpy.context.scene, ob, ps, pss, bpy.context.scene.frame_current, shaders)
                     if node is not None:
                         if name is None:
                             name = _Name(ob.name)

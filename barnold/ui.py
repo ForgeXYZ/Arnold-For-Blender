@@ -360,7 +360,7 @@ class ArnoldObjectPanel(_ObjectPanel, Panel):
         flow.prop(props, "matte")
 
         col = layout.column()
-        col.label("Visibility:")
+        col.label(text="Visibility:")
         flow = col.column_flow()
         flow.prop(props, "visibility_camera")
         flow.prop(props, "visibility_shadow")
@@ -370,7 +370,7 @@ class ArnoldObjectPanel(_ObjectPanel, Panel):
         flow.prop(props, "visibility_glossy")
 
         col = layout.column()
-        col.label("Double-sided:")
+        col.label(text="Double-sided:")
         flow = col.column_flow()
         flow.prop(props, "sidedness_camera")
         flow.prop(props, "sidedness_shadow")
@@ -691,7 +691,7 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
                     # col.prop(standard_surface, "Fresnel_use_IOR")
                     # Below is deprecated in Arnold 5
                         # col.prop(standard_surface, "transmittance")
-                        # col.label("Exit Color:", icon='SETTINGS')
+                        # col.label(text="Exit Color:", icon='SETTINGS')
                         # box = col.box()
                         # box.prop(standard_surface, "refraction_exit_use_environment")
                         # box.row().prop(standard_surface, "refraction_exit_color")
