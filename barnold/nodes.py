@@ -633,6 +633,286 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         return ret
 
 @ArnoldRenderEngine.register_class
+class ArnoldNodeToon(ArnoldNode):
+    bl_label = "Toon"
+    bl_icon = 'MATERIAL'
+    bl_width_default = 200
+
+    ai_name = "toon"
+
+    sockets = collections.OrderedDict([
+        # Base
+        ("base_color"               , ('RGB',   "Base Color",   "ext_properties")),
+        ("base"                     , ('FLOAT', "Base",         "ext_properties")),
+        ("base_tonemap"             , ('RGB',   "Base Tonemap", "ext_properties")),
+
+        # Edge
+        ("mask_color"               , ('RGB', "Mask Color", "ext_properties")),
+        ("edge_color"               , ('RGB', "Edge Color", "ext_properties")),
+        ("edge_tonemap"             , ('RGB', "Edge Tonemap", "ext_properties")),
+        ("edge_opacity"             , ('FLOAT', "Edge Opacity", "ext_properties")),
+        ("edge_width_scale"         , ('FLOAT', "Edge Width Scale", "ext_properties")),
+
+
+        # Silhouette
+        ("silhouette_color"        , ('RGB', "Silhouette Color", "ext_properties")),
+        ("silhouette_tonemap"      , ('RGB', "Silhouette Tonemap", "ext_properties")),
+        ("silhouette_opacity"      , ('FLOAT', "Silhouette Opacity", "ext_properties")),
+        ("silhouette_width_scale"  , ('FLOAT', "Silhouette Width Scale", "ext_properties")),
+        #("priority"                , ('UINT', "Priority", "ext_properties")),
+        ("enable_silhouette"       , ('BOOL', "Enable Silhouette", "ext_properties")),
+        ("ignore_throughput"       , ('BOOL', "Ignore Throughput", "ext_properties")),
+        ("enable"                  , ('BOOL', "Enable", "ext_properties")),
+        ("id_difference"           , ('BOOL', "ID Difference", "ext_properties")),
+        ("shader_difference"       , ('BOOL', "Shader Difference", "ext_properties")),
+        ("uv_threshold"            , ('FLOAT', "UV Threshold", "ext_properties")),
+        ("angle_threshold"         , ('FLOAT', "Angle Threshold", "ext_properties")),
+        #("normal_type"             , ('ENUM', "Normal Type", "ext_properties")),
+
+        # Specular
+        ("specular_color"           , ('RGB',   "Specular Color", "ext_properties")),
+        ("specular"                 , ('FLOAT', "Specular Scale", "ext_properties")),
+        ("specular_roughness"       , ('FLOAT', "Specular Roughness", "ext_properties")),
+        ("specular_tonemap"         , ('RGB',   "Specular Tonemap", "ext_properties")),
+        ("specular_anisotropy"      , ('FLOAT', "Specular Anisotropy", "ext_properties")),
+        ("specular_rotation"        , ('FLOAT', "Specular Rotation", "ext_properties")),
+        ("lights"                   , ('STRING',"Lights", "ext_properties")),
+        ("highlight_color"          , ('RGB',   "Highlight Color", "ext_properties")),
+        ("highlight_size"           , ('FLOAT', "Highlight Size", "ext_properties")),
+        ("aov_highlight"            , ('STRING', "AOV Highlight", "ext_properties")),
+        ("rim_light"                , ('STRING', "Rim Light", "ext_properties")),
+        ("rim_light_color"          , ('RGB', "Rim Light Color", "ext_properties")),
+        ("rim_light_width"          , ('FLOAT', "Rim Light Width", "ext_properties")),
+        ("aov_rim_light"            , ('STRING', "AOV Rim Light", "ext_properties")),
+
+        # Transmission
+        ("transmission_color"       , ('RGB', "Transmission Color", "ext_properties")),
+        ("transmission"             , ('FLOAT', "Transmission", "ext_properties")),
+        ("transmission_roughness"   , ('FLOAT', "Transmission Roughness", "ext_properties")),
+        ("transmission_anisotropy"  , ('FLOAT', "Transmission Anisotropy", "ext_properties")),
+        ("transmission_rotation"    , ('FLOAT', "Transmission Rotation", "ext_properties")),
+
+        # Emission
+        ("emission_color"           , ('RGB', "Emission Color", "ext_properties")),
+        ("emission"                 , ('FLOAT', "Emission", "ext_properties")),
+
+        # Advanced
+        ("IOR"                      ,('FLOAT', "IOR", "ext_properties")),
+        ("normal"                   ,('VECTOR', "Normal", "ext_properties")),
+        ("tangent"                  ,('VECTOR', "Tangent", "ext_properties")),
+        ("indirect_diffuse"         ,('FLOAT', "Indirect Diffuse", "ext_properties")),
+        ("indirect_specular"        ,('FLOAT', "Indirect Specular", "ext_properties")),
+        ("bump_mode"                ,('STRING', "Bump Mode", "ext_properties")),
+        ("energy_conserving"        ,('BOOL', "Energy Conserving", "ext_properties")),
+        ("user_id"                  ,('BOOL', "User ID", "ext_properties")),
+
+        # Sheen
+        ("sheen"                    ,('FLOAT', "Sheen Scale",     "ext_properties")),
+        ("sheen_color"              ,('RGB',   "Sheen Color",     "ext_properties")),
+        ("sheen_roughness"          ,('FLOAT', "Sheen Roughness", "ext_properties"))
+
+    ])
+
+    ext_properties: PointerProperty(
+        type=props.ArnoldShaderToon
+    )
+
+    def init(self, context):
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.create_socket(identifier="base")
+        self.create_socket(identifier="base_color")
+        self.create_socket(identifier="base_tonemap")
+        self.create_socket(identifier="specular")
+        self.create_socket(identifier="specular_color")
+        self.create_socket(identifier="specular_roughness")
+        self.create_socket(identifier="specular_tonemap")
+        self.create_socket(identifier="specular_anisotropy")
+        self.create_socket(identifier="specular_rotation")
+        self.create_socket(identifier="transmission_color")
+        self.create_socket(identifier="transmission_anisotropy")
+        self.create_socket(identifier="transmission_rotation")
+        self.create_socket(identifier="transmission_roughness")
+        self.create_socket(identifier="transmission")
+        self.create_socket(identifier="mask_color")
+        self.create_socket(identifier="edge_color")
+        self.create_socket(identifier="edge_tonemap")
+        self.create_socket(identifier="edge_opacity")
+        self.create_socket(identifier="edge_width_scale")
+        self.create_socket(identifier="silhouette_color")
+        self.create_socket(identifier="silhouette_tonemap")
+        self.create_socket(identifier="silhouette_opacity")
+        self.create_socket(identifier="silhouette_width_scale")
+        #self.create_socket(identifier="priority")
+        self.create_socket(identifier="enable_silhouette")
+        self.create_socket(identifier="angle_threshold")
+        #self.create_socket(identifier="normal_type")
+        self.create_socket(identifier="highlight_color")
+        self.create_socket(identifier="highlight_size")
+        self.create_socket(identifier="rim_light_width")
+        self.create_socket(identifier="rim_light_color")
+        self.create_socket(identifier="IOR")
+        self.create_socket(identifier="normal")
+        self.create_socket(identifier="tangent")
+        self.create_socket(identifier="sheen")
+        self.create_socket(identifier="sheen_color")
+        self.create_socket(identifier="sheen_roughness")
+        self.create_socket(identifier="emission")
+        self.create_socket(identifier="emission_color")
+
+    def draw_buttons_ext(self, context, layout):
+        inputs = self.inputs
+        properties = self.ext_properties
+
+        links = {i.identifier: i.is_linked for i in inputs}
+
+        # Base
+        sublayout = _subpanel(layout, "Base", properties.ui_base,
+                              "ext_properties", "ui_base", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "base", links)
+            _draw_property(col, properties, "base_color", links)
+            _draw_property(col, properties, "base_tonemap", links)
+
+        # Specular
+        sublayout = _subpanel(layout, "Specular", properties.ui_specular,
+                              "ext_properties", "ui_specular", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "specular", links)
+            _draw_property(col, properties, "specular_color", links)
+            _draw_property(col, properties, "specular_roughness", links)
+            _draw_property(col, properties, "specular_tonemap", links)
+            _draw_property(col, properties, "specular_anisotropy", links)
+            _draw_property(col, properties, "specular_rotation", links)
+            _draw_property(col, properties, "lights", links)
+            _draw_property(col, properties, "highlight_color", links)
+            _draw_property(col, properties, "highlight_size", links)
+            _draw_property(col, properties, "aov_highlight", links)
+            _draw_property(col, properties, "rim_light", links)
+            _draw_property(col, properties, "rim_light_color", links)
+            _draw_property(col, properties, "rim_light_width", links)
+            _draw_property(col, properties, "aov_rim_light", links)
+
+
+        # Transmission
+        sublayout = _subpanel(layout, "Transmission", properties.ui_transmission,
+                              "ext_properties", "ui_transmission", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "transmission", links)
+            _draw_property(col, properties, "transmission_color", links)
+            _draw_property(col, properties, "transmission_roughness", links)
+            _draw_property(col, properties, "transmission_anisotropy", links)
+            _draw_property(col, properties, "transmission_rotation", links)
+
+        # Edge
+        sublayout = _subpanel(layout, "Edge", properties.ui_edge,
+                              "ext_properties", "ui_edge", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "mask_color", links)
+            _draw_property(col, properties, "edge_color", links)
+            _draw_property(col, properties, "edge_tonemap", links)
+            _draw_property(col, properties, "edge_opacity", links)
+            _draw_property(col, properties, "edge_width_scale", links)
+
+        # Silhouette
+        sublayout = _subpanel(layout, "Silhouette", properties.ui_silhouette,
+                              "ext_properties", "ui_silhouette", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "silhouette_color", links)
+            _draw_property(col, properties, "silhouette_tonemap", links)
+            _draw_property(col, properties, "silhouette_opacity", links)
+            _draw_property(col, properties, "silhouette_width_scale", links)
+            #_draw_property(col, properties, "priority", links)
+            _draw_property(col, properties, "enable_silhouette", links)
+            _draw_property(col, properties, "ignore_throughput", links)
+            _draw_property(col, properties, "enable", links)
+            _draw_property(col, properties, "id_difference", links)
+            _draw_property(col, properties, "shader_difference", links)
+            _draw_property(col, properties, "uv_threshold", links)
+            _draw_property(col, properties, "angle_threshold", links)
+            _draw_property(col, properties, "normal_type", links)
+
+
+        # Emission
+        sublayout = _subpanel(layout, "Emission", properties.ui_emission,
+                              "ext_properties", "ui_emission", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "emission", links)
+            _draw_property(col, properties, "emission_color", links)
+
+        # Sheen
+        sublayout = _subpanel(layout, "Sheen", properties.ui_sheen,
+                              "ext_properties", "ui_sheen", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "sheen", links)
+            _draw_property(col, properties, "sheen_color", links)
+            _draw_property(col, properties, "sheen_roughness", links)
+
+        # Advanced
+        sublayout = _subpanel(layout, "Advanced", properties.ui_advanced,
+                              "ext_properties", "ui_advanced", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "IOR", links)
+            _draw_property(col, properties, "normal", links)
+            _draw_property(col, properties, "tangent", links)
+            _draw_property(col, properties, "indirect_diffuse", links)
+            _draw_property(col, properties, "indirect_specular", links)
+            _draw_property(col, properties, "bump_mode", links)
+            _draw_property(col, properties, "energy_conserving", links)
+            _draw_property(col, properties, "user_id", links)
+
+
+    def _find_index(self, identifier):
+        ret = 0
+        socks = iter(self.sockets)
+        for i in self.inputs:
+            for s in socks:
+                if s == identifier:
+                    return ret
+                if s == i.identifier:
+                    ret += 1
+                    break
+            else:
+                break
+        return ret
+
+    def create_socket(self, identifier):
+        from_index = len(self.inputs)
+        to_index = self._find_index(identifier)
+        type, name, path = self.sockets[identifier]
+        sock = self.inputs.new(type="ArnoldNodeSocketProperty", name=name, identifier=identifier)
+        sock.path = path
+        sock.attr = identifier
+        if type in ('RGB', 'RGBA'):
+            sock.is_color = True
+            sock.color = (0.78, 0.78, 0.16, 1 if type == 'RGB' else 0.5)
+        elif type == 'FLOAT':
+            sock.color = (0.63, 0.63, 0.63, 1.0)
+        if to_index < from_index:
+            self.inputs.move(from_index, to_index)
+
+    @property
+    def ai_properties(self):
+        links = [i.identifier for i in self.inputs if i.is_linked]
+        props = self.ext_properties
+        ret = {
+            # 'exit_to_background': ('BOOL', props.exit_to_background),
+            # 'caustics': ('BOOL', props.caustics),
+            # 'internal_reflections': ('BOOL', props.internal_reflections),
+        }
+        for i, (t, n, p) in self.sockets.items():
+            if i not in links:
+                ret[i] = (t, self.path_resolve(p + "." + i if p else i))
+        return ret
+
+@ArnoldRenderEngine.register_class
 class ArnoldNodeUtility(ArnoldNode):
     bl_label = "Utility"
     bl_icon = 'MATERIAL'
@@ -1967,6 +2247,7 @@ def register():
         ]),
         ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_SHADERS", "Shaders", items=[
             nodeitems_utils.NodeItem("ArnoldNodeStandardSurface"),
+            nodeitems_utils.NodeItem("ArnoldNodeToon"),
             nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),
             nodeitems_utils.NodeItem("ArnoldNodeStandardHair"),

@@ -956,7 +956,6 @@ class ArnoldLight(PropertyGroup):
         def get(self):
             lamp = self.id_data
             i = _lamps.index(lamp.type)
-            print(i)
             if i == 4:  # AREA
                 _t = self.get("_type", 0)
                 if lamp.shape == 'SQUARE':
@@ -1623,6 +1622,415 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         default=0.3
     )
 
+@ArnoldRenderEngine.register_class
+class ArnoldShaderToon(PropertyGroup):
+    ui_base: BoolProperty(
+        name="Base",
+        default=True
+    )
+    ui_specular: BoolProperty(
+        name="Specular"
+    )
+    ui_transmission: BoolProperty(
+        name="Transmission"
+    )
+    ui_edge: BoolProperty(
+        name="Edge"
+    )
+    ui_silhouette: BoolProperty(
+        name="Silhouette"
+    )
+    ui_sheen: BoolProperty(
+        name="Sheen"
+    )
+    ui_emission: BoolProperty(
+        name="Emission"
+    )
+    ui_advanced: BoolProperty(
+        name="Advanced"
+    )
+    base: FloatProperty(
+        name="Base",
+        description="The base color weight",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0.8
+    )
+    base_color: FloatVectorProperty(
+        name="Color",
+        description="The base color sets how bright the surface is when lit directly with a white light source (intensity at 100%). It defines which percentage for each component of the RGB spectrum which does not get absorbed when light scatters beneath the surface. Metal normally has a black or very dark base color, however, rusty metal's need some base color. A base color map is usually required.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    base_tonemap: FloatVectorProperty(
+        name="Tonemap Color",
+        description="",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+
+    mask_color: FloatVectorProperty(
+        name="Mask Color",
+        description="",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    edge_color: FloatVectorProperty(
+        name="Edge Color",
+        description="",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    edge_tonemap: FloatVectorProperty(
+        name="Edge Tonemap Color",
+        description="",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    edge_opacity: FloatProperty(
+        name="Edge Opacity",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1
+    )
+    edge_width_scale: FloatProperty(
+        name="Edge Width Scale",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1
+    )
+    silhouette_color: FloatVectorProperty(
+        name="Silhouette Color",
+        description="",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    silhouette_tonemap: FloatVectorProperty(
+        name="Silhouette Tonemap",
+        description="",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    silhouette_opacity: FloatProperty(
+        name="Silhouette Opacity",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1
+    )
+    silhouette_width_scale: FloatProperty(
+        name="Silhouette Width Scale",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1
+    )
+    priority: FloatProperty(
+        name="Priority",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1
+    )
+    ignore_throughput: BoolProperty(
+        name="Ignore Throughput",
+        description="",
+        default=False
+    )
+    enable_silhouette: FloatProperty(
+        name="Enable Silhouette",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+    enable: BoolProperty(
+        name="Enable",
+        description="",
+        default=True
+    )
+    id_difference: BoolProperty(
+        name="ID Difference",
+        description="",
+        default=True
+    )
+    shader_difference: EnumProperty(
+        name="Shader Difference",
+        description="",
+        items=[
+            ('red', "Color", "Red"),
+            ('green', "Color", "Green"),
+            ('blue', "Color", "Blue")
+        ],
+        # default='red', 'green', 'blue'
+    )
+    uv_threshold: FloatProperty(
+        name="UV Threshold",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+    angle_threshold: FloatProperty(
+        name="Angle Threshold",
+        description="",
+        subtype="FACTOR",
+        min=0, max=180,
+        default=180
+    )
+    normal_type: FloatVectorProperty(
+        name="Normal Type",
+        description="",
+        subtype='XYZ',
+        size=3,
+        min=0, max=200,
+        default=(1, 1, 1)
+    )
+
+    specular: FloatProperty(
+        name="Specular Scale",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1
+    )
+    specular_color: FloatVectorProperty(
+        name="Specular Color",
+        description="",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    specular_roughness: FloatProperty(
+        name="Specular Roughness",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0.1
+    )
+    specular_tonemap: FloatVectorProperty(
+        name="Specular Color",
+        description="",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    specular_anisotropy: FloatProperty(
+        name="Specular Anisotropy",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+    specular_rotation: FloatProperty(
+        name="Specular Rotation",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+    lights: StringProperty(
+        name="Lights",
+        description=""
+    )
+    highlight_color: FloatVectorProperty(
+        name="Highlight Color",
+        description="",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    highlight_size: FloatProperty(
+        name="Highlight Size",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0.5
+    )
+    aov_highlight: IntProperty(
+        name="AOV Highlight"
+    )
+    rim_light: EnumProperty(
+        name="Rim Light",
+        description="",
+        items=[
+            ('Distant', "Distant", "Distant Light"),
+            ('Point', "Point", "Point Light"),
+            ('Spot', "Spot", "Spot Light"),
+            ('Photometric', "Photometric", "Photometric Light")
+        ]
+    )
+    rim_light_color: FloatVectorProperty(
+        name="Rim Light Color",
+        description="",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    rim_light_width: FloatProperty(
+        name="Rim Light Width",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1
+    )
+    aov_rim_light: IntProperty(
+        name="AOV Rim Light",
+        description=""
+    )
+
+
+    transmission: FloatProperty(
+        name="Transmission",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+    transmission_color: FloatVectorProperty(
+        name="Transmission Color",
+        description="",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    transmission_roughness: FloatProperty(
+        name="Transmission Roughness",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+    transmission_anisotropy: FloatProperty(
+        name="Transmission Roughness",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+    transmission_rotation: FloatProperty(
+        name="Transmission Roughness",
+        description="",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+
+    emission: FloatProperty(
+        name="Weight",
+        description="Controls the amount of emitted light. It can create noise, especially if the source of indirect illumination is very small (e.g. light bulb geometry).",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+    emission_color: FloatVectorProperty(
+        name="Color",
+        description="The emitted light color.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+
+    IOR: FloatProperty(
+        name="IOR",
+        description="",
+        subtype="FACTOR",
+        min=0, max=2,
+        default=1.52
+    )
+    normal: FloatVectorProperty(
+        name="Normal",
+        subtype='XYZ',
+        size=3,
+        min=0, max=200,
+        default=(0, 0, 0)
+    )
+    tangent: FloatVectorProperty(
+        name="Tangent",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    indirect_diffuse: FloatProperty(
+        name="Indirect Diffuse",
+        description="",
+        subtype="FACTOR",
+        min=0, max=2,
+        default=1
+    )
+    indirect_specular: FloatProperty(
+        name="Indirect Specular",
+        description="",
+        subtype="FACTOR",
+        min=0, max=2,
+        default=1
+    )
+    bump_mode: EnumProperty(
+        name="Bump Mode",
+        description="",
+        items=[
+            ('diffuse', "Diffuse", "Diffuse"),
+            ('specular', "Specular", "Specular"),
+            ('both', "Both", "Both")
+        ],
+        default='both'
+    )
+    energy_conserving: BoolProperty(
+        name="Energy Conserving",
+        description="",
+        default=True
+    )
+    user_id: IntProperty(
+        name="User ID",
+        description=""
+    )
+
+    sheen: FloatProperty(
+        name="Weight",
+        description="An energy-conserving sheen layer that can be used to approximate microfiber, cloth-like surfaces such as velvet and satin of varying roughness.",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=0
+    )
+    sheen_color: FloatVectorProperty(
+        name="Color",
+        description="The color of the fibers. Tints the color of the sheen contribution.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    sheen_roughness: FloatProperty(
+        name="Roughness",
+        description="Modulates how much the microfibers diverge from the surface normal direction.",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=0.3
+    )
+
 
 @ArnoldRenderEngine.register_class
 class ArnoldShaderUtility(PropertyGroup):
@@ -1839,6 +2247,7 @@ class ArnoldShader(PropertyGroup):
         items=[
             ('lambert', "Lambert", "Lambert"),
             ('standard_surface', "Standard Surface", "Standard Surface"),
+            ('toon', "Toon", "Toon"),
             ('utility', "Utility", "Utility"),
             ('flat', "Flat", "Flat"),
             ('standard_hair', "Standard Hair", "Standard Hair")
@@ -1847,6 +2256,7 @@ class ArnoldShader(PropertyGroup):
     )
     lambert: PointerProperty(type=ArnoldShaderLambert)
     standard_surface: PointerProperty(type=ArnoldShaderStandardSurface)
+    toon: PointerProperty(type=ArnoldShaderToon)
     utility: PointerProperty(type=ArnoldShaderUtility)
     flat: PointerProperty(type=ArnoldShaderFlat)
     standard_hair: PointerProperty(type=ArnoldShaderStandardHair)

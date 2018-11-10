@@ -211,6 +211,17 @@ class Shaders:
                 arnold.AiNodeSetRGB(node, "sheen_color", *standard_surface.sheen_color)
                 arnold.AiNodeSetFlt(node, "sheen_roughness", standard_surface.sheen_roughness)
                 # TODO: other standard_surface node parmas
+            elif shader.type == 'toon':
+                toon = shader.toon
+                arnold.AiNodeSetFlt(node, "base", toon.base)
+                arnold.AiNodeSetRGB(node, "base_color", *toon.base_color)
+                arnold.AiNodeSetRGB(node, "base_tonemap", *toon.base_toonmap)
+
+                arnold.AiNodeSetFlt(node, "mask_color", toon.mask_color)
+                arnold.AiNodeSetRGB(node, "edge_color", *toon.edge_color)
+                arnold.AiNodeSetRGB(node, "edge_tonemap", *toon.edge_toonmap)
+                arnold.AiNodeSetFlt(node, "edge_opacity", *toon.edge_opacity)
+
             elif shader.type == 'utility':
                 utility = shader.utility
                 arnold.AiNodeSetStr(node, "color_mode", utility.color_mode)

@@ -442,7 +442,6 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
         #     layout.prop(ob, "area_shape", text="New Location")
 
         # Area
-        print(light_type)
         col = layout.column()
         if lamp_type in ('POINT', 'SPOT'):
             col.prop(light, "radius")
