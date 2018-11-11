@@ -628,12 +628,9 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
         return context.material and ArnoldButtonsPanel.poll(context)
 
     def draw(self, context):
-        from . import props
         layout = self.layout
         mat = context.material
         shader = mat.arnold
-        # if not panel_node_draw(layout, mat, 'OUTPUT_MATERIAL', 'Surface'):
-        #     layout.prop(mat, "diffuse_color")
 
         mat_type = mat
         if mat_type == mat:
@@ -647,7 +644,6 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
                 col.prop(lambert, "opacity")
             elif shader_type == 'standard_surface':
                 standard_surface = shader.standard_surface
-                #ss = props.ArnoldShaderStandardSurface
                 path_from_id = standard_surface.path_from_id()
 
                 # Base
@@ -766,6 +762,112 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
                     col.prop(standard_surface, "exit_to_background")
                     col.prop(standard_surface, "indirect_diffuse")
                     col.prop(standard_surface, "indirect_specular")
+            elif shader_type == 'toon':
+                toon = shader.toon
+                path_from_id = toon.path_from_id()
+
+                # Base
+                sublayout = _subpanel(layout, "Base", toon.ui_base,
+                                      path_from_id, "ui_base", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    col.prop(toon, "base")
+                    col.prop(toon, "base_color")
+                    col.prop(toon, "base_tonemap")
+
+                # Specular
+                sublayout = _subpanel(layout, "Specular", toon.ui_specular,
+                                      path_from_id, "ui_specular", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    col.prop(toon, "specular")
+                    col.prop(toon, "specular_color")
+                    col.prop(toon, "specular_roughness")
+                    col.prop(toon, "specular_tonemap")
+                    col.prop(toon, "specular_anisotropy")
+                    col.prop(toon, "specular_rotation")
+                    col.prop(toon, "lights")
+                    col.prop(toon, "highlight_color")
+                    col.prop(toon, "highlight_size")
+                    col.prop(toon, "aov_highlight")
+                    col.prop(toon, "rim_light")
+                    col.prop(toon, "rim_light_color")
+                    col.prop(toon, "rim_light_width")
+                    col.prop(toon, "aov_rim_light")
+
+
+                # Transmission
+                sublayout = _subpanel(layout, "Transmission", toon.ui_transmission,
+                                      path_from_id, "ui_transmission", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    col.prop(toon, "transmission")
+                    col.prop(toon, "transmission_color")
+                    col.prop(toon, "transmission_roughness")
+                    col.prop(toon, "transmission_anisotropy")
+                    col.prop(toon, "transmission_rotation")
+
+                # Edge
+                sublayout = _subpanel(layout, "Edge", toon.ui_edge,
+                                      path_from_id, "ui_edge", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    col.prop(toon, "mask_color")
+                    col.prop(toon, "edge_color")
+                    col.prop(toon, "edge_tonemap")
+                    col.prop(toon, "edge_opacity")
+                    col.prop(toon, "edge_width_scale")
+
+                # Silhouette
+                sublayout = _subpanel(layout, "Silhouette", toon.ui_silhouette,
+                                      path_from_id, "ui_silhouette", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    col.prop(toon, "silhouette_color")
+                    col.prop(toon, "silhouette_tonemap")
+                    col.prop(toon, "silhouette_opacity")
+                    col.prop(toon, "silhouette_width_scale")
+                    #col.prop(toon, "priority")
+                    col.prop(toon, "enable_silhouette")
+                    col.prop(toon, "ignore_throughput")
+                    col.prop(toon, "enable")
+                    col.prop(toon, "id_difference")
+                    col.prop(toon, "shader_difference")
+                    col.prop(toon, "uv_threshold")
+                    col.prop(toon, "angle_threshold")
+                    col.prop(toon, "normal_type")
+
+
+                # Emission
+                sublayout = _subpanel(layout, "Emission", toon.ui_emission,
+                                      path_from_id, "ui_emission", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    col.prop(toon, "emission")
+                    col.prop(toon, "emission_color")
+
+                # Sheen
+                sublayout = _subpanel(layout, "Sheen", toon.ui_sheen,
+                                      path_from_id, "ui_sheen", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    col.prop(toon, "sheen")
+                    col.prop(toon, "sheen_color")
+                    col.prop(toon, "sheen_roughness")
+
+                # Advanced
+                sublayout = _subpanel(layout, "Advanced", toon.ui_advanced,
+                                      path_from_id, "ui_advanced", "material")
+                if sublayout:
+                    col = sublayout.column()
+                    col.prop(toon, "IOR")
+                    col.prop(toon, "normal")
+                    col.prop(toon, "tangent")
+                    col.prop(toon, "indirect_diffuse")
+                    col.prop(toon, "indirect_specular")
+                    col.prop(toon, "bump_mode")
+                    col.prop(toon, "energy_conserving")
+                    col.prop(toon, "user_id")
             elif shader_type == 'utility':
                 utility = shader.utility
                 col = layout.column()

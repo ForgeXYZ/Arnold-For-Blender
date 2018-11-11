@@ -217,10 +217,61 @@ class Shaders:
                 arnold.AiNodeSetRGB(node, "base_color", *toon.base_color)
                 arnold.AiNodeSetRGB(node, "base_tonemap", *toon.base_toonmap)
 
-                arnold.AiNodeSetFlt(node, "mask_color", toon.mask_color)
+                arnold.AiNodeSetRGB(node, "mask_color", toon.mask_color)
                 arnold.AiNodeSetRGB(node, "edge_color", *toon.edge_color)
                 arnold.AiNodeSetRGB(node, "edge_tonemap", *toon.edge_toonmap)
                 arnold.AiNodeSetFlt(node, "edge_opacity", *toon.edge_opacity)
+                arnold.AiNodeSetFlt(node, "edge_width_scale", *toon.edge_width_scale)
+
+                arnold.AiNodeSetRGB(node, "silhouette_color", *toon.silhouette_color)
+                arnold.AiNodeSetRGB(node, "silhouette_tonemap", *toon.silhouette_tonemap)
+                arnold.AiNodeSetFlt(node, "silhouette_opacity", *toon.silhouette_opacity)
+                arnold.AiNodeSetFlt(node, "silhouette_width_scale", *toon.silhouette_width_scale)
+                arnold.AiNodeSetBool(node, "enable_silhouette", *toon.enable_silhouette)
+                arnold.AiNodeSetBool(node, "ignore_throughput", *toon.ignore_throughput)
+                arnold.AiNodeSetBool(node, "enable", *toon.enable)
+                arnold.AiNodeSetBool(node, "id_difference", *toon.id_difference)
+                arnold.AiNodeSetBool(node, "shader_difference", *toon.shader_difference)
+                arnold.AiNodeSetFlt(node, "uv_threshold", *toon.uv_threshold)
+                arnold.AiNodeSetFlt(node, "angle_threshold", *toon.angle_threshold)
+
+                arnold.AiNodeSetRGB(node, "specular_color", *toon.specular_color)
+                arnold.AiNodeSetFlt(node, "specular", *toon.specular)
+                arnold.AiNodeSetFlt(node, "specular_roughness", *toon.specular_roughness)
+                arnold.AiNodeSetRGB(node, "specular_tonemap", *toon.specular_tonemap)
+                arnold.AiNodeSetFlt(node, "specular_anisotropy", *toon.specular_anisotropy)
+                arnold.AiNodeSetFlt(node, "specular_rotation", *toon.specular_rotation)
+                arnold.AiNodeSetStr(node, "lights", *toon.lights)
+                arnold.AiNodeSetRGB(node, "highlight_color", *toon.highlight_color)
+                arnold.AiNodeSetFlt(node, "highlight_size", *toon.highlight_size)
+                arnold.AiNodeSetStr(node, "aov_highlight", *toon.aov_highlight)
+                arnold.AiNodeSetStr(node, "rim_light", *toon.rim_light)
+                arnold.AiNodeSetRGB(node, "rim_light_color", *toon.rim_light_color)
+                arnold.AiNodeSetFlt(node, "rim_light_width", *toon.rim_light_width)
+                arnold.AiNodeSetStr(node, "aov_rim_light", *toon.aov_rim_light)
+
+                arnold.AiNodeSetRGB(node, "transmission_color", *toon.transmission_color)
+                arnold.AiNodeSetFlt(node, "transmission", *toon.transmission)
+                arnold.AiNodeSetFlt(node, "transmission_roughness", *toon.transmission_roughness)
+                arnold.AiNodeSetFlt(node, "transmission_anisotropy", *toon.transmission_anisotropy)
+                arnold.AiNodeSetFlt(node, "transmission_rotation", *toon.transmission_rotation)
+
+                arnold.AiNodeSetRGB(node, "emission_color", *toon.emission_color)
+                arnold.AiNodeSetFlt(node, "emission", *toon.emission)
+
+                arnold.AiNodeSetFlt(node, "IOR", *toon.IOR)
+                arnold.AiNodeSetVec(node, "normal", *toon.normal)
+                arnold.AiNodeSetVec(node, "tangent", *toon.tangent)
+                arnold.AiNodeSetFlt(node, "indirect_diffuse", *toon.indirect_diffuse)
+                arnold.AiNodeSetFlt(node, "indirect_specular", *toon.indirect_specular)
+                arnold.AiNodeSetStr(node, "bump_mode", *toon.bump_mode)
+                arnold.AiNodeSetBool(node, "energy_conserving", *toon.energy_conserving)
+                arnold.AiNodeSetBool(node, "user_id", *toon.user_id)
+
+                arnold.AiNodeSetFlt(node, "sheen", *toon.sheen)
+                arnold.AiNodeSetRGB(node, "sheen_color", *toon.sheen_color)
+                arnold.AiNodeSetFlt(node, "sheen_roughness", *toon.sheen_roughness)
+
 
             elif shader.type == 'utility':
                 utility = shader.utility
