@@ -117,7 +117,8 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
                          'cook_filter',
                          'disk_filter',
                          'gaussian_filter',
-                         'triangle_filter'):
+                         'triangle_filter',
+                         'contour_filter'):
                 col.prop(opts, "sample_filter_width")
             elif sft == 'farthest_filter':
                 col.prop(opts, "sample_filter_domain")
@@ -633,7 +634,7 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
         shader = mat.arnold
 
         mat_type = mat
-        if mat_type == mat:
+        if shader.type == 'lambert' or shader.type == 'standard_surface' or shader.type == 'toon' or shader.type == 'utility' or shader.type == 'flat':
             shader_type = shader.type
             layout.prop(shader, "type", expand=True)
             if shader_type == 'lambert':

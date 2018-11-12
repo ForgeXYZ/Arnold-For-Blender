@@ -659,7 +659,7 @@ class ArnoldNodeToon(ArnoldNode):
         ("silhouette_tonemap"      , ('RGB', "Silhouette Tonemap", "ext_properties")),
         ("silhouette_opacity"      , ('FLOAT', "Silhouette Opacity", "ext_properties")),
         ("silhouette_width_scale"  , ('FLOAT', "Silhouette Width Scale", "ext_properties")),
-        #("priority"                , ('UINT', "Priority", "ext_properties")),
+        #("priority"                , ('INT', "Priority", "ext_properties")),
         ("enable_silhouette"       , ('BOOL', "Enable Silhouette", "ext_properties")),
         ("ignore_throughput"       , ('BOOL', "Ignore Throughput", "ext_properties")),
         ("enable"                  , ('BOOL', "Enable", "ext_properties")),
@@ -667,7 +667,7 @@ class ArnoldNodeToon(ArnoldNode):
         ("shader_difference"       , ('BOOL', "Shader Difference", "ext_properties")),
         ("uv_threshold"            , ('FLOAT', "UV Threshold", "ext_properties")),
         ("angle_threshold"         , ('FLOAT', "Angle Threshold", "ext_properties")),
-        #("normal_type"             , ('ENUM', "Normal Type", "ext_properties")),
+        ("normal_type"             , ('STRING', "Normal Type", "ext_properties")),
 
         # Specular
         ("specular_color"           , ('RGB',   "Specular Color", "ext_properties")),
@@ -742,7 +742,7 @@ class ArnoldNodeToon(ArnoldNode):
         self.create_socket(identifier="silhouette_tonemap")
         self.create_socket(identifier="silhouette_opacity")
         self.create_socket(identifier="silhouette_width_scale")
-        #self.create_socket(identifier="priority")
+        self.create_socket(identifier="priority")
         self.create_socket(identifier="enable_silhouette")
         self.create_socket(identifier="angle_threshold")
         #self.create_socket(identifier="normal_type")
@@ -826,7 +826,7 @@ class ArnoldNodeToon(ArnoldNode):
             _draw_property(col, properties, "silhouette_tonemap", links)
             _draw_property(col, properties, "silhouette_opacity", links)
             _draw_property(col, properties, "silhouette_width_scale", links)
-            #_draw_property(col, properties, "priority", links)
+            _draw_property(col, properties, "priority", links)
             _draw_property(col, properties, "enable_silhouette", links)
             _draw_property(col, properties, "ignore_throughput", links)
             _draw_property(col, properties, "enable", links)
@@ -1001,6 +1001,22 @@ class ArnoldNodeFlat(ArnoldNode):
         self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
         self.inputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="color")
         self.inputs.new(type="ArnoldNodeSocketColor", name="Opacity", identifier="opacity")
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeRamp(ArnoldNode):
+    bl_label = "Ramp RGB"
+    bl_icon = 'MATERIAL'
+
+    ai_name="ramp_rgb"
+
+    def init(self, context):
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="NodeSocketString", name="Type", identifier="type")
+        self.inputs.new(type="NodeSocketShader", name="Input", identifier="input")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="color")
+        self.inputs.new(type="NodeSocketFloat", name="Position", identifier="position")
+        self.inputs.new(type="NodeSocketString", name="interpolation", identifier="interpolation")
+        self.inputs.new(type="NodeSocketVectorXYZ", name="UV Set", identifier="uvset")
 
 
 @ArnoldRenderEngine.register_class
@@ -2257,6 +2273,7 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeAmbientOcclusion"),
             nodeitems_utils.NodeItem("ArnoldNodeMotionVector"),
             nodeitems_utils.NodeItem("ArnoldNodeRaySwitch"),
+            nodeitems_utils.NodeItem("ArnoldNodeRamp"),
             nodeitems_utils.NodeItem("ArnoldNodeBump2D"),
             nodeitems_utils.NodeItem("ArnoldNodeBump3D"),
             nodeitems_utils.NodeItem("ArnoldNodeImage"),

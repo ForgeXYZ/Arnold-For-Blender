@@ -19,13 +19,6 @@ import bpy
 import bgl
 from mathutils import Matrix, Vector, geometry
 
-#solidangle_LICENSE = os.environ.get('solidangle_LICENSE')
-# try:
-#    os.environ["solidangle_LICENSE"]
-# except KeyError:
-#    print("Please set the environment variable solidangle_LICENSE")
-#    sys.exit(1)
-#sys.path.append(r"/Users/furby/xyz/dev/amity/arnold-sdk/python")
 import arnold
 
 from ..nodes import (
@@ -310,7 +303,7 @@ class Shaders:
             wire = shader.wire
             node = arnold.AiNode('wireframe')
             arnold.AiNodeSetStr(node, "edge_type", wire.edge_type)
-            arnold.AiNodeSetRGB(node, "line_color", *mat.diffuse_color)
+            arnold.AiNodeSetRGB(node, "line_color", *wire.diffuse_color)
             arnold.AiNodeSetRGB(node, "fill_color", *wire.fill_color)
             arnold.AiNodeSetFlt(node, "line_width", wire.line_width)
             arnold.AiNodeSetBool(node, "raster_space", wire.raster_space)
@@ -557,7 +550,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     @contextmanager
     def _Mesh(ob):
         pc = time.perf_counter()
-        mesh = ob.to_mesh(depsgraph, apply_modifiers=True,calc_undeformed=False)
+        mesh = ob.to_mesh(depsgraph, apply_modifiers=True, calc_undeformed=True)
         if mesh is not None:
             try:
                 mesh.calc_normals_split()
@@ -571,7 +564,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     _Name = _CleanNames("O", itertools.count())
 
     # enabled scene layers
-    # layers = [i for i, j in enumerate(scene.layers) if j]
+    # layers = [i for i, j in enumerate(depsgraph.objects) if j]
     # in_layers = lambda o: any(o.layers[i] for i in layers)
     # nodes cache
     nodes = {}  # {Object: AiNode}
@@ -593,12 +586,12 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
 
     ##############################
     ## objects
-    for ob in depsgraph.objects:
+    for ob in bpy.data.objects:
         arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
 
-        if ob.hide_render: # or not in_layers(ob)
-            arnold.AiMsgDebug(b"    skip (hidden)")
-            continue
+        # if not bpy.context.object.visible_get(): # or not in_layers(ob)
+        #     arnold.AiMsgDebug(b"    skip (hidden)")
+        #     continue
 
         if duplicator_parent is not False:
             if duplicator_parent == ob.parent:
@@ -811,7 +804,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     ##############################
     ## mesh lights
     for light_node, name in mesh_lights:
-        ob = bpy.context.scene.objects.get(name)
+        ob = bpy.data.objects.get(name)
         if ob is None:
             continue
         node = nodes.get(ob)
@@ -991,7 +984,8 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                  'cook_filter',
                  'disk_filter',
                  'gaussian_filter',
-                 'triangle_filter'}:
+                 'triangle_filter',
+                 'contour_filter'}:
         arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
     elif sft == 'farthest_filter':
         arnold.AiNodeSetStr(filter, "domain", opts.sample_filter_domain)

@@ -140,6 +140,7 @@ class ArnoldOptions(PropertyGroup):
             ('cook_filter', "Cook", "Cook"),
             ('cubic_filter', "Cubic", "Cubic"),
             ('disk_filter', "Disk", "Disk"),
+            ('contour_filter', "Contour", "Contour"),
             ('farthest_filter', "Farthest", "Farthest"),
             ('gaussian_filter', "Gauss", "Gauss"),
             ('heatmap_filter', "Heatmap", "Heatmap"),
@@ -1741,24 +1742,22 @@ class ArnoldShaderToon(PropertyGroup):
         min=0, max=1,
         default=1
     )
-    priority: FloatProperty(
+    priority: IntProperty(
         name="Priority",
         description="",
         subtype="FACTOR",
-        min=0, max=1,
-        default=1
+        min=0, max=10,
+        default=0
     )
     ignore_throughput: BoolProperty(
         name="Ignore Throughput",
         description="",
         default=False
     )
-    enable_silhouette: FloatProperty(
+    enable_silhouette: BoolProperty(
         name="Enable Silhouette",
         description="",
-        subtype="FACTOR",
-        min=0, max=1,
-        default=0
+        default=False
     )
     enable: BoolProperty(
         name="Enable",
@@ -1770,15 +1769,10 @@ class ArnoldShaderToon(PropertyGroup):
         description="",
         default=True
     )
-    shader_difference: EnumProperty(
+    shader_difference: BoolProperty(
         name="Shader Difference",
         description="",
-        items=[
-            ('red', "Color", "Red"),
-            ('green', "Color", "Green"),
-            ('blue', "Color", "Blue")
-        ],
-        # default='red', 'green', 'blue'
+        default=True
     )
     uv_threshold: FloatProperty(
         name="UV Threshold",
@@ -1794,13 +1788,10 @@ class ArnoldShaderToon(PropertyGroup):
         min=0, max=180,
         default=180
     )
-    normal_type: FloatVectorProperty(
+    normal_type: StringProperty(
         name="Normal Type",
         description="",
-        subtype='XYZ',
-        size=3,
-        min=0, max=200,
-        default=(1, 1, 1)
+        default='shading normal'
     )
 
     specular: FloatProperty(
@@ -1876,7 +1867,8 @@ class ArnoldShaderToon(PropertyGroup):
             ('Distant', "Distant", "Distant Light"),
             ('Point', "Point", "Point Light"),
             ('Spot', "Spot", "Spot Light"),
-            ('Photometric', "Photometric", "Photometric Light")
+            ('Photometric', "Photometric", "Photometric Light"),
+            (' ', "None", "None")
         ]
     )
     rim_light_color: FloatVectorProperty(
