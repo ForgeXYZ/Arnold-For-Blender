@@ -273,7 +273,9 @@ class ArnoldNodeOutput(_NodeOutput, Node):
 
     def init(self, context):
         super().init(context)
-        self.inputs.new(type="NodeSocketShader", name="Shader", identifier="shader")
+        self.inputs.new(type="NodeSocketShader", name="Surface", identifier="surface")
+        self.inputs.new(type="NodeSocketShader", name="Volume", identifier="volume")
+        self.inputs.new(type="NodeSocketVector", name="Displacement", identifier="displacement")
         # self.inputs.new("NodeSocketShader", "Surface Shader", "surface")
         # self.inputs.new("NodeSocketShader", "Volume Shader", "volume")
 
@@ -322,6 +324,7 @@ class ArnoldNodeLambert(ArnoldNode):
         self.inputs.new(type="ArnoldNodeSocketColor", name="Diffuse", identifier="Kd_color")
         self.inputs.new(type="NodeSocketFloat", name="Weight", identifier="Kd").default_value = 0.7
         self.inputs.new(type="ArnoldNodeSocketColor", name="Opacity", identifier="opacity")
+
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeStandardVolume(ArnoldNode):
@@ -384,7 +387,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         ("thin_film_thickness" ,('FLOAT', "Thin Film Thickness", "ext_properties")),
         ("thin_film_ior",       ('FLOAT',"Thin Film IOR",        "ext_properties")),
         # Geometry
-        ("opacity"                  , ('FLOAT', "Opacity",     "ext_properties")),
+        ("opacity"                  , ('RGB', "Opacity",     "ext_properties")),
         ("thin_walled"              , ('BOOL',  "Thin Walled", "ext_properties")),
         # Subsurface
         ("subsurface"               , ('FLOAT', "Subsurface", "ext_properties")),
@@ -631,6 +634,190 @@ class ArnoldNodeStandardSurface(ArnoldNode):
             if i not in links:
                 ret[i] = (t, self.path_resolve(p + "." + i if p else i))
         return ret
+
+
+@ArnoldRenderEngine.register_class
+class ArnoldNodeCarPaint(ArnoldNode):
+    bl_label = "Car Paint"
+    bl_icon = 'MATERIAL'
+    bl_width_default = 200
+
+    ai_name = 'car_paint'
+
+    sockets = collections.OrderedDict([
+        # Base
+        ("base_color"               , ('RGB',   "Base Color",      "ext_properties")),
+        ("base"                     , ('FLOAT', "Base",            "ext_properties")),
+        ("base_roughness"           , ('FLOAT', "Base Roughness",  "ext_properties")),
+
+        # Specular
+        ("specular_color"           , ('RGB',    "Specular Color",         "ext_properties")),
+        ("specular"                 , ('FLOAT',  "Specular Scale",         "ext_properties")),
+        ("specular_flip_flop"       , ('RGB',    "Specular Flip Flop",     "ext_properties")),
+        ("specular_light_facing"    , ('RGB',    "Specular Light Facing",  "ext_properties")),
+        ("specular_falloff"         , ('FLOAT',  "Specular Falloff",       "ext_properties")),
+        ("specular_roughness"       , ('FLOAT',  "Specular Roughness",     "ext_properties")),
+        ("specular_IOR"             , ('FLOAT',  "Specular IOR",           "ext_properties")),
+
+        # Flakes
+        ("transmission_color"       , ('RGB',    "Transmission Color",     "ext_properties")),
+        ("flake_color"              , ('RGB',    "Flake Color",            "ext_properties")),
+        ("flake_flip_flop"          , ('RGB',    "Flake Flip Flop",        "ext_properties")),
+        ("flake_light_facing"       , ('RGB',    "Flake Light Facing",     "ext_properties")),
+        ("flake_falloff"            , ('FLOAT',  "Flake Falloff",          "ext_properties")),
+        ("flake_roughness"          , ('FLOAT',  "Flake Roughness",        "ext_properties")),
+        ("flake_IOR"                , ('FLOAT',  "Flake IOR",              "ext_properties")),
+        ("flake_scale"              , ('FLOAT',  "Flake Scale",            "ext_properties")),
+        ("flake_density"            , ('FLOAT',  "Flake Density",          "ext_properties")),
+        ("flake_layers"             , ('INT',    "Flake Layers",           "ext_properties")),
+        ("flake_normal_randomize"   , ('FLOAT',  "Flake Normal Randomize", "ext_properties")),
+        ("flake_coord_space"        , ('STRING', "Flake Coordinate Space", "ext_properties")),
+        ("pref_name"                , ('STRING', "Pref Name",              "ext_properties")),
+
+        # Coat
+        ("coat"                     , ('FLOAT',  "Coat",                   "ext_properties")),
+        ("coat_color"               , ('RGB',    "Coat Color",             "ext_properties")),
+        ("coat_roughness"           , ('FLOAT',  "Coat Roughness",         "ext_properties")),
+        ("coat_IOR"                 , ('FLOAT',  "Coat IOR",               "ext_properties")),
+        ("coat_normal"              , ('VECTOR', "Coat Normal",            "ext_properties")),
+    ])
+
+    ext_properties: PointerProperty(
+        type=props.ArnoldShaderCarPaint
+    )
+
+    def init(self, context):
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.create_socket(identifier="base")
+        self.create_socket(identifier="base_color")
+        self.create_socket(identifier="base_roughness")
+        self.create_socket(identifier="specular")
+        self.create_socket(identifier="specular_color")
+        self.create_socket(identifier="specular_flip_flop")
+        self.create_socket(identifier="specular_light_facing")
+        self.create_socket(identifier="specular_falloff")
+        self.create_socket(identifier="specular_roughness")
+        self.create_socket(identifier="specular_IOR")
+        self.create_socket(identifier="transmission_color")
+        self.create_socket(identifier="flake_color")
+        self.create_socket(identifier="flake_flip_flop")
+        self.create_socket(identifier="flake_light_facing")
+        self.create_socket(identifier="flake_falloff")
+        self.create_socket(identifier="flake_roughness")
+        self.create_socket(identifier="flake_IOR")
+        self.create_socket(identifier="flake_scale")
+        self.create_socket(identifier="flake_density")
+        self.create_socket(identifier="flake_layers")
+        self.create_socket(identifier="flake_normal_randomize")
+        self.create_socket(identifier="flake_coord_space")
+        self.create_socket(identifier="pref_name")
+        self.create_socket(identifier="coat")
+        self.create_socket(identifier="coat_color")
+        self.create_socket(identifier="coat_roughness")
+        self.create_socket(identifier="coat_IOR")
+        self.create_socket(identifier="coat_normal")
+
+    def draw_buttons_ext(self, context, layout):
+        inputs = self.inputs
+        properties = self.ext_properties
+
+        links = {i.identifier: i.is_linked for i in inputs}
+
+        # Base
+        sublayout = _subpanel(layout, "Base", properties.ui_base,
+                              "ext_properties", "ui_base", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "base", links)
+            _draw_property(col, properties, "base_color", links)
+            _draw_property(col, properties, "base_roughness", links)
+
+        # Specular
+        sublayout = _subpanel(layout, "Specular", properties.ui_specular,
+                              "ext_properties", "ui_specular", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "specular", links)
+            _draw_property(col, properties, "specular_color", links)
+            _draw_property(col, properties, "specular_roughness", links)
+            _draw_property(col, properties, "specular_flip_flop", links)
+            _draw_property(col, properties, "specular_light_facing", links)
+            _draw_property(col, properties, "specular_falloff", links)
+            _draw_property(col, properties, "specular_IOR", links)
+
+        # Flake
+        sublayout = _subpanel(layout, "Flake", properties.ui_flake,
+                              "ext_properties", "ui_flake", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "transmission_color", links)
+            _draw_property(col, properties, "flake_color", links)
+            _draw_property(col, properties, "flake_flip_flop", links)
+            _draw_property(col, properties, "flake_light_facing", links)
+            _draw_property(col, properties, "flake_falloff", links)
+            _draw_property(col, properties, "flake_roughness", links)
+            _draw_property(col, properties, "flake_IOR", links)
+            _draw_property(col, properties, "flake_scale", links)
+            _draw_property(col, properties, "flake_density", links)
+            _draw_property(col, properties, "flake_layers", links)
+            _draw_property(col, properties, "flake_normal_randomize", links)
+            _draw_property(col, properties, "flake_coord_space", links)
+            _draw_property(col, properties, "pref_name", links)
+
+        # Coat
+        sublayout = _subpanel(layout, "Coat", properties.ui_coat,
+                              "ext_properties", "ui_coat", "node")
+        if sublayout:
+            col = sublayout.column()
+            _draw_property(col, properties, "coat", links)
+            _draw_property(col, properties, "coat_color", links)
+            _draw_property(col, properties, "coat_roughness", links)
+            _draw_property(col, properties, "coat_IOR", links)
+            _draw_property(col, properties, "coat_normal", links)
+
+    def _find_index(self, identifier):
+        ret = 0
+        socks = iter(self.sockets)
+        for i in self.inputs:
+            for s in socks:
+                if s == identifier:
+                    return ret
+                if s == i.identifier:
+                    ret += 1
+                    break
+            else:
+                break
+        return ret
+
+    def create_socket(self, identifier):
+        from_index = len(self.inputs)
+        to_index = self._find_index(identifier)
+        type, name, path = self.sockets[identifier]
+        sock = self.inputs.new(type="ArnoldNodeSocketProperty", name=name, identifier=identifier)
+        sock.path = path
+        sock.attr = identifier
+        if type in ('RGB', 'RGBA'):
+            sock.is_color = True
+            sock.color = (0.78, 0.78, 0.16, 1 if type == 'RGB' else 0.5)
+        elif type == 'FLOAT':
+            sock.color = (0.63, 0.63, 0.63, 1.0)
+        if to_index < from_index:
+            self.inputs.move(from_index, to_index)
+
+    @property
+    def ai_properties(self):
+        links = [i.identifier for i in self.inputs if i.is_linked]
+        props = self.ext_properties
+        ret = {
+            # 'exit_to_background': ('BOOL', props.exit_to_background),
+            # 'caustics': ('BOOL', props.caustics),
+            # 'internal_reflections': ('BOOL', props.internal_reflections),
+        }
+        for i, (t, n, p) in self.sockets.items():
+            if i not in links:
+                ret[i] = (t, self.path_resolve(p + "." + i if p else i))
+        return ret
+
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeToon(ArnoldNode):
@@ -1334,7 +1521,7 @@ class ArnoldNodeImage(ArnoldNode):
     uvset: StringProperty(
         name="UV set"
     )
-    ignore_missing_tiles: BoolProperty(
+    ignore_missing_textures: BoolProperty(
         name="Ignore Missing Tiles"
     )
 
@@ -1342,7 +1529,7 @@ class ArnoldNodeImage(ArnoldNode):
         self.outputs.new(type="NodeSocketColor", name="RGBA", identifier="output")
         self.inputs.new(type="ArnoldNodeSocketColor", name="Multiply", identifier="multiply")
         self.inputs.new(type="ArnoldNodeSocketColor", name="Offset", identifier="offset").default_value = (0, 0, 0)
-        self.inputs.new(type="NodeSocketColor", name="Missing tile color", identifier="missing_tile_color")
+        self.inputs.new(type="NodeSocketColor", name="Missing tile color", identifier="missing_texture_color")
         self.inputs.new(type="NodeSocketVector", name="UV coords", identifier="uvcoords").hide_value = True
 
     def draw_buttons(self, context, layout):
@@ -1399,7 +1586,7 @@ class ArnoldNodeImage(ArnoldNode):
             "soffset": ('FLOAT', self.soffset),
             "toffset": ('FLOAT', self.toffset),
             "swap_st": ('BOOL', self.swap_st),
-            "ignore_missing_tiles": ('BOOL', self.swap_st),
+            "ignore_missing_textures": ('BOOL', self.swap_st),
         }
         if self.filename:
             props["filename"] = ('STRING', bpy.path.abspath(self.filename))
@@ -2264,6 +2451,7 @@ def register():
         ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_SHADERS", "Shaders", items=[
             nodeitems_utils.NodeItem("ArnoldNodeStandardSurface"),
             nodeitems_utils.NodeItem("ArnoldNodeToon"),
+            nodeitems_utils.NodeItem("ArnoldNodeCarPaint"),
             nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),
             nodeitems_utils.NodeItem("ArnoldNodeStandardHair"),

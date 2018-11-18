@@ -622,6 +622,14 @@ class ArnoldShape(PropertyGroup):
         ],
         default='none'
     )
+    disp_height: FloatProperty(
+        name="Height",
+        default=0
+    )
+    # disp_map: PointerProperty(
+    #     name="Displacement Map",
+    #
+    # )
     subdiv_iterations: IntProperty(
         name="Iterations",
         subtype='UNSIGNED',
@@ -1540,7 +1548,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         min=0, max=1,
         default=0
     )
-    opacity: FloatProperty(
+    opacity: FloatVectorProperty(
         name="Opacity",
         description="Controls the degree to which light is not allowed to"
                     " travel through it. Unlike transparency, whereby the"
@@ -1548,9 +1556,10 @@ class ArnoldShaderStandardSurface(PropertyGroup):
                     " will affect the entire shader. Useful for retaining the"
                     " shadow definition of an object, whilst making the object"
                     " itself invisible to the camera.",
-        subtype='FACTOR',
+        size=3,
         min=0, max=1,
-        default=1
+        default=(1, 1, 1),
+        subtype='COLOR'
     )
     caustics: BoolProperty(
         name="Caustics",
@@ -1622,6 +1631,232 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         min=0, max=1,
         default=0.3
     )
+
+@ArnoldRenderEngine.register_class
+class ArnoldShaderCarPaint(PropertyGroup):
+    ui_base: BoolProperty(
+        name="Base",
+        default=True
+    )
+    ui_specular: BoolProperty(
+        name="Specular"
+    )
+    ui_flake: BoolProperty(
+        name="Transmission"
+    )
+    ui_coat: BoolProperty(
+        name="Edge"
+    )
+
+    base: FloatProperty(
+        name="Base",
+        description="The primer layer color weight.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0.8
+    )
+    base_color: FloatVectorProperty(
+        name="Color",
+        description="The color of the primer layer.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    base_roughness: FloatProperty(
+        name="Base Roughness",
+        description="The primer layer follows an Oren-Nayar reflection model with surface roughness. A value of 0.0 is comparable to a Lambert reflection.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0.5
+    )
+    specular: FloatProperty(
+        name="Specular",
+        description="The base coat color weight.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1.0
+    )
+    specular_color: FloatVectorProperty(
+        name="Color",
+        description="The color the specular reflection will be modulated with. Use this color to 'tint' the specular highlight from the base coat layer.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    specular_flip_flop: FloatVectorProperty(
+        name="Flip Flop",
+        description="Connect a ramp shader here to modulate the specular reflection from the base coat depending on the viewing angle. This can be used to mimic a pearlescent effect.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    specular_light_facing: FloatVectorProperty(
+        name="Light Facing",
+        description="Modulates the base coat specular color of the area facing the light source.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    specular_falloff: FloatProperty(
+        name="Falloff",
+        description="The falloff rate of the light facing color of the base specular coat.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1.0
+    )
+    specular_roughness: FloatProperty(
+        name="Roughness",
+        description="Controls the glossiness of the specular reflections from the base coat layer.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0.25
+    )
+    specular_IOR: FloatProperty(
+        name="IOR",
+        description="Determines the index of refraction for the base coat.",
+        subtype="FACTOR",
+        min=0, max=5,
+        default=1.52
+    )
+    transmission_color: FloatVectorProperty(
+        name="Transmission Color",
+        description="Simulates light attenuation due to pigments. The lower the value, the denser pigments.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    flake_color: FloatVectorProperty(
+        name="Flake Color",
+        description="The color the specular reflection will be modulated with. Use this color to 'tint' the specular highlight from flakes.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    flake_flip_flop: FloatVectorProperty(
+        name="Flip Flop",
+        description="Connect a ramp shader here to modulate the specular reflection from flakes depending on the viewing angle.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    flake_light_facing: FloatVectorProperty(
+        name="Light Facing",
+        description="Modulate the specular reflection color from flakes of the area facing the light source.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    flake_falloff: FloatProperty(
+        name="Falloff",
+        description="The falloff rate of the light facing color of flakes. The higher the value, the narrower the region.",
+        subtype="FACTOR",
+        min=0, max=5,
+        default=1.52
+    )
+    flake_roughness: FloatProperty(
+        name="Roughness",
+        description="Controls the glossiness of the specular reflections from flakes.",
+        subtype="FACTOR",
+        min=0, max=5,
+        default=1.52
+    )
+    flake_IOR: FloatProperty(
+        name="IOR",
+        description="Determines the index of refraction of flakes.",
+        subtype="FACTOR",
+        min=0, max=5,
+        default=2
+    )
+    flake_scale: FloatProperty(
+        name="Scale",
+        description="Scales the flake structure up or down.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=.001
+    )
+    flake_density: FloatProperty(
+        name="Density",
+        description="Controls the density of flakes.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0
+    )
+    flake_layers: IntProperty(
+        name="Layers",
+        description="Specify the number of flake layers.",
+        subtype="FACTOR",
+        min=0, max=100,
+        default=1
+    )
+    flake_normal_randomize: FloatProperty(
+        name="Normal Randomize",
+        description="Randomize the orientation of flakes.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0.2
+    )
+    flake_coord_space: EnumProperty(
+        name="Coordinate Space",
+        description="Specifies the coordinate space used for calculating the shapes of flakes.",
+        items=[
+            ('World', "World", "World"),
+            ('Object', "Object", "Object"),
+            ('Pref', "Pref", "Pref"),
+            ('UV', "UV", "UV")
+        ],
+        default='Pref'
+    )
+    pref_name: StringProperty(
+        name="Perf Name",
+        description="Specify the name of the reference position user-data array.",
+        default="Pref"
+    )
+    coat: FloatProperty(
+        name="Scale",
+        description="This attribute is used to coat the material. It acts as a clear-coat layer on top of the base coat and primer layers.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1.0
+    )
+    coat_color: FloatVectorProperty(
+        name="Color",
+        description="This is the color of the coating layer's transparency.",
+        size=3,
+        min=0, max=1,
+        default=(1, 1, 1),
+        subtype='COLOR'
+    )
+    coat_roughness: FloatProperty(
+        name="Roughness",
+        description="Controls the glossiness of the specular reflections.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=0.0
+    )
+    coat_IOR: FloatProperty(
+        name="Coat",
+        description="The IOR parameter (Index of Refraction) defines the material's Fresnel reflectivity and is by default the angular function used.",
+        subtype="FACTOR",
+        min=0, max=1,
+        default=1.25
+    )
+    coat_normal: FloatVectorProperty(
+        name="Normal",
+        description="The Coat Normal affects the Fresnel blending of the coat over the base, so depending on the normal, the base will be more or less visible from particular angles.",
+        subtype='XYZ',
+        size=3,
+        min=0, max=200,
+        default=(0, 0, 0)
+    )
+
 
 @ArnoldRenderEngine.register_class
 class ArnoldShaderToon(PropertyGroup):

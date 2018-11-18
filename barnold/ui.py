@@ -400,6 +400,19 @@ class ArnoldSubdivisionPanel(_ObjectPanel, Panel):
         col.prop(props, "subdiv_uv_smoothing")
         col.prop(props, "subdiv_smooth_derivs")
 
+@ArnoldRenderEngine.register_class
+class ArnoldDisplacementPanel(_ObjectPanel, Panel):
+    bl_label = "Arnold Displacement"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        props = context.object.arnold
+
+        col = layout.column()
+        col.prop(props, "disp_height")
+        #col.prop(props, "disp_map")
+
 ##
 ## Lights
 ##

@@ -136,9 +136,13 @@ class Shaders:
         if mat.use_nodes:
             for n in mat.node_tree.nodes:
                 if isinstance(n, ArnoldNodeOutput) and n.is_active:
-                    input = n.inputs[0]
-                    if input.is_linked:
-                        return _AiNode(input.links[0].from_node, self._Name(mat.name), {})
+                    #input = n.inputs[0]
+                    for input in n.inputs:
+                        if input.is_linked:
+                            return _AiNode(input.links[0].from_node, self._Name(mat.name), {})
+                            # if shader:
+                            #     node = arnold.AiNode(mat.arnold.type)
+                            #     arnold.AiNodeSetPtr(arnold.AiUniverseGetOptions(), input.identifier, shader)
                     break
             return None
 
@@ -533,6 +537,8 @@ def _export_object_properties(ob, node):
     arnold.AiNodeSetBool(node, "invert_normals", props.invert_normals)
     arnold.AiNodeSetBool(node, "opaque", props.opaque)
     arnold.AiNodeSetBool(node, "matte", props.matte)
+    #arnold.AiNodeSetArray(node, "disp_map", ArnoldNodeOutput.disp_map)
+    arnold.AiNodeSetFlt(node, "disp_height", props.disp_height)
     if props.subdiv_type != 'none':
         arnold.AiNodeSetStr(node, "subdiv_type", props.subdiv_type)
         arnold.AiNodeSetByte(node, "subdiv_iterations", props.subdiv_iterations)
@@ -962,6 +968,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                 if isinstance(_node, ArnoldNodeWorldOutput) and _node.is_active:
                     name = "W::" + _RN.sub("_", world.name)
                     for input in _node.inputs:
+                        print(input.identifier)
                         if input.is_linked:
                             node = _AiNode(input.links[0].from_node, name, {})
                             if node:
