@@ -13,7 +13,7 @@ Barnold v1.0 Roadmap                   [###########              ] 40% Complete
 ```
 ### Currently In Development: 
 - Fixing the IPR (rendered viewport)
-- Supporting Blender 2.8
+- Supporting Blender 2.8 (Working - [DOWNLOAD FOR BLENDER 2.8](https://github.com/tyler-furby/barnold/tree/blender2.8))
 - Cleaning up UI
 - VDB & AOV Support
 
