@@ -24,7 +24,7 @@ import nodeitems_utils
 from . import ArnoldRenderEngine
 from . import props
 from .cycles_convert import convert_cycles_node
-import barnold.ui
+from .ui import _subpanel
 
 
 _WRAP_ITEMS = [
