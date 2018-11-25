@@ -134,17 +134,19 @@ class Shaders:
 
     def _export(self, mat):
         if mat.use_nodes:
-            for n in mat.node_tree.nodes:
-                if isinstance(n, ArnoldNodeOutput) and n.is_active:
-                    #input = n.inputs[0]
-                    for input in n.inputs:
-                        if input.is_linked:
-                            return _AiNode(input.links[0].from_node, self._Name(mat.name), {})
+            for n in mat.node_tree.links:
+                return _AiNode(n.from_node, self._Name(mat.name), {})
+                # if isinstance(n, ArnoldNodeOutput) and n.is_active:
+                #     print(n)
+                #     #input = n.inputs[0]
+                #     for input in n.inputs:
+                #         if input.is_linked:
+                #             return _AiNode(input.links[0].from_node, self._Name(mat.name), {})
                             # if shader:
                             #     node = arnold.AiNode(mat.arnold.type)
                             #     arnold.AiNodeSetPtr(arnold.AiUniverseGetOptions(), input.identifier, shader)
-                    break
-            return None
+            #         break
+            # return None
 
         shader = mat.arnold
         if mat == mat:

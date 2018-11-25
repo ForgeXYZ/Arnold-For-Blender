@@ -20,7 +20,9 @@ import os
 class ArnoldRenderEngine(bpy.types.RenderEngine):
     bl_idname = "ARNOLD_RENDER"
     bl_label = "Arnold Render"
-
+    bl_use_preview = True
+    bl_use_save_buffers = True
+    bl_use_shading_nodes = True
     bl_use_shading_nodes_custom = False
 
     _CLASSES = []  # classes for (un)register

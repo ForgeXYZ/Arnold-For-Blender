@@ -15,6 +15,7 @@ from bpy.types import (
     Menu,
     Operator,
 )
+import barnold.nodes as nodes
 from . import ArnoldRenderEngine
 
 class ArnoldButtonsPanel:
@@ -645,6 +646,11 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
         layout = self.layout
         mat = context.material
         shader = mat.arnold
+
+        if mat and not nodes.is_arnold_nodetree(mat):
+            # layout.operator(
+            #     'shading.add_renderman_nodetree').idtype = "material"
+            layout.operator('barnold.convert_cycles')
 
         mat_type = mat
         if shader.type == 'lambert' or shader.type == 'standard_surface' or shader.type == 'toon' or shader.type == 'utility' or shader.type == 'flat':

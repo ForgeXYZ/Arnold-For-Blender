@@ -9,6 +9,7 @@ import bpy
 from bpy.types import NodeTree, NodeSocket, Node
 from bpy.props import (
     IntProperty,
+    IntVectorProperty,
     BoolProperty,
     EnumProperty,
     StringProperty,
@@ -22,7 +23,8 @@ import nodeitems_utils
 
 from . import ArnoldRenderEngine
 from . import props
-from .ui import _subpanel
+from .cycles_convert import convert_cycles_node
+import barnold.ui
 
 
 _WRAP_ITEMS = [
@@ -48,6 +50,188 @@ def _draw_property(layout, data, identifier, links):
     sub.prop(data, identifier)
     op = row.operator("barnold.node_socket_add", text="", icon=icon)
     op.identifier = identifier
+
+def find_node(material, nodetype):
+    if material and material.node_tree:
+        ntree = material.node_tree
+
+        active_output_node = None
+        for node in ntree.nodes:
+            if getattr(node, "bl_idname", None) == nodetype:
+                if getattr(node, "is_active_output", True):
+                    return node
+                if not active_output_node:
+                    active_output_node = node
+        return active_output_node
+
+    return None
+
+def is_arnold_nodetree(material):
+    return find_node(material, 'ArnoldNodeOutput')
+
+def set_ouput_node_location(nt, output_node, cycles_output):
+    output_node.location = cycles_output.location
+    output_node.location[1] -= 500
+
+def offset_node_location(arnold_parent, arnold_node, cycles_node):
+    linked_socket = next((sock for sock in cycles_node.outputs if sock.is_linked),
+                         None)
+    arnold_node.location = arnold_parent.location
+    if linked_socket:
+        arnold_node.location += (cycles_node.location -
+                               linked_socket.links[0].to_node.location)
+
+def create_arnold_surface(nt, parent_node, input_index, node_type="ArnoldNodeStandardSurface"):
+    layer = nt.nodes.new(node_type)
+    nt.links.new(layer.outputs[0], parent_node.inputs[input_index])
+    setattr(layer, 'enableDiffuse', False)
+
+    layer.location = parent_node.location
+    layer.diffuseGain = 0
+    layer.location[0] -= 300
+    return layer
+
+combine_nodes = ['ShaderNodeAddShader', 'ShaderNodeMixShader']
+
+def convert_cycles_bsdf(nt, arnold_parent, node, input_index):
+
+    # if mix or add pass both to parent
+    if node.bl_idname in combine_nodes:
+        i = 0 if node.bl_idname == 'ShaderNodeAddShader' else 1
+
+        node1 = node.inputs[
+            0 + i].links[0].from_node if node.inputs[0 + i].is_linked else None
+        node2 = node.inputs[
+            1 + i].links[0].from_node if node.inputs[1 + i].is_linked else None
+
+        if not node1 and not node2:
+            return
+        elif not node1:
+            convert_cycles_bsdf(nt, arnold_parent, node2, input_index)
+        elif not node2:
+            convert_cycles_bsdf(nt, arnold_parent, node1, input_index)
+
+        # if ones a combiner or they're of the same type and not glossy we need
+        # to make a mixer
+        elif node.bl_idname == 'ShaderNodeMixShader' or node1.bl_idname in combine_nodes \
+                or node2.bl_idname in combine_nodes or \
+                node1.bl_idname == 'ShaderNodeGroup' or node2.bl_idname == 'ShaderNodeGroup' \
+                or (bsdf_map[node1.bl_idname][0] == bsdf_map[node2.bl_idname][0]):
+            mixer = nt.nodes.new('ArnoldNodeMixRGB')
+            # if parent is output make a arnold standard surface first
+            nt.links.new(mixer.outputs["ArnoldNodeOutput"],
+                         arnold_parent.inputs[input_index])
+            offset_node_location(arnold_parent, mixer, node)
+
+            # set the layer masks
+            if node.bl_idname == 'ShaderNodeAddShader':
+                mixer.layer1Mask = .5
+            else:
+                convert_cycles_input(
+                    nt, node.inputs['Fac'], mixer, 'layer1Mask')
+
+            # make a new node for each
+            convert_cycles_bsdf(nt, mixer, node1, 0)
+            convert_cycles_bsdf(nt, mixer, node2, 1)
+
+        # this is a heterogenous mix of add
+        # else:
+        #     if arnold_parent.plugin_name == 'ArnoldLayerMixer':
+        #         old_parent = arnold_parent
+        #         arnold_parent = create_arnold_surface(nt, arnold_parent, input_index,
+        #                                           'ArnoldLayerPattern')
+        #         offset_node_location(old_parent, arnold_parent, node)
+        #     convert_cycles_bsdf(nt, arnold_parent, node1, 0)
+        #     convert_cycles_bsdf(nt, arnold_parent, node2, 1)
+
+    # otherwise set lobe on parent
+    # elif 'Bsdf' in node.bl_idname or node.bl_idname == 'ShaderNodeSubsurfaceScattering':
+    #     if arnold_parent.plugin_name == 'ArnoldLayerMixer':
+    #         old_parent = arnold_parent
+    #         arnold_parent = create_arnold_surface(nt, arnold_parent, input_index,
+    #                                           'ArnoldLayerMixer')
+    #         offset_node_location(old_parent, arnold_parent, node)
+    #
+    #     node_type = node.bl_idname
+    #     bsdf_map[node_type][1](nt, node, arnold_parent)
+    # # if we find an emission node, naively make it a meshlight
+    # # note this will only make the last emission node the light
+    elif node.bl_idname == 'ShaderNodeEmission':
+        output = next((n for n in nt.nodes if hasattr(n, 'rendearnold_node_type') and
+                       n.rendearnold_node_type == 'output'),
+                      None)
+        meshlight = nt.nodes.new("meshlight")
+        nt.links.new(meshlight.outputs[0], output.inputs["Light"])
+        meshlight.location = output.location
+        meshlight.location[0] -= 300
+        convert_cycles_input(
+            nt, node.inputs['Strength'], meshlight, "intensity")
+        if node.inputs['Color'].is_linked:
+            convert_cycles_input(
+                nt, node.inputs['Color'], meshlight, "textureColor")
+        else:
+            setattr(meshlight, 'lightColor', node.inputs[
+                    'Color'].default_value[:3])
+
+    else:
+        arnold_node = convert_cycles_node(nt, node)
+        nt.links.new(arnold_node.outputs[0], arnold_parent.inputs[input_index])
+
+def convert_cycles_displacement(nt, surface_node, displace_socket):
+    # for now just do bump
+    if displace_socket.is_linked:
+        bump = nt.nodes.new("ArnoldNodeBump2D")
+        nt.links.new(bump.outputs[0], surface_node.inputs['bumpNormal'])
+        bump.location = surface_node.location
+        bump.location[0] -= 200
+        bump.location[1] -= 100
+
+        convert_cycles_input(nt, displace_socket, bump, "inputBump")
+
+def convert_cycles_nodetree(id, output_node, reporter):
+    # find base node
+    from . import cycles_convert
+    cycles_convert.converted_nodes = {}
+    nt = id.node_tree
+    reporter({'INFO'}, 'Converting material ' + id.name + ' to Arnold')
+    cycles_output_node = find_node(id, 'ShaderNodeOutputMaterial')
+    if not cycles_output_node:
+        reporter({'WARNING'}, 'No Cycles output found ' + id.name)
+        return False
+
+    # if no bsdf return false
+    if not cycles_output_node.inputs[0].is_linked:
+        reporter({'WARNING'}, 'No Cycles bsdf found ' + id.name)
+        return False
+
+    # set the output node location
+    set_ouput_node_location(nt, output_node, cycles_output_node)
+
+    # walk tree
+    cycles_convert.report = reporter
+    begin_cycles_node = cycles_output_node.inputs[0].links[0].from_node
+    # if this is an emission use Arnold Mesh Light
+    if begin_cycles_node.bl_idname == "ShaderNodeEmission":
+        meshlight = nt.nodes.new("mesh_light")
+        nt.links.new(meshlight.outputs[0], output_node.inputs["Light"])
+        offset_node_location(output_node, meshlight, begin_cycles_node)
+        convert_cycles_input(nt, begin_cycles_node.inputs[
+                             'Strength'], meshlight, "intensity")
+        if begin_cycles_node.inputs['Color'].is_linked:
+            convert_cycles_input(nt, begin_cycles_node.inputs[
+                                 'Color'], meshlight, "textureColor")
+        else:
+            setattr(meshlight, 'lightColor', begin_cycles_node.inputs[
+                    'Color'].default_value[:3])
+        bxdf = nt.nodes.new('ArnoldNode')
+        nt.links.new(bxdf.outputs[0], output_node.inputs["Surface"])
+    else:
+        base_surface = create_arnold_surface(nt, output_node, 0)
+        offset_node_location(output_node, base_surface, begin_cycles_node)
+        convert_cycles_bsdf(nt, base_surface, begin_cycles_node, 0)
+        convert_cycles_displacement(
+            nt, base_surface, cycles_output_node.inputs[2])
+    return True
 
 
 @ArnoldRenderEngine.register_class
@@ -1597,7 +1781,7 @@ class ArnoldNodeImage(ArnoldNode):
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeSky(ArnoldNode):
-    bl_label = "Sky"
+    bl_label = "Sky (Deprecated)"
     bl_icon = 'WORLD'
     bl_width_default = 220
 
@@ -1740,6 +1924,226 @@ class ArnoldNodeSky(ArnoldNode):
             "Z": ('VECTOR', self.Z),
         }
 
+@ArnoldRenderEngine.register_class
+class ArnoldNodeSkydome(ArnoldNode):
+    bl_label = "Skydome"
+    bl_icon = 'WORLD'
+
+    ai_name = "skydome_light"
+
+    # shader: FloatVectorProperty(
+    #     name="Shader",
+    #     subtype='COLOR',
+    #     min=0, max=1,
+    #     default=(1, 1, 1)
+    # )
+
+    resolution: StringProperty(
+        name="Resolution",
+        default="1000"
+    )
+
+    format: EnumProperty(
+        name="Format",
+        description="The type of Map being Connected",
+        items=[
+            ('latlong', "Lat-long", "Lat-long"),
+            ('mirrored_ball', "Mirrored Ball", "Mirrored Ball"),
+            ('angular', "Angular", "Angular")
+        ],
+        default='latlong'
+    )
+
+    portal_mode: EnumProperty(
+        name="Portal Mode",
+        description="Defines how the skydome light interacts with light portals.",
+        items=[
+            ('off', "Off", "Off"),
+            ('interior_only', "Interior Only", "Interior Only"),
+            ('interior_exterior', "Interior Exterior", "Interior Exterior")
+        ],
+        default='off'
+    )
+
+    # color: FloatVectorProperty(
+    #     name="Color",
+    #     subtype='COLOR',
+    #     min=0, max=1,
+    #     default=(1, 1, 1)
+    # )
+
+    # intensity: FloatProperty(
+    #     name="Intensity",
+    #     min=0, max=10,
+    #     default=1.0
+    # )
+    #
+    # exposure: FloatProperty(
+    #     name="Exposure",
+    #     min=0, max=10,
+    #     default=0.0
+    # )
+
+    cast_shadows: BoolProperty(
+        name="Cast Shadows",
+        default=True
+    )
+
+    shadow_density: FloatProperty(
+        name="Shadow Density",
+        min=0, max=1,
+        default=1.0
+    )
+
+    shadow_color: FloatVectorProperty(
+        name="Shadow Color",
+        subtype='COLOR',
+        min=0, max=1,
+        default=(0, 0, 0)
+    )
+
+    samples: FloatProperty(
+        name="Samples",
+        min=0, max=100,
+        default=1
+    )
+
+    normalize: BoolProperty(
+        name="Normalize",
+        default=True
+    )
+
+    camera: BoolProperty(
+        name="Camera",
+        default=True
+    )
+
+    diffuse: BoolProperty(
+        name="Diffuse",
+        default=True
+    )
+
+    specular: BoolProperty(
+        name="Specular",
+        default=True
+    )
+
+    sss: BoolProperty(
+        name="Subsurface",
+        default=True
+    )
+
+    volume: BoolProperty(
+        name="Volume",
+        default=True
+    )
+
+    transmission: BoolProperty(
+        name="Transmission",
+        default=True
+    )
+
+    indirect: FloatProperty(
+        name="Indirect",
+        min= 0, max=10,
+        default=1
+    )
+
+    max_bounces: FloatProperty(
+        name="Max Bounces",
+        min= 0, max=999,
+        default=999
+    )
+
+    filters: FloatVectorProperty(
+        name="Filters",
+        subtype='COLOR',
+        min=0, max=1,
+        default=(0, 0, 0)
+    )
+
+    geometry_matrix_object: StringProperty(
+        name="Object"
+    )
+
+    geometry_matrix_rotation: FloatVectorProperty(
+        name="Rotation",
+        subtype='XYZ',
+        unit='ROTATION',
+        default=(1.5707963268,0,0)
+    )
+    geometry_matrix_translation: FloatVectorProperty(
+        name="Translation",
+        subtype='XYZ'
+    )
+
+    geometry_matrix_scale: FloatVectorProperty(
+        name="Scale",
+        subtype='XYZ',
+        default=(1, 1, 1)
+    )
+
+    # volume_samples: FloatProperty(
+    #     name="Volume Samples",
+    #     min = 0, max=100,
+    #     default=1
+    # )
+
+    def init(self, context):
+        self.outputs.new(type="NodeSocketShader", name="Background", identifier="output")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="color")
+        #self.inputs.new(type="NodeSocketShader", name="Shader", identifier="shader")
+        self.inputs.new(type="NodeSocketFloat", name="Intensity", identifier="intensity").default_value = 1
+        self.inputs.new(type="NodeSocketFloat", name="Exposure", identifier="exposure").default_value = 0
+
+
+    def draw_buttons(self, context, layout):
+        layout.prop(self, "format")
+        layout.prop(self, "resolution")
+        layout.prop(self, "portal_mode")
+        # layout.prop(self, "opaque_alpha")
+
+        col = layout.column()
+        col.label(text="Visibility:")
+        flow = col.column_flow(align=True)
+        flow.prop(self, "camera")
+        flow.prop(self, "diffuse")
+        flow.prop(self, "specular")
+        flow.prop(self, "sss")
+        flow.prop(self, "volume")
+        flow.prop(self, "transmission")
+
+        sub = col.box().column()
+        sub.prop_search(self, "geometry_matrix_object", context.scene, "objects", text="")
+        sub = sub.column()
+        sub.enabled = not self.geometry_matrix_object
+        sub.template_component_menu(self, "geometry_matrix_scale", name="Scale:")
+        sub.template_component_menu(self, "geometry_matrix_rotation", name="Rotation:")
+        sub.template_component_menu(self, "geometry_matrix_translation", name="Translation:")
+
+    @property
+    def ai_properties(self):
+        scale = self.geometry_matrix_scale
+        matrix = Matrix([
+            [scale.x, 0, 0],
+            [0, scale.y, 0],
+            [0, 0, scale.z]
+        ])
+        matrix.rotate(Euler(self.geometry_matrix_rotation))
+        matrix = matrix.to_4x4()
+        matrix.translation = (self.geometry_matrix_translation)
+        return {
+            "format": ('STRING', self.format),
+            "resolution": ('STRING', self.resolution),
+            "portal_mode": ('STRING', self.portal_mode),
+            "matrix": ('MATRIX', matrix),
+            "camera": ('BOOL', self.camera),
+            "diffuse": ('BOOL', self.diffuse),
+            "specular": ('BOOL', self.specular),
+            "sss": ('BOOL', self.sss),
+            "volume": ('BOOL', self.volume),
+            "transmission": ('BOOL', self.transmission)
+        }
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodePhysicalSky(ArnoldNode):
@@ -2288,6 +2692,46 @@ class ArnoldNodeLightBlocker(ArnoldNode):
         ret['geometry_matrix'] = ('MATRIX', matrix)
         return ret
 
+# @ArnoldRenderEngine.register_class
+# class ArnoldMatrixTransform(ArnoldNode):
+#     bl_label = "Matrix Transform"
+#     bl_icon = 'WORLD'
+#
+#     ai_name = "matrix_transform"
+#
+#     # rotation_type: EnumProperty(
+#     #     name="Rotation Type",
+#     #     items=[
+#     #         ('euler_angles', "closest", "closest"),
+#     #         ('trilinear', "trilinear", "trilinear"),
+#     #         ('tricubic', "tricubic", "tricubic")
+#     #     ],
+#     #     default='euler-angles'
+#     # )
+#     rotation: FloatVectorProperty(
+#         name="Rotation",
+#         subtype='XYZ',
+#         unit='ROTATION'
+#     )
+#     translate: FloatVectorProperty(
+#         name="Translation",
+#         subtype='XYZ',
+#         unit='TRANSLATION'
+#     )
+#     scale: FloatVectorProperty(
+#         name="Scale",
+#         subtype='XYZ',
+#         unit='SCALE'
+#     )
+#
+#     def draw_buttons(self, context, layout):
+#         sub = col.box().column()
+#         sub.prop_search(self, "geometry_matrix_object", context.scene, "objects", text="")
+#         sub = sub.column()
+#         sub.enabled = not self.geometry_matrix_object
+#         sub.template_component_menu(self, "scale", name="Weight:")
+#         sub.template_component_menu(self, "rotation", name="Rotation:")
+#         sub.template_component_menu(self, "translate", name="Translation:")
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeDensity(ArnoldNode):
@@ -2329,51 +2773,17 @@ class ArnoldNodeDensity(ArnoldNode):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeMixRGB(ArnoldNode):
-    bl_label = "Mix RGB"
+class ArnoldNodeMixShader(ArnoldNode):
+    bl_label = "Mix Shader"
     bl_icon = 'MATERIAL'
 
-    ai_name = "BArnoldMixRGB"
-
-    blend_type: EnumProperty(
-        name="Blend Type",
-        items=[
-            ('mix', "Mix", "Mix"),
-            ('add', "Add", "Add"),
-            ('multiply', "Multiply", "Multiply"),
-            ('screen', "Screen", "Screen"),
-            ('overlay', "Overlay", "Overlay"),
-            ('subtract', "Subtract", "Subtract"),
-            ('divide', "Divide", "Divide"),
-            ('difference', "Difference", "Difference"),
-            ('darken', "Darken", "Darken Only"),
-            ('lighten', "Lighten", "Lighten Only"),
-            ('dodge', "Dodge", "Dodge"),
-            ('burn', "Burn", "Burn"),
-            ('hue', "Hue", "Hue"),
-            ('saturation', "Saturation", "Saturation"),
-            ('value', "Value", "Value"),
-            ('color', "Color", "Color"),
-            ('soft', "Soft Light", "Soft Light"),
-            ('linear', "Linear Light", "Linear Light")
-        ],
-        default='mix'
-    )
+    ai_name = "mix_rgba"
 
     def init(self, context):
         self.outputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="output")
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Color #1", identifier="color1").default_value = (0.5, 0.5, 0.5)
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Color #2", identifier="color2").default_value = (0.5, 0.5, 0.5)
-        self.inputs.new(type="NodeSocketFloat", name="Factor", identifier="factor").default_value = 0.5
-
-    def draw_buttons(self, context, layout):
-        layout.prop(self, "blend_type", text="")
-
-    @property
-    def ai_properties(self):
-        return {
-            "blend": ('STRING', self.blend_type)
-        }
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Shader", identifier="shader1")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Shader", identifier="shader2")
+        self.inputs.new(type="NodeSocketFloat", name="Mix", identifier="mix").default_value = 0.5
 
 
 class ArnoldNodeCategory(nodeitems_utils.NodeCategory):
@@ -2434,63 +2844,69 @@ def register():
 
     node_categories = [
         # world
-        ArnoldWorldNodeCategory("ARNOLD_NODES_WORLD_OUTPUT", "Output", items=[
+        ArnoldWorldNodeCategory("ARNOLD_NODES_WORLD_OUTPUT", "Arnold Output", items=[
             nodeitems_utils.NodeItem("ArnoldNodeWorldOutput")
         ]),
-        ArnoldWorldNodeCategory("ARNOLD_NODES_WORLD_SHADERS", "Shaders", items=[
-            nodeitems_utils.NodeItem("ArnoldNodeSky"),
+        ArnoldWorldNodeCategory("ARNOLD_NODES_WORLD_BACKGROUND_SHADERS", "Arnold Background Shaders", items=[
+            nodeitems_utils.NodeItem("ArnoldNodeSkydome"),
+            nodeitems_utils.NodeItem("ArnoldNodeImage"),
             nodeitems_utils.NodeItem("ArnoldNodePhysicalSky"),
+            nodeitems_utils.NodeItem("ArnoldNodeSky"),
+        ]),
+        ArnoldWorldNodeCategory("ARNOLD_NODES_WORLD_ATMOSPHERE_SHADERS", "Arnold Atmosphere Shaders", items=[
             nodeitems_utils.NodeItem("ArnoldNodeVolumeScattering"),
             nodeitems_utils.NodeItem("ArnoldNodeFog"),
-            nodeitems_utils.NodeItem("ArnoldNodeImage"),
         ]),
         # surface
-        ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_OUTPUT", "Output", items=[
+        ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_OUTPUT", "Arnold Output", items=[
             nodeitems_utils.NodeItem("ArnoldNodeOutput")
         ]),
-        ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_SHADERS", "Shaders", items=[
+        ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_SHADERS", "Arnold Material Shaders", items=[
             nodeitems_utils.NodeItem("ArnoldNodeStandardSurface"),
+            nodeitems_utils.NodeItem("ArnoldNodeStandardHair"),
+            nodeitems_utils.NodeItem("ArnoldNodeStandardVolume"),
+            nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeToon"),
             nodeitems_utils.NodeItem("ArnoldNodeCarPaint"),
-            nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),
-            nodeitems_utils.NodeItem("ArnoldNodeStandardHair"),
             nodeitems_utils.NodeItem("ArnoldNodeUtility"),
             nodeitems_utils.NodeItem("ArnoldNodeWireframe"),
-            nodeitems_utils.NodeItem("ArnoldNodeStandardVolume"),
             nodeitems_utils.NodeItem("ArnoldNodeAmbientOcclusion"),
-            nodeitems_utils.NodeItem("ArnoldNodeMotionVector"),
-            nodeitems_utils.NodeItem("ArnoldNodeRaySwitch"),
-            nodeitems_utils.NodeItem("ArnoldNodeRamp"),
+
+        ]),
+        ArnoldObjectNodeCategory("ARNOLD_NODES_OBJECT_TEXTURES", "Arnold Texture Shaders", items=[
+            nodeitems_utils.NodeItem("ArnoldNodeImage"),
             nodeitems_utils.NodeItem("ArnoldNodeBump2D"),
             nodeitems_utils.NodeItem("ArnoldNodeBump3D"),
-            nodeitems_utils.NodeItem("ArnoldNodeImage"),
             nodeitems_utils.NodeItem("ArnoldNodeNoise"),
         ]),
         # light
-        ArnoldLightNodeCategory("ARNOLD_NODES_LIGHT_OUTPUT", "Output", items=[
+        ArnoldLightNodeCategory("ARNOLD_NODES_LIGHT_OUTPUT", "Arnold Output", items=[
             nodeitems_utils.NodeItem("ArnoldNodeLightOutput")
         ]),
-        ArnoldLightNodeCategory("ARNOLD_NODES_LIGHT_SHADERS", "Shaders", items=[
+        ArnoldLightNodeCategory("ARNOLD_NODES_LIGHT_SHADERS", "Arnold Light Shaders", items=[
             nodeitems_utils.NodeItem("ArnoldNodeSky"),
             nodeitems_utils.NodeItem("ArnoldNodePhysicalSky"),
             nodeitems_utils.NodeItem("ArnoldNodeImage"),
         ]),
-        ArnoldLightNodeCategory("ARNOLD_NODES_LIGHT_FILTERS", "Filters", items=[
+        ArnoldLightNodeCategory("ARNOLD_NODES_LIGHT_FILTERS", "Arnold Light Filters", items=[
             nodeitems_utils.NodeItem("ArnoldNodeBarndoor"),
             nodeitems_utils.NodeItem("ArnoldNodeGobo"),
             nodeitems_utils.NodeItem("ArnoldNodeLightDecay"),
             nodeitems_utils.NodeItem("ArnoldNodeLightBlocker"),
         ]),
         # common
-        ArnoldNodeCategory("ARNOLD_NODES_COLORS", "Color", items=[
-            nodeitems_utils.NodeItem("ArnoldNodeMixRGB"),
+        ArnoldNodeCategory("ARNOLD_NODES_COLORS", "Arnold Utility Shaders", items=[
+            nodeitems_utils.NodeItem("ArnoldNodeMixShader"),
+            nodeitems_utils.NodeItem("ArnoldNodeRamp"),
+            nodeitems_utils.NodeItem("ArnoldNodeMotionVector"),
+            nodeitems_utils.NodeItem("ArnoldNodeRaySwitch"),
         ]),
-        ArnoldNodeCategory("ARNOLD_NODES_GROUP", "Group", items=node_group_items),
-        ArnoldNodeCategory("ARNOLD_NODES_LAYOUT", "Layout", items=[
-            nodeitems_utils.NodeItem("NodeFrame"),
-            nodeitems_utils.NodeItem("NodeReroute"),
-        ]),
+        # ArnoldNodeCategory("ARNOLD_NODES_GROUP", "Group", items=node_group_items),
+        # ArnoldNodeCategory("ARNOLD_NODES_LAYOUT", "Layout", items=[
+        #     nodeitems_utils.NodeItem("NodeFrame"),
+        #     nodeitems_utils.NodeItem("NodeReroute"),
+        # ]),
     ]
     nodeitems_utils.register_node_categories("ARNOLD_NODES", node_categories)
 

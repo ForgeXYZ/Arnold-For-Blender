@@ -14,6 +14,7 @@ from bpy.props import (
 )
 from bpy_extras.io_utils import ExportHelper
 from . import ArnoldRenderEngine
+from .nodes import convert_cycles_nodetree, is_arnold_nodetree
 
 
 @ArnoldRenderEngine.register_class
@@ -52,6 +53,66 @@ class ArnoldNodeSocketAdd(Operator):
             break
         else:
             node.create_socket(identifier)
+        return {'FINISHED'}
+
+@ArnoldRenderEngine.register_class
+class ArnoldConvertFromCycles(Operator):
+
+    ''''''
+    bl_idname = "barnold.convert_cycles"
+    bl_label = "Convert Cycles/EEVEE Shaders to Arnold"
+    bl_description = "Convert all nodetrees to Arnold"
+
+    def execute(self, context):
+        for mat in bpy.data.materials:
+            mat.use_nodes = True
+            nt = mat.node_tree
+            if is_arnold_nodetree(mat):
+                continue
+            output = nt.nodes.new('ArnoldNodeOutput')
+            try:
+                if not convert_cycles_nodetree(mat, output, self.report):
+                    default = nt.nodes.new('ArnoldNodeStandardSurface')
+                    default.location = output.location
+                    default.location[0] -= 300
+                    nt.links.new(default.outputs[0], output.inputs[0])
+            except Exception as e:
+                self.report({'ERROR'}, "Error converting " + mat.name)
+                #self.report({'ERROR'}, str(e))
+                # uncomment to debug conversion
+                import traceback
+                traceback.print_exc()
+
+        for lamp in bpy.data.lights:
+            # if lamp.use_nodes:
+            #     continue
+            light_type = lamp.type
+            lamp.arnold.visibility = False
+            if light_type == 'SUN':
+                lamp.arnold.type = 'distant_light'
+            elif light_type == 'HEMI':
+                lamp.arnold.type = 'skydome_light'
+                lamp.arnold.type.visibility = True
+            elif light_type == 'POINT':
+                lamp.arnold.type = 'point_light'
+            else:
+                lamp.arnold.type = light_type
+
+            if light_type == 'AREA':
+                lamp.shape = 'RECTANGLE'
+                lamp.size = 1.0
+                lamp.size_y = 1.0
+
+            lamp.use_nodes = True
+
+        # convert cycles vis settings
+        for ob in context.scene.objects:
+            if not ob.cycles_visibility.camera:
+                ob.arnold.visibility = False
+            # if not ob.cycles_visibility.diffuse or not ob.cycles_visibility.glossy:
+            #     ob.arnold.visibility_trace_indirect = False
+            # if not ob.cycles_visibility.transmission:
+            #     ob.renderman.visibility_trace_transmission = False
         return {'FINISHED'}
 
 
