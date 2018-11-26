@@ -674,13 +674,13 @@ class ArnoldShape(PropertyGroup):
     #FLOAT         disp_zero_value                   0
     #BOOL          disp_autobump                     false
     #BYTE          autobump_visibility               159
-    visibility: BoolProperty(
+    visibility: IntProperty(
         name="Visibility",
-        default=True
+        default=255
     )
-    sidedness: BoolProperty(
+    sidedness: IntProperty(
         name="Sidedness",
-        default=True
+        default=255
     )
     receive_shadows: BoolProperty(
         name="Receive shadows",

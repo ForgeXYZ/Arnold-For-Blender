@@ -1380,14 +1380,9 @@ class ArnoldNodeRamp(ArnoldNode):
 
     ai_name="ramp_rgb"
 
-    def init(self, context):
-        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
-        self.inputs.new(type="NodeSocketString", name="Type", identifier="type")
-        self.inputs.new(type="NodeSocketShader", name="Input", identifier="input")
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="color")
-        self.inputs.new(type="NodeSocketFloat", name="Position", identifier="position")
-        self.inputs.new(type="NodeSocketString", name="interpolation", identifier="interpolation")
-        self.inputs.new(type="NodeSocketVectorXYZ", name="UV Set", identifier="uvset")
+
+    def draw_buttons(self, context, layout):
+        layout.template_color_ramp(self, "color")
 
 
 @ArnoldRenderEngine.register_class
