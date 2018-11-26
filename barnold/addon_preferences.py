@@ -12,6 +12,11 @@ class ArnoldAddonPreferences(AddonPreferences):
         name="Arnold Path",
         subtype="DIR_PATH")
 
+    draw_panel_icon: BoolProperty(
+        name="Draw Panel Icon",
+        description="Draw an icon on Arnold Panels",
+        default=True)
+
     def draw(self, context):
         layout = self.layout
         layout.label(text="IMPORTANT NOTICE:")

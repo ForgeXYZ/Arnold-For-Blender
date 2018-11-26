@@ -142,7 +142,7 @@ class ArnoldOptions(PropertyGroup):
             ('disk_filter', "Disk", "Disk"),
             ('contour_filter', "Contour", "Contour"),
             ('farthest_filter', "Farthest", "Farthest"),
-            ('gaussian_filter', "Gauss", "Gauss"),
+            ('gaussian_filter', "Gaussian", "Gaussian"),
             ('heatmap_filter', "Heatmap", "Heatmap"),
             ('mitnet_filter', "Mitnet", "Mitnet"),
             ('sinc_filter', "Sinc", "Sinc"),

@@ -15,10 +15,71 @@ from bpy.types import (
     Menu,
     Operator,
 )
+
+import barnold.engine as engine
 import barnold.nodes as nodes
 from . import ArnoldRenderEngine
 
-class ArnoldButtonsPanel:
+# icons
+import os
+from . icons.icons import load_icons
+
+
+from bpy.props import (PointerProperty, StringProperty, BoolProperty,
+                       EnumProperty, IntProperty, FloatProperty, FloatVectorProperty,
+                       CollectionProperty)
+
+
+def get_addon_prefs():
+    addon = bpy.context.user_preferences.addons[__name__.split('.')[0]]
+    return addon.preferences
+# ------- Subclassed Panel Types -------
+class _ArnoldPanelHeader():
+
+    def draw_header(self, context):
+        if get_addon_prefs().draw_panel_icon:
+            icons = load_icons()
+            arnold_blender = icons.get("arnold_logo")
+            self.layout.label(text="", icon_value=arnold_blender.icon_id)
+        else:
+            pass
+
+class CollectionPanel(_ArnoldPanelHeader):
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+
+    @classmethod
+    def poll(cls, context):
+        rd = context.scene.render
+        return rd.engine == ArnoldRenderEngine.bl_idname
+
+    def _draw_collection(self, context, layout, ptr, name, operator,
+                         opcontext, prop_coll, collection_index, default_name=''):
+        layout.label(name)
+        row = layout.row()
+        row.template_list("UI_UL_list", "ARNOLD", ptr, prop_coll, ptr,
+                          collection_index, rows=1)
+        col = row.column(align=True)
+
+        op = col.operator(operator, icon="ZOOMIN", text="")
+        op.context = opcontext
+        op.collection = prop_coll
+        op.collection_index = collection_index
+        op.defaultname = default_name
+        op.action = 'ADD'
+
+        op = col.operator(operator, icon="ZOOMOUT", text="")
+        op.context = opcontext
+        op.collection = prop_coll
+        op.collection_index = collection_index
+        op.action = 'REMOVE'
+
+        if hasattr(ptr, prop_coll) and len(getattr(ptr, prop_coll)) > 0 and \
+                getattr(ptr, collection_index) >= 0:
+            item = getattr(ptr, prop_coll)[getattr(ptr, collection_index)]
+            self.draw_item(layout, context, item)
+
+class ArnoldButtonsPanel(_ArnoldPanelHeader):
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "render"
@@ -75,61 +136,106 @@ from bl_ui.properties_render import RenderButtonsPanel
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
+class ArnoldRenderMainPanel(ArnoldButtonsPanel, Panel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
-    bl_label = "Arnold Render: Main"
+    bl_label = " Arnold Render Settings"
 
     def draw(self, context):
         layout = self.layout
         opts = context.scene.arnold
         opts_path = opts.path_from_id()
+        icons = load_icons()
 
-        sublayout = _subpanel(layout, "Sampling", opts.ui_sampling, opts_path, "ui_sampling", "scene")
-        if sublayout:
-            col = sublayout.column()
-            col.label(text="Samples:", icon='SETTINGS')
-            col.prop(opts, "AA_samples")
-            col.prop(opts, "GI_diffuse_samples")
-            col.prop(opts, "GI_specular_samples")
-            col.prop(opts, "GI_transmission_samples")
-            col.prop(opts, "GI_sss_samples")
-            col.prop(opts, "GI_volume_samples")
-            col.separator()
-            col.prop(opts, "lock_sampling_pattern")
-            col.prop(opts, "sss_use_autobump")
+        # Render
+        row = layout.row(align=True)
+        arnold_blender = icons.get("arnold_logo")
+        row.operator("render.render", text="Render",
+                     icon='RENDER_STILL')
+        # Render Animation
+        arnold_blender = icons.get("arnold_logo")
+        row.operator("render.render", text="Render Animation",
+                     icon='RENDER_ANIMATION').animation = True
+        # Playback Animation
+        arnold_blender = icons.get("arnold_logo")
+        row.operator("render.play_rendered_anim", text="Playback Animation",
+                     icon='FILE_MOVIE')
 
-            col.separator()
-            col.label(text="Clamping:", icon='SETTINGS')
-            col.prop(opts, "clamp_sample_values")
-            subcol = col.column()
-            subcol.enabled = opts.clamp_sample_values
-            subcol.prop(opts, "AA_sample_clamp_affects_aovs")
-            subcol.prop(opts, "AA_sample_clamp")
+        layout.separator()
 
-            col.separator()
-            col.label(text="Filter:", icon='SETTINGS')
-            col.prop(opts, "sample_filter_type")
-            sft = opts.sample_filter_type
-            if sft == 'blackman_harris_filter':
-                col.prop(opts, "sample_filter_bh_width")
-            elif sft == 'sinc_filter':
-                col.prop(opts, "sample_filter_sinc_width")
-            elif sft in ('cone_filter',
-                         'cook_filter',
-                         'disk_filter',
-                         'gaussian_filter',
-                         'triangle_filter',
-                         'contour_filter'):
-                col.prop(opts, "sample_filter_width")
-            elif sft == 'farthest_filter':
-                col.prop(opts, "sample_filter_domain")
-            elif sft == 'heatmap_filter':
-                row = col.row(align=True)
-                row.prop(opts, "sample_filter_min")
-                row.prop(opts, "sample_filter_max")
-            elif sft == 'variance_filter':
-                col.prop(opts, "sample_filter_width")
-                col.prop(opts, "sample_filter_scalar_mode")
+        split = layout.split(factor=-0.22)
+
+        # sublayout = _subpanel(layout, "Sampling", opts.ui_sampling, opts_path, "ui_sampling", "scene")
+        # if sublayout:
+        arnold_blender = icons.get("arnold_logo")
+        #layout.template_icon(icon_value=arnold_blender.icon_id, scale=5.0)
+        layout.separator()
+        col = layout.column()
+        row = col.row()
+        row = split.row(align=True)
+        row.alignment = 'LEFT'
+        row.label(text="Sampling", icon='OUTLINER_DATA_CAMERA')
+        col = layout.column()
+        row = col.row()
+        row.alignment = 'RIGHT'
+        row.label(text="Camera (AA)")
+        row.prop(opts, "AA_samples", text="")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.label(text="Diffuse")
+        row.prop(opts, "GI_diffuse_samples", text="")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.label(text="Specular")
+        row.prop(opts, "GI_specular_samples", text="")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.label(text="Transmission")
+        row.prop(opts, "GI_transmission_samples", text="")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.label(text="SSS")
+        row.prop(opts, "GI_sss_samples", text="")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.label(text="Volume Indirect")
+        row.prop(opts, "GI_volume_samples", text="")
+        row = col.row(align=True)
+        row.separator()
+        col.prop(opts, "lock_sampling_pattern")
+        col.prop(opts, "sss_use_autobump")
+
+        col.separator()
+        col.label(text="Clamping", icon='OUTLINER_OB_CAMERA')
+        col.prop(opts, "clamp_sample_values")
+        subcol = col.column()
+        subcol.enabled = opts.clamp_sample_values
+        subcol.prop(opts, "AA_sample_clamp_affects_aovs")
+        subcol.prop(opts, "AA_sample_clamp")
+
+        col.separator()
+        col.label(text="Filter", icon='FILTER')
+        col.prop(opts, "sample_filter_type")
+        sft = opts.sample_filter_type
+        if sft == 'blackman_harris_filter':
+            col.prop(opts, "sample_filter_bh_width")
+        elif sft == 'sinc_filter':
+            col.prop(opts, "sample_filter_sinc_width")
+        elif sft in ('cone_filter',
+                     'cook_filter',
+                     'disk_filter',
+                     'gaussian_filter',
+                     'triangle_filter',
+                     'contour_filter'):
+            col.prop(opts, "sample_filter_width")
+        elif sft == 'farthest_filter':
+            col.prop(opts, "sample_filter_domain")
+        elif sft == 'heatmap_filter':
+            row = col.row(align=True)
+            row.prop(opts, "sample_filter_min")
+            row.prop(opts, "sample_filter_max")
+        elif sft == 'variance_filter':
+            col.prop(opts, "sample_filter_width")
+            col.prop(opts, "sample_filter_scalar_mode")
 
         sublayout = _subpanel(layout, "Ray Depth", opts.ui_ray_depth, opts_path, "ui_ray_depth", "scene")
         if sublayout:
@@ -177,9 +283,9 @@ class ArnoldRenderMainPanel(RenderButtonsPanel, Panel):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldRenderSystemPanel(RenderButtonsPanel, Panel):
+class ArnoldRenderSystemPanel(ArnoldButtonsPanel, Panel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
-    bl_label = "Arnold Render: System"
+    bl_label = " Arnold System Settings"
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
@@ -226,9 +332,9 @@ class ArnoldRenderSystemPanel(RenderButtonsPanel, Panel):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldRenderDiagnosticsPanel(RenderButtonsPanel, Panel):
+class ArnoldRenderDiagnosticsPanel(ArnoldButtonsPanel, Panel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
-    bl_label = "Arnold Render: Diagnostics"
+    bl_label = " Arnold Diagnostic Settings"
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
@@ -256,9 +362,9 @@ class ArnoldRenderDiagnosticsPanel(RenderButtonsPanel, Panel):
 
 
 @ArnoldRenderEngine.register_class
-class ArnoldRenderOverridePanel(RenderButtonsPanel, Panel):
+class ArnoldRenderOverridePanel(ArnoldButtonsPanel, Panel):
     COMPAT_ENGINES = {ArnoldRenderEngine.bl_idname}
-    bl_label = "Arnold Render: Override"
+    bl_label = " Arnold Override Settings"
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):

@@ -17,14 +17,14 @@ from bpy.props import (
     FloatVectorProperty,
     PointerProperty
 )
-from mathutils import Matrix, Euler
+from mathutils import Matrix, Euler, Color
 from bl_ui.space_node import NODE_HT_header, NODE_MT_editor_menus
 import nodeitems_utils
 
 from . import ArnoldRenderEngine
 from . import props
 from .cycles_convert import convert_cycles_node
-from .ui import _subpanel
+import barnold.ui
 
 
 _WRAP_ITEMS = [
@@ -1380,9 +1380,50 @@ class ArnoldNodeRamp(ArnoldNode):
 
     ai_name="ramp_rgb"
 
+    # color: FloatVectorProperty(
+    #     name="Color",
+    #     size=3,
+    #     min=0, max=1,
+    #     subtype='COLOR'
+    # )
+
+    def init(self, context):
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        # self.inputs.new(type="NodeSocketString", name="Type", identifier="type")
+        # self.inputs.new(type="NodeSocketShader", name="Input", identifier="input")
+        # self.inputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="color")
+        # self.inputs.new(type="NodeSocketFloat", name="Position", identifier="position")
+        # self.inputs.new(type="NodeSocketString", name="interpolation", identifier="interpolation")
+        self.inputs.new(type="NodeSocketVectorXYZ", name="UV Set", identifier="uvset")
 
     def draw_buttons(self, context, layout):
-        layout.template_color_ramp(self, "color")
+        params = {}
+        layout.label('', icon='arnold_logo')
+        layout.template_color_ramp(self, "color", expand=True)
+
+    @property
+    def ai_properties(self):
+        #scale = self.geometry_matrix_scale
+        color = Color([
+            [0, 0, 0],
+            [1, 1, 1],
+            [1, 1, 1]
+        ])
+        # matrix.rotate(Euler(self.geometry_matrix_rotation))
+        # matrix = matrix.to_4x4()
+        # matrix.translation = (self.geometry_matrix_translation)
+        return {
+            "color": ('RGB', color),
+            # "resolution": ('STRING', self.resolution),
+            # "portal_mode": ('STRING', self.portal_mode),
+            # "matrix": ('MATRIX', matrix),
+            # "camera": ('BOOL', self.camera),
+            # "diffuse": ('BOOL', self.diffuse),
+            # "specular": ('BOOL', self.specular),
+            # "sss": ('BOOL', self.sss),
+            # "volume": ('BOOL', self.volume),
+            # "transmission": ('BOOL', self.transmission)
+        }
 
 
 @ArnoldRenderEngine.register_class

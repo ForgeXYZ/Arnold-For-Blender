@@ -33,7 +33,9 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
         #     "RENDER_PT_output",
         #     "RENDER_PT_post_processing",
         # ), False)),
-        ("properties_render", None),
+        ("properties_render", ((
+            "RENDER_PT_color_management",
+        ), False)),
         ("properties_output", ((
             "RENDER_PT_dimensions",
             "RENDER_PT_output",

@@ -21,12 +21,13 @@ from mathutils import Matrix, Vector, geometry
 
 import arnold
 
-from ..nodes import (
-    ArnoldNode,
-    ArnoldNodeOutput,
-    ArnoldNodeWorldOutput,
-    ArnoldNodeLightOutput
-)
+# from ..nodes import (
+#     ArnoldNode,
+#     ArnoldNodeOutput,
+#     ArnoldNodeWorldOutput,
+#     ArnoldNodeLightOutput
+# )
+import barnold.nodes as nt
 from . import bla as _BLA
 from . import ipr as _IPR
 
@@ -80,7 +81,7 @@ def _AiNode(node, prefix, nodes):
     Returns:
         arnold.AiNode or None
     """
-    if not isinstance(node, ArnoldNode):
+    if not isinstance(node, nt.ArnoldNode):
         return None
 
     anode = nodes.get(node)
@@ -136,7 +137,7 @@ class Shaders:
         if mat.use_nodes:
             for n in mat.node_tree.links:
                 return _AiNode(n.from_node, self._Name(mat.name), {})
-                # if isinstance(n, ArnoldNodeOutput) and n.is_active:
+                # if isinstance(n, nt.ArnoldNodeOutput) and n.is_active:
                 #     print(n)
                 #     #input = n.inputs[0]
                 #     for input in n.inputs:
@@ -539,7 +540,7 @@ def _export_object_properties(ob, node):
     arnold.AiNodeSetBool(node, "invert_normals", props.invert_normals)
     arnold.AiNodeSetBool(node, "opaque", props.opaque)
     arnold.AiNodeSetBool(node, "matte", props.matte)
-    #arnold.AiNodeSetArray(node, "disp_map", ArnoldNodeOutput.disp_map)
+    #arnold.AiNodeSetArray(node, "disp_map", nt.ArnoldNodeOutput.disp_map)
     arnold.AiNodeSetFlt(node, "disp_height", props.disp_height)
     if props.subdiv_type != 'none':
         arnold.AiNodeSetStr(node, "subdiv_type", props.subdiv_type)
@@ -735,7 +736,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
             if lamp.use_nodes:
                 filter_nodes = []
                 for _node in lamp.node_tree.nodes:
-                    if isinstance(_node, ArnoldNodeLightOutput) and _node.is_active:
+                    if isinstance(_node, nt.ArnoldNodeLightOutput) and _node.is_active:
                         for input in _node.inputs:
                             if input.is_linked:
                                 _node = _AiNode(input.links[0].from_node, name, lamp_nodes)
@@ -967,7 +968,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     if world:
         if world.use_nodes:
             for _node in world.node_tree.nodes:
-                if isinstance(_node, ArnoldNodeWorldOutput) and _node.is_active:
+                if isinstance(_node, nt.ArnoldNodeWorldOutput) and _node.is_active:
                     name = "W::" + _RN.sub("_", world.name)
                     for input in _node.inputs:
                         print(input.identifier)
@@ -1155,7 +1156,7 @@ def view_update(engine, context):
 
             def _AiNode(node, prefix):
                 anode = _nodes.get(node)
-                if anode is None and isinstance(node, ArnoldNode):
+                if anode is None and isinstance(node, nt.ArnoldNode):
                     params = {'name': ('STRING', "%s&N::%s" % (prefix, node.name))}
                     for input in node.inputs:
                         if input.is_linked:
@@ -1460,7 +1461,7 @@ def view_update(engine, context):
             world = context.scene.world
             if world and world.use_nodes:
                 for _node in world.node_tree.nodes:
-                    if isinstance(_node, ArnoldNodeWorldOutput) and _node.is_active:
+                    if isinstance(_node, nt.ArnoldNodeWorldOutput) and _node.is_active:
                         for input in _node.inputs:
                             if input.is_linked:
                                 node = _AiNode(input.links[0].from_node, "W::" + world.name)
