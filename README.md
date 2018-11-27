@@ -1,6 +1,9 @@
 # Arnold For Blender (BtoA) Beta
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5D8ZMMACFUX36)
-![](https://cdn.rawgit.com/tyler-furby/barnold/master/arnold%20logo.svg)
+
+<p align="center">
+<img src="https://rawcdn.githack.com/tyler-furby/Arnold-For-Blender/b194477da00ea4ab76d0acf0722be2be51df0075/arnold%20logo.svg" alt="Blender One Logo" width="50%">
+</p>
 
 Arnold integration with Blender, updated to work with the latest versions of Arnold 5.2.1.0 and Blender 2.8. This is not yet production ready, but will be soon... :balloon:
 
