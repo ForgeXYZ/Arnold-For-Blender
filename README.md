@@ -15,10 +15,15 @@ Update: Working on the offical version of this addon, will post more information
 Blender One Roadmap                   [####                     ] 20% Complete
 ```
 ### Currently In Development: 
-- Fixing the IPR (rendered viewport)
-- Supporting Blender 2.8
+- OpenGL / Optix / RTX IPR (rendered viewport)
+_ Fixing a segfault on high poly scenes
 - Cleaning up UI
+- Adding procedurals
+- Adding Stand-Ins
+- Streamling with Eevee, Cycles, and Workbench Render Engines
+- Adding Color Ramps, Math Nodes, and more
 - VDB & AOV Support
+- Launching a custom build (Blender One) which comes packaged with Arnold Render by default.
 
 ### Installation (Windows, macOS, and Linux)
 - Download this repository.
