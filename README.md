@@ -1,4 +1,4 @@
-# Barnold (beta) Status: :green_heart: 
+# Arnold For Blender 2.79 (No Longer Being Maintained.)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5D8ZMMACFUX36)
 ![](https://cdn.rawgit.com/tyler-furby/barnold/master/arnold%20logo.svg)
 
