@@ -1,4 +1,4 @@
-# Arnold For Blender (BtoA) Beta
+# Arnold For Blender 2.80 (BtoA) Beta
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5D8ZMMACFUX36)
 
 <p align="center">
