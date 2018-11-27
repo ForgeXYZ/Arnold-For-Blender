@@ -12,7 +12,7 @@ Join the Discord channel for discussions/help/updates/feature requests/talk abou
 Update: Working on the offical version of this addon, will post more information as that project progresses further.
 
 ```
-Barnold v1.0 Roadmap                   [###########              ] 40% Complete
+Blender One Roadmap                   [####                     ] 20% Complete
 ```
 ### Currently In Development: 
 - Fixing the IPR (rendered viewport)
