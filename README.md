@@ -37,7 +37,7 @@ Blender One Roadmap                   [####                     ] 20% Complete
 - Enable "Auto Run Python Scripts" in blender by going to File>User Preferences>File tab 
 - Enable the plugin in blender by going to File>User Preferences>Add-ons tab>Search for 'arnold' in the search bar, and clicking the checkbox next to `Render: Barnold` to enable this plugin.
 
-### Complete Barnold Documentation (coming soon)
+### Complete BtoA Documentation (coming soon)
 
 ### About
 I'm actively working on this every day, if you have any issues feel free to contact me at tyler@tylerfurby.com,
