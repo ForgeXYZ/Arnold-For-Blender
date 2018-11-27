@@ -16,7 +16,7 @@ Blender One Roadmap                   [####                     ] 20% Complete
 ```
 ### Currently In Development: 
 - OpenGL / Optix / RTX IPR (rendered viewport)
-_ Fixing a segfault on high poly scenes
+- Fixing a segfault on high poly scenes
 - Cleaning up UI
 - Adding procedurals
 - Adding Stand-Ins
