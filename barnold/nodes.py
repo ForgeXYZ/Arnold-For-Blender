@@ -21,10 +21,11 @@ from mathutils import Matrix, Euler, Color
 from bl_ui.space_node import NODE_HT_header, NODE_MT_editor_menus
 import nodeitems_utils
 
+from . icons.icons import load_icons
 from . import ArnoldRenderEngine
 from . import props
 from .cycles_convert import convert_cycles_node
-import barnold.ui
+import barnold.ui as ui
 
 
 _WRAP_ITEMS = [
@@ -681,7 +682,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         links = {i.identifier: i.is_linked for i in inputs}
 
         # Diffuse
-        sublayout = _subpanel(layout, "Diffuse", properties.ui_diffuse,
+        sublayout = ui._subpanel(layout, "Diffuse", properties.ui_diffuse,
                               "ext_properties", "ui_diffuse", "node")
         if sublayout:
             col = sublayout.column()
@@ -691,7 +692,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
             _draw_property(col, properties, "metalness", links)
 
         # Specular
-        sublayout = _subpanel(layout, "Specular", properties.ui_specular,
+        sublayout = ui._subpanel(layout, "Specular", properties.ui_specular,
                               "ext_properties", "ui_specular", "node")
         if sublayout:
             col = sublayout.column()
@@ -703,7 +704,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
             _draw_property(col, properties, "specular_rotation", links)
 
         # Transmission
-        sublayout = _subpanel(layout, "Transmission", properties.ui_refraction,
+        sublayout = ui._subpanel(layout, "Transmission", properties.ui_refraction,
                               "ext_properties", "ui_refraction", "node")
         if sublayout:
             col = sublayout.column()
@@ -717,7 +718,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
             _draw_property(col, properties, "transmit_aovs", links)
 
         # Subsurface
-        sublayout = _subpanel(layout, "Subsurface", properties.ui_sss,
+        sublayout = ui._subpanel(layout, "Subsurface", properties.ui_sss,
                               "ext_properties", "ui_sss", "node")
         if sublayout:
             col = sublayout.column()
@@ -729,7 +730,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
             _draw_property(col, properties, "subsurface_anisotropy", links)
 
         # Coat
-        sublayout = _subpanel(layout, "Coat", properties.ui_coat,
+        sublayout = ui._subpanel(layout, "Coat", properties.ui_coat,
                               "ext_properties", "ui_coat", "node")
         if sublayout:
             col = sublayout.column()
@@ -741,7 +742,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
 
 
         # Emission
-        sublayout = _subpanel(layout, "Emission", properties.ui_emission,
+        sublayout = ui._subpanel(layout, "Emission", properties.ui_emission,
                               "ext_properties", "ui_emission", "node")
         if sublayout:
             col = sublayout.column()
@@ -749,7 +750,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
             _draw_property(col, properties, "emission_color", links)
 
         # Thin Film
-        sublayout = _subpanel(layout, "Thin Film", properties.ui_thinfilm,
+        sublayout = ui._subpanel(layout, "Thin Film", properties.ui_thinfilm,
                               "ext_properties", "ui_thinfilm", "node")
         if sublayout:
             col = sublayout.column()
@@ -757,7 +758,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
             _draw_property(col, properties, "thin_film_ior", links)
 
         # Geometry
-        sublayout = _subpanel(layout, "Geometry", properties.ui_geometry,
+        sublayout = ui._subpanel(layout, "Geometry", properties.ui_geometry,
                               "ext_properties", "ui_geometry", "node")
         if sublayout:
             col = sublayout.column()
@@ -765,7 +766,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
             _draw_property(col, properties, "thin_walled", links)
 
         # Advanced
-        sublayout = _subpanel(layout, "Advanced", properties.ui_caustics,
+        sublayout = ui._subpanel(layout, "Advanced", properties.ui_caustics,
                               "ext_properties", "ui_advanced", "node")
         if sublayout:
             col = sublayout.column()
@@ -908,7 +909,7 @@ class ArnoldNodeCarPaint(ArnoldNode):
         links = {i.identifier: i.is_linked for i in inputs}
 
         # Base
-        sublayout = _subpanel(layout, "Base", properties.ui_base,
+        sublayout = ui._subpanel(layout, "Base", properties.ui_base,
                               "ext_properties", "ui_base", "node")
         if sublayout:
             col = sublayout.column()
@@ -917,7 +918,7 @@ class ArnoldNodeCarPaint(ArnoldNode):
             _draw_property(col, properties, "base_roughness", links)
 
         # Specular
-        sublayout = _subpanel(layout, "Specular", properties.ui_specular,
+        sublayout = ui._subpanel(layout, "Specular", properties.ui_specular,
                               "ext_properties", "ui_specular", "node")
         if sublayout:
             col = sublayout.column()
@@ -930,7 +931,7 @@ class ArnoldNodeCarPaint(ArnoldNode):
             _draw_property(col, properties, "specular_IOR", links)
 
         # Flake
-        sublayout = _subpanel(layout, "Flake", properties.ui_flake,
+        sublayout = ui._subpanel(layout, "Flake", properties.ui_flake,
                               "ext_properties", "ui_flake", "node")
         if sublayout:
             col = sublayout.column()
@@ -949,7 +950,7 @@ class ArnoldNodeCarPaint(ArnoldNode):
             _draw_property(col, properties, "pref_name", links)
 
         # Coat
-        sublayout = _subpanel(layout, "Coat", properties.ui_coat,
+        sublayout = ui._subpanel(layout, "Coat", properties.ui_coat,
                               "ext_properties", "ui_coat", "node")
         if sublayout:
             col = sublayout.column()
@@ -1137,7 +1138,7 @@ class ArnoldNodeToon(ArnoldNode):
         links = {i.identifier: i.is_linked for i in inputs}
 
         # Base
-        sublayout = _subpanel(layout, "Base", properties.ui_base,
+        sublayout = ui._subpanel(layout, "Base", properties.ui_base,
                               "ext_properties", "ui_base", "node")
         if sublayout:
             col = sublayout.column()
@@ -1146,7 +1147,7 @@ class ArnoldNodeToon(ArnoldNode):
             _draw_property(col, properties, "base_tonemap", links)
 
         # Specular
-        sublayout = _subpanel(layout, "Specular", properties.ui_specular,
+        sublayout = ui._subpanel(layout, "Specular", properties.ui_specular,
                               "ext_properties", "ui_specular", "node")
         if sublayout:
             col = sublayout.column()
@@ -1167,7 +1168,7 @@ class ArnoldNodeToon(ArnoldNode):
 
 
         # Transmission
-        sublayout = _subpanel(layout, "Transmission", properties.ui_transmission,
+        sublayout = ui._subpanel(layout, "Transmission", properties.ui_transmission,
                               "ext_properties", "ui_transmission", "node")
         if sublayout:
             col = sublayout.column()
@@ -1178,7 +1179,7 @@ class ArnoldNodeToon(ArnoldNode):
             _draw_property(col, properties, "transmission_rotation", links)
 
         # Edge
-        sublayout = _subpanel(layout, "Edge", properties.ui_edge,
+        sublayout = ui._subpanel(layout, "Edge", properties.ui_edge,
                               "ext_properties", "ui_edge", "node")
         if sublayout:
             col = sublayout.column()
@@ -1189,7 +1190,7 @@ class ArnoldNodeToon(ArnoldNode):
             _draw_property(col, properties, "edge_width_scale", links)
 
         # Silhouette
-        sublayout = _subpanel(layout, "Silhouette", properties.ui_silhouette,
+        sublayout = ui._subpanel(layout, "Silhouette", properties.ui_silhouette,
                               "ext_properties", "ui_silhouette", "node")
         if sublayout:
             col = sublayout.column()
@@ -1209,7 +1210,7 @@ class ArnoldNodeToon(ArnoldNode):
 
 
         # Emission
-        sublayout = _subpanel(layout, "Emission", properties.ui_emission,
+        sublayout = ui._subpanel(layout, "Emission", properties.ui_emission,
                               "ext_properties", "ui_emission", "node")
         if sublayout:
             col = sublayout.column()
@@ -1217,7 +1218,7 @@ class ArnoldNodeToon(ArnoldNode):
             _draw_property(col, properties, "emission_color", links)
 
         # Sheen
-        sublayout = _subpanel(layout, "Sheen", properties.ui_sheen,
+        sublayout = ui._subpanel(layout, "Sheen", properties.ui_sheen,
                               "ext_properties", "ui_sheen", "node")
         if sublayout:
             col = sublayout.column()
@@ -1226,7 +1227,7 @@ class ArnoldNodeToon(ArnoldNode):
             _draw_property(col, properties, "sheen_roughness", links)
 
         # Advanced
-        sublayout = _subpanel(layout, "Advanced", properties.ui_advanced,
+        sublayout = ui._subpanel(layout, "Advanced", properties.ui_advanced,
                               "ext_properties", "ui_advanced", "node")
         if sublayout:
             col = sublayout.column()
@@ -1375,10 +1376,12 @@ class ArnoldNodeFlat(ArnoldNode):
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeRamp(ArnoldNode):
+
     bl_label = "Ramp RGB"
-    bl_icon = 'MATERIAL'
+    bl_icon = 'PREFERENCES'
 
     ai_name="ramp_rgb"
+
 
     # color: FloatVectorProperty(
     #     name="Color",
@@ -1388,6 +1391,11 @@ class ArnoldNodeRamp(ArnoldNode):
     # )
 
     def init(self, context):
+        # icons = load_icons()
+        # arnold_blender = icons.get("arnold_logo")
+        icons = load_icons()
+        arnold_blender = icons.get("arnold_logo")
+        self.label(text="", icon='MATERIAL')
         self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
         # self.inputs.new(type="NodeSocketString", name="Type", identifier="type")
         # self.inputs.new(type="NodeSocketShader", name="Input", identifier="input")
@@ -1397,9 +1405,11 @@ class ArnoldNodeRamp(ArnoldNode):
         self.inputs.new(type="NodeSocketVectorXYZ", name="UV Set", identifier="uvset")
 
     def draw_buttons(self, context, layout):
+        icons = load_icons()
+        arnold_blender = icons.get("arnold_logo")
         params = {}
-        layout.label('', icon='arnold_logo')
-        layout.template_color_ramp(self, "color", expand=True)
+        layout.label(text="", icon_value=arnold_blender.icon_id)
+        layout.template_color_ramp(self, "color_ramp", expand=True)
 
     @property
     def ai_properties(self):

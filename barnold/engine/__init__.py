@@ -609,7 +609,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                 arnold.AiMsgDebug(b"    skip (duplicator child)")
                 continue
 
-        if ob.is_duplicator:
+        if ob.is_instancer:
             duplicators.append(ob)
             if ob.dupli_type in {'VERTS', 'FACES'}:
                 duplicator_parent = ob.parent
