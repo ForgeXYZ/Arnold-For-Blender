@@ -1462,10 +1462,13 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         min=-1,max=1,
         default=0
     )
-    subsurface_type: StringProperty(
+    subsurface_type: EnumProperty(
         name="Type",
         description="Henyey-Greenstein Anisotropy coefficient between -1 (full back-scatter) and 1 (full forward-scatter). The default is 0 for an isotropic medium, which scatters the light evenly in all directions, giving a uniform effect. Positive values bias the scattering effect forwards, in the direction of the light, while negative values bias the scattering backward, toward the light.",
-        subtype='BYTE_STRING',
+        items=[
+            ('diffusion', "Diffusion", "Diffusion"),
+            ('randomwalk', "Randomwalk", "Randomwalk")
+        ],
         default='diffusion'
     )
     thin_walled: BoolProperty(
