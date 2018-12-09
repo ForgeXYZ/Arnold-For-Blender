@@ -221,7 +221,7 @@ class ArnoldOptions(PropertyGroup):
     # options node
     AA_samples: IntProperty(
         name="Camera (AA)",
-        min=0, max=100,
+        min=-5, max=100,
         soft_min=1, soft_max=10,
         default=3
     )
