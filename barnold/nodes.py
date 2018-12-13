@@ -1585,58 +1585,38 @@ class ArnoldNodeStandardHair(ArnoldNode):
 
     ai_name = "standard_hair"
 
-    uparam: StringProperty(
-        name="U"
-    )
-    vparam: StringProperty(
-        name="V"
-    )
 
     def init(self, context):
         self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Root Color", identifier="rootcolor").default_value = (0.1, 0.1, 0.1)
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Tip Color", identifier="tipcolor").default_value = (0.5, 0.5, 0.5)
-        self.inputs.new(type="NodeSocketFloat", name="Ambient diffuse", identifier="ambdiff").default_value = 0.6
-        self.inputs.new(type="NodeSocketFloat", name="Indirect diffuse", identifier="kd_ind")
-        self.inputs.new(type="NodeSocketBool", name="Diffuse cache", identifier="diffuse_cache")
-        # Specular #1
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Specular: Color", identifier="spec_color")
-        self.inputs.new(type="NodeSocketFloat", name="Specular: Glossiness", identifier="gloss").default_value = 10
-        self.inputs.new(type="NodeSocketFloat", name="Specular: Weight", identifier="spec").default_value = 1
-        self.inputs.new(type="NodeSocketFloat", name="Specular: Angular shift", identifier="spec_shift")
-        # Specular #2
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Spec. #2: Color", identifier="spec2_color").default_value = (1, 0.4, 0.1)
-        self.inputs.new(type="NodeSocketFloat", name="Spec. #2: Glossiness", identifier="gloss2").default_value = 7
-        self.inputs.new(type="NodeSocketFloat", name="Spec. #2: Weight", identifier="spec2").default_value = 0
-        self.inputs.new(type="NodeSocketFloat", name="Spec. #2: Angular shift", identifier="spec2_shift")
+        # Base
+        self.inputs.new(type="NodeSocketFloat", name="Base", identifier="base").default_value = 1.0
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Base Color", identifier="base_color").default_value = (1.0, 1.0, 1.0)
+        # Melanin
+        self.inputs.new(type="NodeSocketFloat", name="Melanin", identifier="melanin").default_value = (1.0)
+        self.inputs.new(type="NodeSocketFloat", name="Melanin Redness", identifier="melanin_redness").default_value = 0.0
+        self.inputs.new(type="NodeSocketFloat", name="Melanin Randomize", identifier="melanin_randomize").default_value = 0
+        # Roughness
+        self.inputs.new(type="NodeSocketFloat", name="Roughness", identifier="roughness").default_value = 0.2
+        self.inputs.new(type="NodeSocketFloat", name="Roughness Azimuthal", identifier="roughness_azimuthal").default_value = 0.2
+        self.inputs.new(type="NodeSocketBool", name="Roughness Anisotropic", identifier="roughness_anisotropic ").default_value = False
+        self.inputs.new(type="NodeSocketFloat", name="IOR", identifier="ior").default_value = 1.55
+        self.inputs.new(type="NodeSocketFloat", name="Shift", identifier="shift").default_value = 2.5
+        # Specular
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Specular Tint", identifier="specular_tint").default_value = (1.0, 1.0, 1.0)
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Secondary Specular Tint", identifier="specular2_tint").default_value = (1.0, 1.0, 1.0)
         # Transmission
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Transmission: Color", identifier="transmission_color").default_value = (1, 0.4, 0.1)
-        self.inputs.new(type="NodeSocketFloat", name="Transmission", identifier="transmission")
-        self.inputs.new(type="NodeSocketFloat", name="Transmission: Spread", identifier="transmission_spread").default_value = 1
-        self.inputs.new(type="NodeSocketFloat", name="Transmission: Depth", identifier="transmission_depth").default_value= 1
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Transmission: Scatter", identifier="transmission_scatter").default_value = (0, 0, 0)
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Transmission Tint", identifier="transmission_tint").default_value = (1.0, 1.0, 1.0)
+        # Diffuse
+        self.inputs.new(type="NodeSocketFloat", name="Diffuse", identifier="diffuse").default_value = 0
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Diffuse Color", identifier="diffuse_color").default_value = (1.0, 1.0, 1.0)
+        # Emission
+        self.inputs.new(type="NodeSocketFloat", name="Emission", identifier="emission").default_value = 0
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Emission Color", identifier="emission_color").default_value = (1.0, 1.0, 1.0)
+        # Advanced
+        self.inputs.new(type="NodeSocketFloat", name="Indirect Diffuse", identifier="indirect_diffuse").default_value= 1
+        self.inputs.new(type="NodeSocketFloat", name="Indirect Specular", identifier="indirect_specular").default_value = 1
+        self.inputs.new(type="NodeSocketFloat", name="Extra Depth", identifier="extra_depth").default_value= 1
         self.inputs.new(type="ArnoldNodeSocketColor", name="Opacity", identifier="opacity")
-
-    def draw_buttons(self, context, layout):
-        col = layout.column()
-        col.label(text="Remap UV:")
-        row = col.row()
-        col = row.column()
-        col.alignment = 'LEFT'
-        col.label(text="U:")
-        col.label(text="V:")
-        col = row.column()
-        col.prop(self, "uparam", text="")
-        col.prop(self, "vparam", text="")
-
-    @property
-    def ai_properties(self):
-        props = {}
-        if self.uparam:
-            props['uparam'] = ('STRING', self.uparam)
-        if self.vparam:
-            props['vparam'] = ('STRING', self.vparam)
-        return props
 
 
 @ArnoldRenderEngine.register_class

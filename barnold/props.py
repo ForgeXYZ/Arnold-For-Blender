@@ -1440,13 +1440,17 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         name="Subsurface Color",
         description="The color used to determine the subsurface scattering effect. For example, replicating a skin material would mean setting this to a fleshy color.",
         subtype='COLOR',
-        default=(1, 1, 1)
+        size=3,
+        soft_min=0.0, soft_max=1.0,
+        default=[1.0, 1.0, 1.0]
     )
     subsurface_radius: FloatVectorProperty(
         name="Radius",
         description="The approximate distance up to which light can scatter below the surface, also known as “mean free path” (MFP). This parameter affects the average distance that light might propagate below the surface before scattering back out. This effect on the distance can be specified for each color component separately. Higher values will smooth the appearance of the subsurface scattering, while lower values will result in a more opaque look.",
         subtype='COLOR',
-        default=(1, 1, 1)
+        size=3,
+        soft_min=0.0, soft_max=1.0,
+        default=[1.0, 1.0, 1.0]
     )
     subsurface_scale: FloatProperty(
         name="Scale",
