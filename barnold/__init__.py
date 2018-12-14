@@ -140,11 +140,11 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
     def is_active(cls, context):
         return context.scene.render.engine == cls.bl_idname
 
-    def update(self, data, scene):
-        engine.update(self, data, scene)
+    def update(self, data, depsgraph):
+        engine.update(self, data, depsgraph)
 
-    def render(self, scene):
-        engine.render(self, scene)
+    def render(self, depsgraph):
+        engine.render(self, depsgraph)
 
     def view_update(self, context):
         engine.view_update(self, context)
