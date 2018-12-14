@@ -1016,8 +1016,48 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
         arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
         arnold.AiNodeSetStr(filter, "filter_weights", opts.sample_filter_weights)
 
-    display = arnold.AiNode("driver_display_callback")
-    arnold.AiNodeSetStr(display, "name", "__driver")
+    dd = opts.display_driver_type
+    display = arnold.AiNode(dd)
+    if dd == 'driver_display_callback':
+        arnold.AiNodeSetStr(display, "name", "__driver")
+        outputs_aovs = (
+            b"RGBA RGBA __filter __driver",
+        )
+    elif dd == 'driver_deepexr':
+        arnold.AiNodeSetStr(display, "name", "__deepexr")
+        outputs_aovs = (
+            b"RGBA RGBA __filter __deepexr",
+        )
+    elif dd == 'driver_exr':
+        arnold.AiNodeSetStr(display, "name", "__exr")
+        outputs_aovs = (
+            b"RGBA RGBA __filter __exr",
+        )
+    elif dd == 'driver_jpeg':
+        arnold.AiNodeSetStr(display, "name", "__jpeg")
+        outputs_aovs = (
+            b"RGBA RGBA __filter __jpeg",
+        )
+    elif dd == 'driver_null':
+        arnold.AiNodeSetStr(display, "name", "__null")
+        outputs_aovs = (
+            b"RGBA RGBA __filter __null",
+        )
+    elif dd == 'driver_png':
+        arnold.AiNodeSetStr(display, "name", "__png")
+        outputs_aovs = (
+            b"RGBA RGBA __filter __png",
+        )
+    elif dd == 'driver_tiff':
+        arnold.AiNodeSetStr(display, "name", "__tiff")
+        outputs_aovs = (
+            b"RGBA RGBA __filter __tiff",
+        )
+
+    arnold.AiNodeSetStr(display, "filename", render.frame_path())
+
+    # display = arnold.AiNode("driver_display_callback")
+    # arnold.AiNodeSetStr(display, "name", "__driver")
     #arnold.AiNodeSetFlt(display, "gamma", opts.display_gamma)
     #arnold.AiNodeSetBool(display, "rgba_packing", False)
 
@@ -1025,11 +1065,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     #png = arnold.AiNode("driver_png")
     #arnold.AiNodeSetStr(png, "name", "__png")
     #arnold.AiNodeSetStr(png, "filename", render.frame_path())
-
-    outputs_aovs = (
-        b"RGBA RGBA __filter __driver",
-        # b"RGBA RGBA __filter __png"
-    )
     outputs = arnold.AiArray(len(outputs_aovs), 1, arnold.AI_TYPE_STRING, *outputs_aovs)
     arnold.AiNodeSetArray(options, "outputs", outputs)
 

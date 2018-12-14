@@ -246,6 +246,10 @@ class ArnoldRenderMainPanel(ArnoldButtonsPanel, Panel):
         elif sft == 'diff_filter':
             col.prop(opts, "sample_filter_width")
             col.prop(opts, 'sample_filter_weights')
+
+        col.separator()
+        col.label(text="Display", icon='FILE_IMAGE')
+        col.prop(opts, "display_driver_type")
             
         sublayout = _subpanel(layout, "Ray Depth", opts.ui_ray_depth, opts_path, "ui_ray_depth", "scene")
         if sublayout:

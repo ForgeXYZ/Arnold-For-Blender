@@ -126,6 +126,20 @@ class ArnoldOptions(PropertyGroup):
         name="Clamp Sample Values"
     )
 
+    display_driver_type: EnumProperty(
+        name="Driver",
+        items=[
+            ('driver_display_callback', "Display", "Display"),
+            ('driver_deepexr', "Deep EXR", "Deep EXR"),
+            ('driver_exr', "OpenEXR", "OpenEXR"),
+            ('driver_jpeg', "JPEG", "JPEG"),
+            ('driver_null', "None", "None"),
+            ('driver_png', "PNG", "PNG"),
+            ('driver_tiff', "TIFF", "TIFF")
+        ],
+        default='driver_display_callback'
+    )
+
     #############################
 
     sample_filter_type: EnumProperty(
