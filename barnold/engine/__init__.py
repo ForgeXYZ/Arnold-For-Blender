@@ -1020,42 +1020,28 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     display = arnold.AiNode(dd)
     if dd == 'driver_display_callback':
         arnold.AiNodeSetStr(display, "name", "__driver")
-        outputs_aovs = ( str.encode(opts.aov_pass), )
+        outputs_aovs = ( str.encode(opts.aov_pass + "__driver"), )
     elif dd == 'driver_ptr':
         arnold.AiNodeSetStr(display, "name", "__ptr")
-        outputs_aovs = (
-            b"RGBA RGBA __filter __ptr",
-        )
+        outputs_aovs = ( str.encode(opts.aov_pass + "__ptr"), )
     elif dd == 'driver_deepexr':
         arnold.AiNodeSetStr(display, "name", "__deepexr")
-        outputs_aovs = (
-            b"RGBA RGBA __filter __deepexr",
-        )
+        outputs_aovs = ( str.encode(opts.aov_pass + "__deepexr"), )
     elif dd == 'driver_exr':
         arnold.AiNodeSetStr(display, "name", "__exr")
-        outputs_aovs = (
-            b"RGBA RGBA __filter __exr",
-        )
+        outputs_aovs = ( str.encode(opts.aov_pass + "__exr"), )
     elif dd == 'driver_jpeg':
         arnold.AiNodeSetStr(display, "name", "__jpeg")
-        outputs_aovs = (
-            b"RGBA RGBA __filter __jpeg",
-        )
+        outputs_aovs = ( str.encode(opts.aov_pass + "__jpeg"), )
     elif dd == 'driver_null':
         arnold.AiNodeSetStr(display, "name", "__null")
-        outputs_aovs = (
-            b"RGBA RGBA __filter __null",
-        )
+        outputs_aovs = ( str.encode(opts.aov_pass + "__null"), )
     elif dd == 'driver_png':
         arnold.AiNodeSetStr(display, "name", "__png")
-        outputs_aovs = (
-            b"RGBA RGBA __filter __png",
-        )
+        outputs_aovs = ( str.encode(opts.aov_pass + "__png"), )
     elif dd == 'driver_tiff':
         arnold.AiNodeSetStr(display, "name", "__tiff")
-        outputs_aovs = (
-            b"RGBA RGBA __filter __tiff",
-        )
+        outputs_aovs = ( str.encode(opts.aov_pass + "__tiff"), )
 
     arnold.AiNodeSetStr(display, "filename", render.frame_path())
 

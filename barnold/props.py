@@ -144,10 +144,10 @@ class ArnoldOptions(PropertyGroup):
     aov_pass: EnumProperty(
         name="AOV",
         items=[
-            ("RGBA RGB __filter __driver", "RGB", "RGB"),
-            ("RGBA RGBA __filter __driver", "RGBA", "RGBA")
+            ("RGBA RGB __filter ", "RGB", "RGB"),
+            ("RGBA RGBA __filter ", "RGBA", "RGBA")
         ],
-        default= "RGBA RGB __filter __driver"
+        default= "RGBA RGB __filter "
     )
 
     #############################
