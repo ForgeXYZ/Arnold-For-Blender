@@ -866,8 +866,8 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
                                       path_from_id, "ui_emission", "material")
                 if sublayout:
                     col = sublayout.column()
-                    col.prop(mat, "emit", text="Weight")
-                    col.prop(mat, "diffuse_color", text="Color")
+                    col.prop(standard_surface, "emission")
+                    col.prop(standard_surface, "emission_color")
 
 
                 # Thin Film

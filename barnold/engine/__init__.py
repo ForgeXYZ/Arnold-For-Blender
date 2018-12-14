@@ -1020,10 +1020,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     display = arnold.AiNode(dd)
     if dd == 'driver_display_callback':
         arnold.AiNodeSetStr(display, "name", "__driver")
-        # outputs_aovs = (
-        #     b"RGBA RGB __filter __driver",
-        # )
-
         outputs_aovs = ( str.encode(opts.aov_pass), )
     elif dd == 'driver_ptr':
         arnold.AiNodeSetStr(display, "name", "__ptr")
