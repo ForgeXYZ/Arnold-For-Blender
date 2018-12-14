@@ -823,15 +823,6 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
                     col.prop(standard_surface, "transmission_dispersion")
                     col.prop(standard_surface, "transmission_extra_roughness")
                     col.prop(standard_surface, "transmit_aovs")
-                    # col.prop(standard_surface, "Fresnel_use_IOR")
-                    # Below is deprecated in Arnold 5
-                        # col.prop(standard_surface, "transmittance")
-                        # col.label(text="Exit Color:", icon='SETTINGS')
-                        # box = col.box()
-                        # box.prop(standard_surface, "refraction_exit_use_environment")
-                        # box.row().prop(standard_surface, "refraction_exit_color")
-                        # col.prop(standard_surface, "enable_internal_reflections")
-
 
                 # Subsurface
                 sublayout = _subpanel(layout, "Subsurface", standard_surface.ui_sss,

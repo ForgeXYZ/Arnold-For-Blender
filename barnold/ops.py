@@ -162,7 +162,7 @@ class ArnoldExportASS(Operator, ExportHelper):
     bl_idname = "barnold.export_ass"
     bl_label = "Export ASS"
 
-    filename_ext: ".ass"
+    filename_ext = ".ass"
     filter_glob: StringProperty(default="*.ass", options={'HIDDEN'})
     binary: BoolProperty(name="Binary-encode ASS File", default=True)
     open_procs: BoolProperty(name="Expand Procedurals")
@@ -176,12 +176,13 @@ class ArnoldExportASS(Operator, ExportHelper):
             try:
                 from . import engine
 
+                depsgraph = context.depsgraph
                 scene = context.scene
                 render = scene.render
                 resolution = render.resolution_percentage / 100
                 engine.export_ass(
                     context.blend_data,
-                    scene,
+                    depsgraph,
                     scene.camera,
                     int(render.resolution_x * resolution),
                     int(render.resolution_y * resolution),
@@ -202,4 +203,4 @@ class ArnoldExportASS(Operator, ExportHelper):
             self.layout.operator_context = 'INVOKE_DEFAULT'
             self.layout.operator(cls.bl_idname, text="Arnold Render (.ass)")
 
-        #bl_ui.space_info.INFO_MT_file_export.append(menu_func)
+        bpy.types.TOPBAR_MT_file_export.append(menu_func)

@@ -1056,15 +1056,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
 
     arnold.AiNodeSetStr(display, "filename", render.frame_path())
 
-    # display = arnold.AiNode("driver_display_callback")
-    # arnold.AiNodeSetStr(display, "name", "__driver")
-    #arnold.AiNodeSetFlt(display, "gamma", opts.display_gamma)
-    #arnold.AiNodeSetBool(display, "rgba_packing", False)
-
-    # TODO: unusable, camera flipped (top to buttom) for tiles hightlighting
-    #png = arnold.AiNode("driver_png")
-    #arnold.AiNodeSetStr(png, "name", "__png")
-    #arnold.AiNodeSetStr(png, "filename", render.frame_path())
+    
     outputs = arnold.AiArray(len(outputs_aovs), 1, arnold.AI_TYPE_STRING, *outputs_aovs)
     arnold.AiNodeSetArray(options, "outputs", outputs)
 
@@ -1078,7 +1070,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
             AA_samples = isl
     arnold.AiNodeSetInt(options, "AA_samples", AA_samples)
 
-    arnold.AiMsgDebug(b"BARNOLD: <<<")
+    arnold.AiMsgDebug(b"ARNOLD DEBUG: <<<")
 
 
 def export_ass(data, scene, camera, xres, yres, filepath, open_procs, binary):
