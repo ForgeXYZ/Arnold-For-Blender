@@ -573,8 +573,8 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     _Name = _CleanNames("O", itertools.count())
 
     # enabled scene layers
-    # layers = [i for i, j in enumerate(depsgraph.objects) if j]
-    # in_layers = lambda o: any(o.layers[i] for i in layers)
+    layers = [i for i, j in enumerate(depsgraph.objects) if j]
+    in_layers = lambda o: any(o.layers[i] for i in layers)
     # nodes cache
     nodes = {}  # {Object: AiNode}
     inodes = {}  # {Object.data: AiNode}
@@ -598,9 +598,9 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     for ob in bpy.data.objects:
         arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
 
-        # if not bpy.context.object.visible_get(): # or not in_layers(ob)
-        #     arnold.AiMsgDebug(b"    skip (hidden)")
-        #     continue
+        if ob.hide_render or not ob.visible_get(): # or not in_layers(ob)
+            arnold.AiMsgDebug(b"    skip (hidden)")
+            continue
 
         if duplicator_parent is not False:
             if duplicator_parent == ob.parent:
@@ -1020,8 +1020,15 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     display = arnold.AiNode(dd)
     if dd == 'driver_display_callback':
         arnold.AiNodeSetStr(display, "name", "__driver")
+        # outputs_aovs = (
+        #     b"RGBA RGB __filter __driver",
+        # )
+
+        outputs_aovs = ( str.encode(opts.aov_pass), )
+    elif dd == 'driver_ptr':
+        arnold.AiNodeSetStr(display, "name", "__ptr")
         outputs_aovs = (
-            b"RGBA RGBA __filter __driver",
+            b"RGBA RGBA __filter __ptr",
         )
     elif dd == 'driver_deepexr':
         arnold.AiNodeSetStr(display, "name", "__deepexr")
@@ -1073,28 +1080,28 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     arnold.AiMsgDebug(b"ARNOLD DEBUG: <<<")
 
 
-def export_ass(data, scene, camera, xres, yres, filepath, open_procs, binary):
+def export_ass(data, depsgraph, camera, xres, yres, filepath, open_procs, binary):
     arnold.AiBegin()
     try:
-        _export(data, scene, camera, xres, yres)
+        _export(data, depsgraph, camera, xres, yres)
         arnold.AiASSWrite(filepath, arnold.AI_NODE_ALL, open_procs, binary)
     finally:
         arnold.AiEnd()
 
 
-def update(engine, data, scene):
+def update(engine, data, depsgraph):
     print("Arnold Engine Updating...")
     engine.use_highlight_tiles = True
     engine._session = {}
     arnold.AiBegin()
-    _export(data, scene,
+    _export(data, depsgraph,
             engine.camera_override,
             engine.resolution_x,
             engine.resolution_y,
             session=engine._session)
 
 
-def render(engine, scene):
+def render(engine, depsgraph):
     try:
         session = engine._session
         xoff, yoff = session["offset"]
@@ -1290,7 +1297,7 @@ def view_update(engine, context):
                                 'vlist': ('ARRAY', (arnold.AI_TYPE_VECTOR, vlist)),
                                 'nsides': ('ARRAY', (arnold.AI_TYPE_UINT, nsides)),
                                 'vidxs': ('ARRAY', (arnold.AI_TYPE_UINT, vidxs)),
-                                'shader':('NODE', (nodes[index])),
+                                #'shader':('NODE', (nodes[index])),
                                 #'smoothing': ('BOOL', True),
                             }))
                                 ## TODO: Assign Shader data to polymesh...
@@ -1527,13 +1534,13 @@ def view_update(engine, context):
         print("~" * 30)
 
 
-def view_draw(engine, context):
+def view_draw(engine, depsgraph, region, space_data, region_data):
     #print(">>> view_draw [%f]:" % time.clock(), engine)
 
     try:
-        region = context.region
-        v3d = context.space_data
-        rv3d = context.region_data
+        region = bpy.context.region
+        v3d = bpy.context.space_data
+        rv3d = bpy.context.region_data
 
         data = {}
         _camera = {}
@@ -1583,12 +1590,20 @@ def view_draw(engine, context):
         bgl.glGetFloatv(bgl.GL_VIEWPORT, v)
         vw = v[2]
         vh = v[3]
+
+        # aspect_x = bpy.context.scene.render.pixel_aspect_x
+        # aspect_y = bpy.context.scene.render.pixel_aspect_y
+
+        # bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_RGBA, width, height, 0, bgl.GL_RGBA, bgl.GL_UNSIGNED_BYTE, bgl.Buffer(bgl.GL_FLOAT, len(rect), rect))
+        # bgl.glCopyTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_RGBA, 1920, 1080, width, height, 0)
+
+        # bgl.glDrawBuffer(4)
         #bgl.glRasterPos2f(0, vh - 1.0)
         #bgl.glPixelZoom(vw / width, -vh / height)
-        # bgl.glDrawPixels(width, height, bgl.GL_RGBA, bgl.GL_FLOAT,
-        #                  bgl.Buffer(bgl.GL_FLOAT, len(rect), rect))
-        # bgl.glPixelZoom(1.0, 1.0)
-        # bgl.glRasterPos2f(0, 0)
+        #bgl.glDrawPixels(width, height, bgl.GL_RGBA, bgl.GL_FLOAT,
+                         #bgl.Buffer(bgl.GL_FLOAT, len(rect), rect))
+        #bgl.glPixelZoom(1.0, 1.0)
+        #bgl.glRasterPos2f(0, 0)
     except:
         print("~" * 30)
         traceback.print_exc()

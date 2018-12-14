@@ -250,6 +250,10 @@ class ArnoldRenderMainPanel(ArnoldButtonsPanel, Panel):
         col.separator()
         col.label(text="Display", icon='FILE_IMAGE')
         col.prop(opts, "display_driver_type")
+
+        col.separator()
+        col.label(text="AOV Browser", icon='RENDER_RESULT')
+        col.prop(opts, "aov_pass")
             
         sublayout = _subpanel(layout, "Ray Depth", opts.ui_ray_depth, opts_path, "ui_ray_depth", "scene")
         if sublayout:
