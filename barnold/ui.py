@@ -236,7 +236,17 @@ class ArnoldRenderMainPanel(ArnoldButtonsPanel, Panel):
         elif sft == 'variance_filter':
             col.prop(opts, "sample_filter_width")
             col.prop(opts, "sample_filter_scalar_mode")
-
+            col.prop(opts, 'sample_filter_weights')
+        elif sft == 'cryptomatte_filter':
+            col.prop(opts, "sample_filter_width")
+            col.prop(opts, "sample_filter_rank")
+            col.prop(opts, "cryptomatte_filter")
+        elif sft == 'denoise_optix_filter':
+            col.prop(opts, "optix_blend")
+        elif sft == 'diff_filter':
+            col.prop(opts, "sample_filter_width")
+            col.prop(opts, 'sample_filter_weights')
+            
         sublayout = _subpanel(layout, "Ray Depth", opts.ui_ray_depth, opts_path, "ui_ray_depth", "scene")
         if sublayout:
             col = sublayout.column()

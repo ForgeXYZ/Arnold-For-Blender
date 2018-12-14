@@ -133,22 +133,19 @@ class ArnoldOptions(PropertyGroup):
         items=[
             ('blackman_harris_filter', "Blackman-Harris", "Blackman-Harris"),
             ('box_filter', "Box", "Box"),
-            ('catrom2d_filter', "Catrom 2", "Catrom"),
             ('catrom_filter', "Catrom", "Catrom"),
             ('closest_filter', "Closest", "Closest"),
-            ('cone_filter', "Cone", "Cone"),
-            ('cook_filter', "Cook", "Cook"),
-            ('cubic_filter', "Cubic", "Cubic"),
-            ('disk_filter', "Disk", "Disk"),
             ('contour_filter', "Contour", "Contour"),
+            ('cryptomatte_filter', "Cryptomatte", "Cryptomatte"),
+            ('denoise_optix_filter', "Optix Denoiser", "Optix Denoiser"),
+            ('diff_filter', "Difference", "Difference"),
             ('farthest_filter', "Farthest", "Farthest"),
             ('gaussian_filter', "Gaussian", "Gaussian"),
             ('heatmap_filter', "Heatmap", "Heatmap"),
             ('mitnet_filter', "Mitnet", "Mitnet"),
             ('sinc_filter', "Sinc", "Sinc"),
             ('triangle_filter', "Triangle", "Triangle"),
-            ('variance_filter', "Variance", "Variance"),
-            ('video_filter', "Video", "Video")
+            ('variance_filter', "Variance", "Variance")
         ],
         default='gaussian_filter'
     )
@@ -158,6 +155,38 @@ class ArnoldOptions(PropertyGroup):
     sample_filter_width: FloatProperty(
         name="Width",
         default=2
+    )
+    sample_filter_rank: IntProperty(
+        name="Rank",
+        default=2
+    )
+    cryptomatte_filter: EnumProperty(
+        name="Filter Kernel",
+        items=[
+            ('blackman_harris_filter', "Blackman-Harris", "Blackman-Harris"),
+            ('box_filter', "Box", "Box"),
+            ('cone_filter', "Cone", "Cone"),
+            ('disk_filter', "Disk", "Disk"),
+            ('gaussian_filter', "Gaussian", "Gaussian"),
+            ('triangle_filter', "Triangle", "Triangle")
+        ],
+        default='gaussian_filter'
+    )
+    optix_blend: FloatProperty(
+        name="Optix Blend",
+        default=0
+    )
+    sample_filter_weights: EnumProperty(
+        name="Filter Kernel Weights",
+        items=[
+            ('blackman_harris_filter', "Blackman-Harris", "Blackman-Harris"),
+            ('box_filter', "Box", "Box"),
+            ('cone_filter', "Cone", "Cone"),
+            ('disk_filter', "Disk", "Disk"),
+            ('gaussian_filter', "Gaussian", "Gaussian"),
+            ('triangle_filter', "Triangle", "Triangle")
+        ],
+        default='box_filter'
     )
     sample_filter_bh_width: FloatProperty(
         name="Width",

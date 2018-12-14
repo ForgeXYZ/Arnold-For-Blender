@@ -1005,6 +1005,16 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     elif sft == 'variance_filter':
         arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
         arnold.AiNodeSetBool(filter, "scalar_mode", opts.sample_filter_scalar_mode)
+        arnold.AiNodeSetStr(filter, "filter_weights", opts.sample_filter_weights)
+    elif sft == 'cryptomatte_filter':
+        arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
+        arnold.AiNodeSetInt(filter, "rank", opts.sample_filter_rank)
+        arnold.AiNodeSetStr(filter, "filter", opts.cryptomatte_filter)
+    elif sft == 'denoise_optix_filter':
+        arnold.AiNodeSetFlt(filter, "blend", opts.optix_blend)
+    elif sft == 'diff_filter':
+        arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
+        arnold.AiNodeSetStr(filter, "filter_weights", opts.sample_filter_weights)
 
     display = arnold.AiNode("driver_display_callback")
     arnold.AiNodeSetStr(display, "name", "__driver")
