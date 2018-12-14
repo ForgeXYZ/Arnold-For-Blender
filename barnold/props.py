@@ -2080,13 +2080,19 @@ class ArnoldShaderToon(PropertyGroup):
         name="Angle Threshold",
         description="",
         subtype="FACTOR",
-        min=0, max=180,
-        default=180
+        unit='ROTATION',
+        min=0, max=6.28319,
+        default=3.1415926536
     )
-    normal_type: StringProperty(
+    normal_type: EnumProperty(
         name="Normal Type",
         description="",
-        default='shading normal'
+        items=[
+            ('shading_normal', "Shading Normal", "Shading Normal"),
+            ('smoothed_normal', "Smoothed Normal", "Smoothed Normal"),
+            ('geometric_normal', "Geometric Normal", "Geometric Normal")
+        ],
+        default='shading_normal'
     )
 
     specular: FloatProperty(
