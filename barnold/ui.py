@@ -200,104 +200,202 @@ class ArnoldRenderMainPanel(ArnoldButtonsPanel, Panel):
         row.label(text="Volume Indirect")
         row.prop(opts, "GI_volume_samples", text="")
         row = col.row(align=True)
-        row.separator()
-        col.prop(opts, "lock_sampling_pattern")
-        col.prop(opts, "sss_use_autobump")
+        row = col.row(align=True)
+        
+        layout.separator()
+        col = layout.column()
+        row = col.row()
+        row = split.row(align=True)
+        col = layout.column()
+        row = col.row()
 
+        row.alignment = 'RIGHT'
+        row.prop(opts, "lock_sampling_pattern")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.prop(opts, "sss_use_autobump")
+        row = col.row(align=True)
+
+        layout.separator()
         col.separator()
         col.label(text="Clamping", icon='OUTLINER_OB_CAMERA')
-        col.prop(opts, "clamp_sample_values")
-        subcol = col.column()
+        col = layout.column()
+        row = col.row()
+        row.alignment = 'RIGHT'
+        row.prop(opts, "clamp_sample_values")
+        row = col.row(align=True)
+        
+        subcol = col.row()
+        subcol.alignment = 'RIGHT'
         subcol.enabled = opts.clamp_sample_values
+        # subcol = col.row(align=True)
+        subcol.separator()
+        subcol.alignment = 'RIGHT'
         subcol.prop(opts, "AA_sample_clamp_affects_aovs")
+        subcol.separator()
+        #subcol = col.column(align=True)
+        subcol.alignment = 'RIGHT'
         subcol.prop(opts, "AA_sample_clamp")
+        #subcol = col.column(align=True)
 
         col.separator()
         col.label(text="Filter", icon='FILTER')
-        col.prop(opts, "sample_filter_type")
+        col = layout.column()
+        row = col.row()
+        row.alignment = 'RIGHT'
+        row.label(text="Type")
+        row.prop(opts, "sample_filter_type", text="")
         sft = opts.sample_filter_type
         if sft == 'blackman_harris_filter':
-            col.prop(opts, "sample_filter_bh_width")
+            row.prop(opts, "sample_filter_bh_width")
         elif sft == 'sinc_filter':
-            col.prop(opts, "sample_filter_sinc_width")
+            row.prop(opts, "sample_filter_sinc_width")
         elif sft in ('cone_filter',
                      'cook_filter',
                      'disk_filter',
                      'gaussian_filter',
                      'triangle_filter',
                      'contour_filter'):
-            col.prop(opts, "sample_filter_width")
+            row.prop(opts, "sample_filter_width")
         elif sft == 'farthest_filter':
-            col.prop(opts, "sample_filter_domain")
+            row.prop(opts, "sample_filter_domain")
         elif sft == 'heatmap_filter':
             row = col.row(align=True)
             row.prop(opts, "sample_filter_min")
             row.prop(opts, "sample_filter_max")
         elif sft == 'variance_filter':
-            col.prop(opts, "sample_filter_width")
-            col.prop(opts, "sample_filter_scalar_mode")
-            col.prop(opts, 'sample_filter_weights')
+            row.prop(opts, "sample_filter_width")
+            row.prop(opts, "sample_filter_scalar_mode")
+            row.prop(opts, 'sample_filter_weights')
         elif sft == 'cryptomatte_filter':
-            col.prop(opts, "sample_filter_width")
-            col.prop(opts, "sample_filter_rank")
-            col.prop(opts, "cryptomatte_filter")
+            row.prop(opts, "sample_filter_width")
+            row.prop(opts, "sample_filter_rank")
+            row.prop(opts, "cryptomatte_filter")
         elif sft == 'denoise_optix_filter':
-            col.prop(opts, "optix_blend")
+            row.prop(opts, "optix_blend")
         elif sft == 'diff_filter':
-            col.prop(opts, "sample_filter_width")
-            col.prop(opts, 'sample_filter_weights')
+            row.prop(opts, "sample_filter_width")
+            row.prop(opts, 'sample_filter_weights')
 
+        #layout.separator()
         col.separator()
         col.label(text="Display", icon='FILE_IMAGE')
-        col.prop(opts, "display_driver_type")
+        col = layout.column()
+        row = col.row()
+        row.alignment = 'RIGHT'
+        row.label(text="Driver")
+        row.prop(opts, "display_driver_type", text="")
 
         col.separator()
-        col.label(text="AOV Browser", icon='RENDER_RESULT')
-        col.prop(opts, "aov_pass")
+        col.label(text="AOV Browser", icon='IMAGE_ZDEPTH')
+        col = layout.column()
+        row = col.row()
+        row.alignment = 'RIGHT'
+        row.label(text="AOV Pass")
+        row.prop(opts, "aov_pass", text="")
+
+        col.separator()
+        layout.separator()
+        col = layout.column()
+        row = col.row()
+        row = col.row(align=True)
+        row.alignment = 'LEFT'
+        row.label(text="Ray Depth", icon='CAMERA_STEREO')
+        col = layout.column()
+        row = col.row()
+        row.alignment = 'RIGHT'
             
-        sublayout = _subpanel(layout, "Ray Depth", opts.ui_ray_depth, opts_path, "ui_ray_depth", "scene")
-        if sublayout:
-            col = sublayout.column()
-            col.prop(opts, "GI_total_depth")
-            col.prop(opts, "GI_diffuse_depth")
-            col.prop(opts, "GI_specular_depth")
-            # TODO: DELETE? col.prop(opts, "GI_reflection_depth")
-            col.prop(opts, "GI_transmission_depth")
-            col.prop(opts, "GI_volume_depth")
-            col.separator()
-            col.label(text="Transparency:", icon='SETTINGS')
-            # TODO: DELETE? col.prop(opts, "auto_transparency_mode")
-            col.prop(opts, "auto_transparency_depth")
-            # TODO: DELETE? col.prop(opts, "auto_transparency_threshold")
+        #sublayout = _subpanel(layout, "Ray Depth", opts.ui_ray_depth, opts_path, "ui_ray_depth", "scene")
+        #if sublayout:
+        #col = sublayout.column()
+        row.label(text="Total")
+        row.prop(opts, "GI_total_depth", text="")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.label(text="Diffuse")
+        row.prop(opts, "GI_diffuse_depth", text="")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.label(text="Specular")
+        row.prop(opts, "GI_specular_depth", text="")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.label(text="Transmission")
+        # TODO: DELETE? col.prop(opts, "GI_reflection_depth")
+        row.prop(opts, "GI_transmission_depth", text="")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.label(text="Volume")
+        row.prop(opts, "GI_volume_depth", text="")
+        row = col.row(align=True)
+        
+        col.separator()
+        layout.separator()
+        col = layout.column()
+        row = col.row()
+        row = col.row(align=True)
 
-        sublayout = _subpanel(layout, "Light", opts.ui_light, opts_path, "ui_light", "scene")
-        if sublayout:
-            col = sublayout.column()
-            col.prop(opts, "low_light_threshold")
+        row.alignment = 'RIGHT'
+        row.label(text="Transparency Depth")
+        row.prop(opts, "auto_transparency_depth", text="")
+        row = col.row(align=True)
 
-        sublayout = _subpanel(layout, "Gamma Correction", opts.ui_gamma, opts_path, "ui_gamma", "scene")
-        if sublayout:
-            col = sublayout.column()
-            # TODO: DELETE? col.prop(opts, "texture_gamma")
-            # TODO: DELETE? col.prop(opts, "light_gamma")
-            # TODO: DELETE? col.prop(opts, "shader_gamma")
-            col.separator()
-            col.prop(opts, "display_gamma")
+        col.separator()
+        layout.separator()
+        col = layout.column()
+        row = col.row()
+        row = col.row(align=True)
+        row.alignment = 'LEFT'
+        row.label(text="Light", icon='LIGHT')
+        col = layout.column()
+        row = col.row()
+        row.alignment = 'RIGHT'
+        row.label(text="Low Light Threshold")
+        row.prop(opts, "low_light_threshold", text="")
+        row = col.row(align=True)
 
-        sublayout = _subpanel(layout, "Textures", opts.ui_textures, opts_path, "ui_textures", "scene")
-        if sublayout:
-            col = sublayout.column()
-            col.prop(opts, "texture_automip")
-            col.prop(opts, "texture_accept_unmipped")
-            col.separator()
-            col.prop(opts, "texture_accept_untiled")
-            col.prop(opts, "texture_autotile")
-            col.separator()
-            col.prop(opts, "texture_max_memory_MB")
-            col.prop(opts, "texture_max_open_files")
-            col.separator()
-            col.prop(opts, "texture_diffuse_blur")
-            col.prop(opts, "texture_specular_blur")
+        # sublayout = _subpanel(layout, "Textures", opts.ui_textures, opts_path, "ui_textures", "scene")
+        # if sublayout:
+        col.separator()
+        layout.separator()
+        col = layout.column()
+        row = col.row()
+        row = col.row(align=True)
+        row.alignment = 'LEFT'
+        row.label(text="Textures", icon='TEXTURE_DATA')
+        col = layout.column()
+        row = col.row()
+        row.alignment = 'RIGHT'
+        row.prop(opts, "texture_automip")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.prop(opts, "texture_accept_unmipped")
+        row = col.row(align=True)
+        col.separator()
+        row.alignment = 'RIGHT'
+        row.prop(opts, "texture_accept_untiled")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.label(text="Auto-Tile")
+        row.prop(opts, "texture_autotile", text="")
+        row = col.row(align=True)
+        col.separator()
+        row.alignment = 'RIGHT'
+        row.label(text="Max Cache Size (MB)")
+        row.prop(opts, "texture_max_memory_MB", text="")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.label(text="Max Open Files")
+        row.prop(opts, "texture_max_open_files", text="")
+        row = col.row(align=True)
+        col.separator()
+        row.alignment = 'RIGHT'
+        row.label(text="Diffuse Blur")
+        row.prop(opts, "texture_diffuse_blur", text="")
+        row = col.row(align=True)
+        row.alignment = 'RIGHT'
+        row.label(text="Specular Blur")
+        row.prop(opts, "texture_specular_blur", text="")
 
 
 @ArnoldRenderEngine.register_class
