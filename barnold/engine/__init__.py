@@ -72,7 +72,7 @@ _AiNodeSet = {
 }
 
 
-def _AiNode(node, prefix, nodes):
+def _AiNode(node, prefix, nodes, mat):
     """
     Args:
         node (ArnoldNode): node.
@@ -90,14 +90,14 @@ def _AiNode(node, prefix, nodes):
         name = "%s&N%d::%s" % (prefix, len(nodes), _RN.sub("_", node.name))
         arnold.AiNodeSetStr(anode, "name", name)
         nodes[node] = anode
-        for input in node.inputs:
-            if input.is_linked:
-                _anode = _AiNode(input.links[0].from_node, prefix, nodes)
-                if _anode is not None:
-                    arnold.AiNodeLink(_anode, input.identifier, anode)
-                    continue
-            if not input.hide_value:
-                _AiNodeSet[input.bl_idname](anode, input.identifier, input.default_value)
+        for n in mat.node_tree.links:
+            # if input.is_linked:
+            _anode = _AiNode(n.from_node, prefix, nodes, mat)
+            if _anode is not None:
+                arnold.AiNodeLink(_anode, n.from_socket.name, anode)
+                continue
+            if not n.hide_value:
+                _AiNodeSet[n.bl_idname](anode, n.from_socket.name, n.default_value)
         for p_name, (p_type, p_value) in node.ai_properties.items():
             _AiNodeSet[p_type](anode, p_name, p_value)
     return anode
@@ -136,7 +136,7 @@ class Shaders:
     def _export(self, mat):
         if mat.use_nodes:
             for n in mat.node_tree.links:
-                return _AiNode(n.from_node, self._Name(mat.name), {})
+                return _AiNode(n.from_node, self._Name(mat.name), {}, mat)
                 # if isinstance(n, nt.ArnoldNodeOutput) and n.is_active:
                 #     print(n)
                 #     #input = n.inputs[0]
@@ -739,7 +739,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                     if isinstance(_node, nt.ArnoldNodeLightOutput) and _node.is_active:
                         for input in _node.inputs:
                             if input.is_linked:
-                                _node = _AiNode(input.links[0].from_node, name, lamp_nodes)
+                                _node = _AiNode(input.links[0].from_node, name, lamp_nodes, lamp)
                                 if input.identifier == "color":
                                     color_node = _node
                                 elif input.bl_idname == "ArnoldNodeSocketFilter":
@@ -973,7 +973,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                     for input in _node.inputs:
                         print(input.identifier)
                         if input.is_linked:
-                            node = _AiNode(input.links[0].from_node, name, {})
+                            node = _AiNode(input.links[0].from_node, name, {}, world)
                             if node:
                                 arnold.AiNodeSetPtr(options, input.identifier, node)
                     break
