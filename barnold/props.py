@@ -1479,7 +1479,7 @@ class ArnoldShaderStandardSurface(PropertyGroup):
         name="IOR",
         description="The IOR parameter (Index of Refraction) defines the material's Fresnel reflectivity and is by default the angular function used. Effectively the IOR will define the balance between reflections on surfaces facing the viewer and on surface edges. You can see the reflection intensity remains unchanged, but the reflection intensity on the front side changes a lot.",
         subtype='FACTOR',
-        min=0, soft_max=3,
+        min=0, max=10,
         default=1.52
     )
     subsurface: FloatProperty(
@@ -1779,7 +1779,7 @@ class ArnoldShaderCarPaint(PropertyGroup):
         name="IOR",
         description="Determines the index of refraction for the base coat.",
         subtype="FACTOR",
-        min=0, max=5,
+        min=0, max=10,
         default=1.52
     )
     transmission_color: FloatVectorProperty(
