@@ -137,17 +137,6 @@ class Shaders:
         if mat.use_nodes:
             for n in mat.node_tree.links:
                 return _AiNode(n.from_node, self._Name(mat.name), {})
-                # if isinstance(n, nt.ArnoldNodeOutput) and n.is_active:
-                #     print(n)
-                #     #input = n.inputs[0]
-                #     for input in n.inputs:
-                #         if input.is_linked:
-                #             return _AiNode(input.links[0].from_node, self._Name(mat.name), {})
-                            # if shader:
-                            #     node = arnold.AiNode(mat.arnold.type)
-                            #     arnold.AiNodeSetPtr(arnold.AiUniverseGetOptions(), input.identifier, shader)
-            #         break
-            # return None
 
         shader = mat.arnold
         if mat == mat:
@@ -189,7 +178,7 @@ class Shaders:
                 arnold.AiNodeSetBool(node, "thin_walled", standard_surface.thin_walled)
                 arnold.AiNodeSetVec(node, "normal", *standard_surface.normal)
                 # arnold.AiNodeSetFlt(node, "tangent", standard_surface.tangent)
-                arnold.AiNodeSetFlt(node, "coat", standard_surface.coat)
+                arnold.AiuNodeSetFlt(node, "coat", standard_surface.coat)
                 arnold.AiNodeSetRGB(node, "coat_color", *standard_surface.coat_color)
                 arnold.AiNodeSetFlt(node, "coat_roughness", standard_surface.coat_roughness)
                 #arnold.AiNodeSetFlt(node, "coat_ior", standard_surface.coat_ior)
@@ -573,7 +562,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     _Name = _CleanNames("O", itertools.count())
 
     # enabled scene layers
-    layers = [i for i, j in enumerate(depsgraph.objects) if j]
+    layers = [i for i, j in enumerate(bpy.context.view_layer.objects) if j]
     in_layers = lambda o: any(o.layers[i] for i in layers)
     # nodes cache
     nodes = {}  # {Object: AiNode}
@@ -588,14 +577,14 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     opts = bpy.context.scene.arnold
     arnold.AiMsgSetConsoleFlags(opts.get("console_log_flags", 0))
     arnold.AiMsgSetMaxWarnings(opts.max_warnings)
-    arnold.AiMsgDebug(b"BARNOLD: >>>")
+    arnold.AiMsgDebug(b"ARNOLD: >>>")
 
     plugins_path = os.path.normpath(os.path.join(os.path.dirname(__file__), os.path.pardir, "bin"))
     arnold.AiLoadPlugins(plugins_path)
 
     ##############################
     ## objects
-    for ob in bpy.data.objects:
+    for ob in bpy.context.view_layer.objects:
         arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
 
         if ob.hide_render or not ob.visible_get(): # or not in_layers(ob)
@@ -611,7 +600,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
 
         if ob.is_instancer:
             duplicators.append(ob)
-            if ob.dupli_type in {'VERTS', 'FACES'}:
+            if ob.instance_type in {'VERTS', 'FACES'}:
                 duplicator_parent = ob.parent
             arnold.AiMsgDebug(b"    skip (duplicator)")
             continue
@@ -1094,7 +1083,6 @@ def render(engine, depsgraph):
         def display_callback(x, y, width, height, buffer, data):
             _x = x - xoff
             _y = y - yoff
-
             if buffer:
                 try:
                     result = _htiles.pop((_x, _y), None)
@@ -1107,6 +1095,11 @@ def render(engine, depsgraph):
                     #rect **= 2.2
                     result.layers[0].passes[0].rect = rect
                     engine.end_result(result)
+
+                    # HACK: Update Render Progress
+                    display_callback.counter += 0.0020
+                    engine.update_progress(display_callback.counter)
+                    # 40 - 19
                 finally:
                     arnold.AiFree(buffer)
             else:
@@ -1127,6 +1120,8 @@ def render(engine, depsgraph):
 
         # display callback must be a variable
         cb = arnold.AtDisplayCallBack(display_callback)
+        # HACK: Update Render Progress
+        display_callback.counter = 0
         arnold.AiNodeSetPtr(session['display'], "callback", cb)
 
         res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
@@ -1157,6 +1152,7 @@ def view_update(engine, context):
         if ipr is None:
             blend_data = context.blend_data
             depsgraph = context.depsgraph
+            scene = context.scene
             region = context.region
             v3d = context.space_data
             rv3d = context.region_data
@@ -1207,7 +1203,7 @@ def view_update(engine, context):
                     nodes.append(anode)
                 return anode
 
-            for ob in context.scene.objects:
+            for ob in bpy.data.objects:
                 if ob.type in _CT: # and ob.is_visible(scene)
                     with _to_mesh(ob) as mesh:
                         if mesh is not None:

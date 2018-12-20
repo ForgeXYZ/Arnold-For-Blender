@@ -4,7 +4,7 @@ __author__ = "Tyler Furby"
 __email__ = "tyler@tylerfurby.com"
 
 bl_info = {
-    "name"          : "Barnold",
+    "name"          : "Arnold",
     "description"   : "Solid Angle's Arnold Renderer for Blender",
     "author"        : "Tyler Furby <tyler@tylerfurby.com>", "N.Ildar <nildar@users.sourceforge.net>"
     "version"       : (0, 0, 2),
@@ -18,8 +18,8 @@ import sys
 import os
 
 class ArnoldRenderEngine(bpy.types.RenderEngine):
-    bl_idname = "ARNOLD_RENDER"
-    bl_label = "Arnold Render"
+    bl_idname = "ARNOLD"
+    bl_label = "Arnold"
     bl_use_preview = True
     bl_use_save_buffers = True
     bl_use_shading_nodes = True
