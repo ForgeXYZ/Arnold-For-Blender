@@ -178,7 +178,7 @@ class Shaders:
                 arnold.AiNodeSetBool(node, "thin_walled", standard_surface.thin_walled)
                 arnold.AiNodeSetVec(node, "normal", *standard_surface.normal)
                 # arnold.AiNodeSetFlt(node, "tangent", standard_surface.tangent)
-                arnold.AiuNodeSetFlt(node, "coat", standard_surface.coat)
+                arnold.AiNodeSetFlt(node, "coat", standard_surface.coat)
                 arnold.AiNodeSetRGB(node, "coat_color", *standard_surface.coat_color)
                 arnold.AiNodeSetFlt(node, "coat_roughness", standard_surface.coat_roughness)
                 #arnold.AiNodeSetFlt(node, "coat_ior", standard_surface.coat_ior)
@@ -562,7 +562,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     _Name = _CleanNames("O", itertools.count())
 
     # enabled scene layers
-    layers = [i for i, j in enumerate(bpy.context.view_layer.objects) if j]
+    layers = [i for i, j in enumerate(bpy.data.objects) if j]
     in_layers = lambda o: any(o.layers[i] for i in layers)
     # nodes cache
     nodes = {}  # {Object: AiNode}
