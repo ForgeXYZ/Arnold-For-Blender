@@ -584,7 +584,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
 
     ##############################
     ## objects
-    for ob in bpy.context.view_layer.objects:
+    for ob in bpy.data.objects:
         arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
 
         if ob.hide_render or not ob.visible_get(): # or not in_layers(ob)
