@@ -1074,7 +1074,6 @@ def update(engine, data, depsgraph):
 
 
 def render(engine, depsgraph):
-    update.counter = 0
     try:
         session = engine._session
         xoff, yoff = session["offset"]
