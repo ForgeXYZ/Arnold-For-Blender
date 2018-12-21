@@ -3262,6 +3262,7 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeImage"),
             nodeitems_utils.NodeItem("ArnoldNodePhysicalSky"),
             nodeitems_utils.NodeItem("ArnoldNodeSky"),
+            nodeitems_utils.NodeItem("ArnoldNodeColorCorrect"),
         ]),
         ArnoldWorldNodeCategory("ARNOLD_NODES_WORLD_ATMOSPHERE_SHADERS", "Arnold Atmosphere Shaders", items=[
             nodeitems_utils.NodeItem("ArnoldNodeVolumeScattering"),
