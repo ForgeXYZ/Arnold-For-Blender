@@ -134,7 +134,7 @@ def _nodesubpanel(layout, title, opened, attr, ctx):
     row = box.row()
     row.alignment = 'LEFT'
     icon = 'TRIA_DOWN' if opened else 'TRIA_RIGHT'
-    op = row.operator("barnold.ui_toggle", text=title, icon=icon, emboss=False)
+    op = row.operator("barnold.ui_toggle", text=title, icon=icon, emboss=True)
     op.attr = attr
     op.ctx = ctx
     return col.box() if opened else None

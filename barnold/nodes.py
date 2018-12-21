@@ -513,11 +513,38 @@ class ArnoldNodeLambert(ArnoldNode):
         self.inputs.new(type="NodeSocketFloat", name="Weight", identifier="Kd").default_value = 0.7
         self.inputs.new(type="ArnoldNodeSocketColor", name="Opacity", identifier="opacity")
 
+@ArnoldRenderEngine.register_class
+class ArnoldNodeColorCorrect(ArnoldNode):
+    bl_label = "Color Correct"
+    bl_icon = 'MATERIAL'
+
+    ai_name = "color_correct"
+
+    def init(self, context):
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Shader", identifier="input").default_value=(0,0,0)
+        self.inputs.new(type="NodeSocketFloat", name="Mask", identifier="mask").default_value = 1.0
+        self.inputs.new(type="NodeSocketFloat", name="Gamma", identifier="gamma").default_value=1.0
+        self.inputs.new(type="NodeSocketFloat", name="Hue Shift", identifier="hue_shift").default_value = 0
+        self.inputs.new(type="NodeSocketFloat", name="Saturation", identifier="saturation").default_value=1.0
+        self.inputs.new(type="NodeSocketFloat", name="Contrast", identifier="contrast").default_value = 1.0
+        self.inputs.new(type="NodeSocketFloat", name="Contrast Pivot", identifier="contrast_pivot").default_value=0.180
+        self.inputs.new(type="NodeSocketFloat", name="Exposure", identifier="exposure").default_value = 0.00
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Multiply", identifier="multiply").default_value=(1,1,1)
+        self.inputs.new(type="ArnoldNodeSocketColor", name="Add", identifier="add").default_value=(0,0,0)
+        self.inputs.new(type="NodeSocketBool", name="Invert", identifier="invert").default_value=False
+        self.inputs.new(type="NodeSocketBool", name="Is Luminance", identifier="is_luminance").default_value=False
+        self.inputs.new(type="NodeSocketFloat", name="Multiply", identifier="multiply_alpha").default_value=1.0
+        self.inputs.new(type="NodeSocketFloat", name="Add", identifier="add_alpha").default_value=0.0
+        self.inputs.new(type="NodeSocketBool", name="Invert", identifier="invert_alpha").default_value=False
+
+
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeStandardVolume(ArnoldNode):
     bl_label="Standard Volume"
     bl_icon= "MATERIAL"
+    color = (1,1,1)
     bl_width_default=200
 
     ai_name="standard_volume"
@@ -3263,6 +3290,7 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeBump2D"),
             nodeitems_utils.NodeItem("ArnoldNodeBump3D"),
             nodeitems_utils.NodeItem("ArnoldNodeNoise"),
+            nodeitems_utils.NodeItem("ArnoldNodeColorCorrect"),
         ]),
         # light
         ArnoldLightNodeCategory("ARNOLD_NODES_LIGHT_OUTPUT", "Arnold Output", items=[
