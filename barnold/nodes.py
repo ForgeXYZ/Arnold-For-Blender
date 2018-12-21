@@ -517,26 +517,159 @@ class ArnoldNodeLambert(ArnoldNode):
 class ArnoldNodeColorCorrect(ArnoldNode):
     bl_label = "Color Correct"
     bl_icon = 'MATERIAL'
+    bl_width_default=200
 
     ai_name = "color_correct"
+
+    mask = FloatProperty(
+        name="Mask",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=1
+    )
+
+    gamma = FloatProperty(
+        name="Gamma",
+        subtype='FACTOR',
+        min=0, max=5,
+        default=1
+    )
+
+    hue_shift = FloatProperty(
+        name="Hue Shift",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=0
+    )
+
+    saturation = FloatProperty(
+        name="Saturation",
+        subtype='FACTOR',
+        min=0, max=5,
+        default=1
+    )
+
+    contrast = FloatProperty(
+        name="Contrast",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=1
+    )
+
+    contrast_pivot = FloatProperty(
+        name="Contrast Pivot",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=0.180
+    )
+
+    exposure = FloatProperty(
+        name="Exposure",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=0
+    )
+
+    multiply = FloatVectorProperty(
+        name="Multiply",
+         subtype='COLOR',
+         min=0, max=1,
+         default=(1, 1, 1)
+    )
+
+    add = FloatVectorProperty(
+        name="Add",
+         subtype='COLOR',
+         min=0, max=1,
+         default=(0, 0, 0)
+    )
+    invert = BoolProperty(
+        name="Invert",
+        default=False
+    )
+
+    is_luminance = BoolProperty(
+        name="Is Luminance",
+        default=False
+    )
+
+    multiply_alpha = FloatProperty(
+        name="Multiply",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=1.0
+    )
+
+    add_alpha = FloatProperty(
+        name="Add",
+        subtype='FACTOR',
+        min=0, max=1,
+        default=0.0
+    )
+
+    invert_alpha = BoolProperty(
+        name="Invert",
+        default=False
+    )
 
     def init(self, context):
         self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
         self.inputs.new(type="ArnoldNodeSocketColor", name="Shader", identifier="input").default_value=(0,0,0)
         self.inputs.new(type="NodeSocketFloat", name="Mask", identifier="mask").default_value = 1.0
-        self.inputs.new(type="NodeSocketFloat", name="Gamma", identifier="gamma").default_value=1.0
-        self.inputs.new(type="NodeSocketFloat", name="Hue Shift", identifier="hue_shift").default_value = 0
-        self.inputs.new(type="NodeSocketFloat", name="Saturation", identifier="saturation").default_value=1.0
-        self.inputs.new(type="NodeSocketFloat", name="Contrast", identifier="contrast").default_value = 1.0
-        self.inputs.new(type="NodeSocketFloat", name="Contrast Pivot", identifier="contrast_pivot").default_value=0.180
-        self.inputs.new(type="NodeSocketFloat", name="Exposure", identifier="exposure").default_value = 0.00
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Multiply", identifier="multiply").default_value=(1,1,1)
-        self.inputs.new(type="ArnoldNodeSocketColor", name="Add", identifier="add").default_value=(0,0,0)
-        self.inputs.new(type="NodeSocketBool", name="Invert", identifier="invert").default_value=False
-        self.inputs.new(type="NodeSocketBool", name="Is Luminance", identifier="is_luminance").default_value=False
-        self.inputs.new(type="NodeSocketFloat", name="Multiply", identifier="multiply_alpha").default_value=1.0
-        self.inputs.new(type="NodeSocketFloat", name="Add", identifier="add_alpha").default_value=0.0
-        self.inputs.new(type="NodeSocketBool", name="Invert", identifier="invert_alpha").default_value=False
+        # self.inputs.new(type="NodeSocketFloat", name="Gamma", identifier="gamma").default_value=1.0
+        # self.inputs.new(type="NodeSocketFloat", name="Hue Shift", identifier="hue_shift").default_value = 0
+        # self.inputs.new(type="NodeSocketFloat", name="Saturation", identifier="saturation").default_value=1.0
+        # self.inputs.new(type="NodeSocketFloat", name="Contrast", identifier="contrast").default_value = 1.0
+        # self.inputs.new(type="NodeSocketFloat", name="Contrast Pivot", identifier="contrast_pivot").default_value=0.180
+        # self.inputs.new(type="NodeSocketFloat", name="Exposure", identifier="exposure").default_value = 0.00
+        # self.inputs.new(type="ArnoldNodeSocketColor", name="Multiply", identifier="multiply").default_value=(1,1,1)
+        # self.inputs.new(type="ArnoldNodeSocketColor", name="Add", identifier="add").default_value=(0,0,0)
+        # self.inputs.new(type="NodeSocketBool", name="Invert", identifier="invert").default_value=False
+        # self.inputs.new(type="NodeSocketBool", name="Is Luminance", identifier="is_luminance").default_value=False
+        # self.inputs.new(type="NodeSocketFloat", name="Multiply", identifier="multiply_alpha").default_value=1.0
+        # self.inputs.new(type="NodeSocketFloat", name="Add", identifier="add_alpha").default_value=0.0
+        # self.inputs.new(type="NodeSocketBool", name="Invert", identifier="invert_alpha").default_value=False
+
+    def draw_buttons(self, context, layout):
+        col = layout.column()
+        col.label(text="Color Correction")
+        flow = col.column_flow(align=True)
+        flow.prop(self, "gamma")
+        flow.prop(self, "hue_shift")
+        flow.prop(self, "saturation")
+        flow.prop(self, "contrast")
+        flow.prop(self, "contrast_pivot")
+        flow.prop(self, "exposure")
+        flow.prop(self, "multiply")
+        flow.prop(self, "add")
+        flow.prop(self, "invert")
+        col.label(text="")
+        col = layout.column()
+        col.label(text="Alpha")
+        flow = col.column_flow(align=True)
+        flow.prop(self, "is_luminance")
+        flow.prop(self, "multiply_alpha")
+        flow.prop(self, "add_alpha")
+        flow.prop(self, "invert_alpha")
+        col.label(text="")
+    
+    @property
+    def ai_properties(self):
+        return {
+            "gamma": ('FLOAT', self.gamma),
+            "hue_shift": ('FLOAT', self.hue_shift),
+            "saturation": ('FLOAT', self.saturation),
+            "contrast": ('FLOAT', self.contrast),
+            "contrast_pivot": ('BOOL', self.contrast_pivot),
+            "exposure": ('FLOAT', self.exposure),
+            "multiply": ('RGB', self.multiply),
+            "add": ('RGB', self.add),
+            "invert": ('BOOL', self.invert),
+            "is_luminance": ('FLOAT', self.is_luminance),
+            "multiply_alpha": ('FLOAT', self.multiply_alpha),
+            "add_alpha": ('FLOAT', self.add_alpha),
+            "invert_alpha": ('BOOL', self.invert_alpha),
+        }
 
 
 
