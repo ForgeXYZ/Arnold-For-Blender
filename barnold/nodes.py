@@ -1516,6 +1516,230 @@ cycles_node_map = {
 
 
 
+@ArnoldRenderEngine.register_class
+class ArnoldNodeShadowMatte(ArnoldNode):
+    bl_label = "Shadow Matte"
+    bl_icon = 'MATERIAL'
+
+    ai_name="shadow_matte"
+
+    ui_background: BoolProperty(
+        name="Background",
+        default=True
+    )
+
+    ui_shadow: BoolProperty(
+        name="Background",
+        default=True
+    )
+
+    ui_diffuse: BoolProperty(
+        name="Background",
+        default=True
+    )
+
+    ui_specular: BoolProperty(
+        name="Background",
+        default=True
+    )
+
+    ui_light: BoolProperty(
+        name="Background",
+        default=True
+    )
+
+    ui_aov: BoolProperty(
+        name="Background",
+        default=True
+    )
+
+    background: EnumProperty(
+        name="Background",
+        items=[
+            ('scene_background', "Scene Background", "Scene Background"),
+            ('background_color', "Background Color", "Background Color")
+        ],
+        default='scene_background'
+    )
+
+    background_color: FloatVectorProperty(
+        name="Background Color",
+        size=3,
+        min=0, max=1,
+        subtype='COLOR',
+        default=(1, 1, 1)
+    ) 
+
+    shadow_color: FloatVectorProperty(
+        name="Shadow Color",
+        size=3,
+        min=0, max=1,
+        subtype='COLOR',
+        default=(0, 0, 0)
+    )
+
+    shadow_opacity: FloatProperty(
+        name="Shadow Opacity",
+        subtype='FACTOR',
+        default=1
+    )
+
+    backlighting: FloatProperty(
+        name="Shadow Opacity",
+        subtype='FACTOR',
+        default=0
+    )
+
+    alpha_mask: BoolProperty(
+        name="Alpha Mask",
+        default=True
+    )
+
+    diffuse_color: FloatVectorProperty(
+        name="Diffuse Color",
+        size=3,
+        min=0, max=1,
+        subtype='COLOR',
+        default=(1, 1, 1)
+    )
+
+    diffuse_intensity: FloatProperty(
+        name="Diffuse Intensity",
+        subtype='FACTOR',
+        default=0.7
+    )
+
+    use_background: BoolProperty(
+        name="Use Background",
+        default=True
+    )
+
+    indirect_diffuse: BoolProperty(
+        name="Indirect Diffuse",
+        default=False
+    )
+
+    indirect_specular: BoolProperty(
+        name="Indirect Specular",
+        default=False
+    )
+
+    specular_color: FloatVectorProperty(
+        name="Specular Color",
+        size=3,
+        min=0, max=1,
+        subtype='COLOR',
+        default=(1, 1, 1)
+    )
+
+    specular_intensity: FloatProperty(
+        name="Specular Intensity",
+        subtype='FACTOR',
+        default=1.0
+    )
+
+    specular_roughness: FloatProperty(
+        name="Specular Roughness",
+        subtype='FACTOR',
+        default=0.1
+    )
+
+    specular_IOR: FloatProperty(
+        name="Specular IOR",
+        subtype='FACTOR',
+        default=1.52
+    )
+
+    light_group: StringProperty(
+        name="Light Group",
+        default=""
+    )
+
+    shadow_aov: StringProperty(
+        name="Shadow AOV",
+        default="shadow"
+    )
+
+    shadow_diff: StringProperty(
+        name="Shadow Diff",
+        default="shadow_diff"
+    )
+
+    shadow_mask: StringProperty(
+        name="Shadow Mask",
+        default="shadow_mask"
+    )
+
+    def init(self, context):
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+        
+    def draw_buttons(self, context, layout):
+        col = layout.column()
+        sublayout = ui._nodesubpanel(layout, "Background", self.ui_background, "ui_background", "node")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(self, "background", text="Background")
+            col.prop(self, "background_color", text="Background Color")
+        sublayout = ui._nodesubpanel(layout, "Shadows", self.ui_shadow, "ui_shadow", "node")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(self, "shadow_color", text="Shadow Color")
+            col.prop(self, "shadow_opacity", text="Shadow Opacity")
+            col.prop(self, "backlighting", text="Backlighting")
+            col.prop(self, "alpha_mask", text="Alpha Mask")
+        sublayout = ui._nodesubpanel(layout, "Diffuse", self.ui_diffuse, "ui_diffuse", "node")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(self, "diffuse_color", text="Color")
+            col.prop(self, "diffuse_intensity", text="Intensity")
+            col.prop(self, "use_background", text="Use Background")
+            col.prop(self, "indirect_diffuse", text="Indirect Diffuse")
+        sublayout = ui._nodesubpanel(layout, "Specular", self.ui_specular, "ui_specular", "node")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(self, "indirect_specular", text="Indirect Specular")
+            col.prop(self, "specular_color", text="Color")
+            col.prop(self, "specular_intensity", text="Intensity")
+            col.prop(self, "specular_roughness", text="Roughness")
+            col.prop(self, "specular_IOR", text="IOR")
+        sublayout = ui._nodesubpanel(layout, "Lights", self.ui_light, "ui_light", "node")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(self, "light_group", text="Light Group")
+        sublayout = ui._nodesubpanel(layout, "AOVs", self.ui_aov, "ui_aov", "node")
+        if sublayout:
+            col = sublayout.column()
+            col.prop(self, "shadow_aov", text="Shadow")
+            col.prop(self, "shadow_diff", text="Shadow Diff")
+            col.prop(self, "shadow_mask", text="Shadow Mask")
+
+    @property
+    def ai_properties(self):
+        return {
+            "background": ('STRING', self.background),
+            "background_color": ('RGB', self.background_color),
+            "shadow_color": ('RGB', self.shadow_color),
+            "shadow_opacity": ('FLOAT', self.shadow_opacity),
+            "backlighting": ('FLOAT', self.backlighting),
+            "alpha_mask": ('BOOL', self.alpha_mask),
+            "diffuse_color": ('RGB', self.diffuse_color),
+            "diffuse_intensity": ('FLOAT', self.diffuse_intensity),
+            "use_background": ('BOOL', self.use_background),
+            "indirect_diffuse": ('BOOL', self.indirect_diffuse),
+            "indirect_specular": ('BOOL', self.indirect_specular),
+            "specular_color": ('RGB', self.specular_color),
+            "specular_intensity": ('FLOAT', self.specular_intensity),
+            "specular_roughness": ('FLOAT', self.specular_roughness),
+            "specular_IOR": ('FLOAT', self.specular_IOR),
+            "light_group": ('STRING', self.light_group),
+            "shadow_aov": ('STRING', self.shadow_aov),
+            "shadow_diff": ('STRING', self.shadow_diff),
+            "shadow_mask": ('STRING', self.shadow_mask)
+        }
+
+
+
+
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeRamp(ArnoldNode):
@@ -3027,6 +3251,7 @@ def register():
             nodeitems_utils.NodeItem("ArnoldNodeLambert"),
             nodeitems_utils.NodeItem("ArnoldNodeToon"),
             nodeitems_utils.NodeItem("ArnoldNodeCarPaint"),
+            nodeitems_utils.NodeItem("ArnoldNodeShadowMatte"),
             nodeitems_utils.NodeItem("ArnoldNodeFlat"),
             nodeitems_utils.NodeItem("ArnoldNodeUtility"),
             nodeitems_utils.NodeItem("ArnoldNodeWireframe"),

@@ -128,6 +128,17 @@ def _subpanel(layout, title, opened, path, attr, ctx):
     op.ctx = ctx
     return col.box() if opened else None
 
+def _nodesubpanel(layout, title, opened, attr, ctx):
+    col = layout.column(align=True)
+    box = col.box()
+    row = box.row()
+    row.alignment = 'LEFT'
+    icon = 'TRIA_DOWN' if opened else 'TRIA_RIGHT'
+    op = row.operator("barnold.ui_toggle", text=title, icon=icon, emboss=False)
+    op.attr = attr
+    op.ctx = ctx
+    return col.box() if opened else None
+
 ##
 ## Options
 ##
