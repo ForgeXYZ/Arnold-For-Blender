@@ -1892,7 +1892,7 @@ class ArnoldNodeImage(ArnoldNode):
         scol.prop(self, "soffset", text="U")
         scol.prop(self, "toffset", text="V")
 
-        col.label(text="Weight:")
+        col.label(text="Scale:")
         scol = col.column(align=True)
         scol.prop(self, "sscale", text="U")
         scol.prop(self, "tscale", text="V")
