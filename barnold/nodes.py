@@ -616,19 +616,6 @@ class ArnoldNodeColorCorrect(ArnoldNode):
         self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
         self.inputs.new(type="ArnoldNodeSocketColor", name="Shader", identifier="input").default_value=(0,0,0)
         self.inputs.new(type="NodeSocketFloat", name="Mask", identifier="mask").default_value = 1.0
-        # self.inputs.new(type="NodeSocketFloat", name="Gamma", identifier="gamma").default_value=1.0
-        # self.inputs.new(type="NodeSocketFloat", name="Hue Shift", identifier="hue_shift").default_value = 0
-        # self.inputs.new(type="NodeSocketFloat", name="Saturation", identifier="saturation").default_value=1.0
-        # self.inputs.new(type="NodeSocketFloat", name="Contrast", identifier="contrast").default_value = 1.0
-        # self.inputs.new(type="NodeSocketFloat", name="Contrast Pivot", identifier="contrast_pivot").default_value=0.180
-        # self.inputs.new(type="NodeSocketFloat", name="Exposure", identifier="exposure").default_value = 0.00
-        # self.inputs.new(type="ArnoldNodeSocketColor", name="Multiply", identifier="multiply").default_value=(1,1,1)
-        # self.inputs.new(type="ArnoldNodeSocketColor", name="Add", identifier="add").default_value=(0,0,0)
-        # self.inputs.new(type="NodeSocketBool", name="Invert", identifier="invert").default_value=False
-        # self.inputs.new(type="NodeSocketBool", name="Is Luminance", identifier="is_luminance").default_value=False
-        # self.inputs.new(type="NodeSocketFloat", name="Multiply", identifier="multiply_alpha").default_value=1.0
-        # self.inputs.new(type="NodeSocketFloat", name="Add", identifier="add_alpha").default_value=0.0
-        # self.inputs.new(type="NodeSocketBool", name="Invert", identifier="invert_alpha").default_value=False
 
     def draw_buttons(self, context, layout):
         col = layout.column()
