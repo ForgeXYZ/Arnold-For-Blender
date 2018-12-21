@@ -6,17 +6,19 @@ __email__ = "nildar@users.sourceforge.net"
 import collections
 
 import bpy
-from bpy.types import NodeTree, NodeSocket, Node
-from bpy.props import (
-    IntProperty,
-    IntVectorProperty,
-    BoolProperty,
-    EnumProperty,
-    StringProperty,
-    FloatProperty,
-    FloatVectorProperty,
-    PointerProperty
-)
+import _cycles
+from bpy.app.handlers import persistent
+
+import xml.etree.ElementTree as ET
+
+import tempfile
+import nodeitems_utils
+import shutil
+
+from bpy.types import NodeTree, NodeSocket, Node, ColorRamp
+from bpy.props import *
+from nodeitems_utils import NodeCategory, NodeItem
+
 from mathutils import Matrix, Euler, Color
 from bl_ui.space_node import NODE_HT_header, NODE_MT_editor_menus
 import nodeitems_utils
@@ -24,6 +26,7 @@ import nodeitems_utils
 from . icons.icons import load_icons
 from . import ArnoldRenderEngine
 from . import props
+
 from .cycles_convert import convert_cycles_node
 import barnold.ui as ui
 
@@ -85,7 +88,7 @@ def offset_node_location(arnold_parent, arnold_node, cycles_node):
 def create_arnold_surface(nt, parent_node, input_index, node_type="ArnoldNodeStandardSurface"):
     layer = nt.nodes.new(node_type)
     nt.links.new(layer.outputs[0], parent_node.inputs[input_index])
-    setattr(layer, 'enableDiffuse', False)
+    #setattr(layer, 'enableDiffuse', False)
 
     layer.location = parent_node.location
     layer.diffuseGain = 0
@@ -583,7 +586,9 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         ("subsurface_type"          , ('STRING',"Subsurface Type",       "ext_properties")),
         # Emission
         ("emission_color"           , ('RGB', "Emission Color", "ext_properties")),
-        ("emission"                 , ('FLOAT', "Emission", "ext_properties"))
+        ("emission"                 , ('FLOAT', "Emission", "ext_properties")),
+        # Normal
+        ("normal"                 , ('VECTOR', "Normal", "ext_properties"))
     ])
 
     # base: FloatProperty(
@@ -641,7 +646,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         self.create_socket(identifier="emission")
         self.create_socket(identifier="emission_color")
         self.create_socket(identifier="opacity")
-        self.create_socket(identifier="coat_normal")
+        self.create_socket(identifier="normal")
 
     # def init(self, context):
     #     self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
@@ -775,6 +780,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
             _draw_property(col, properties, "exit_to_background", links)
             _draw_property(col, properties, "indirect_diffuse", links)
             _draw_property(col, properties, "indirect_specular", links)
+            _draw_property(col, properties, "normal", links)
 
 
     def _find_index(self, identifier):
@@ -1374,6 +1380,143 @@ class ArnoldNodeFlat(ArnoldNode):
         self.inputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="color")
         self.inputs.new(type="ArnoldNodeSocketColor", name="Opacity", identifier="opacity")
 
+
+
+
+def translate_cycles_node(ri, node, mat_name):
+    if node.bl_idname == 'ShaderNodeGroup':
+        translate_node_group(ri, node, mat_name)
+        return
+
+    if node.bl_idname not in cycles_node_map.keys():
+        print('No translation for node of type %s named %s' %
+              (node.bl_idname, node.name))
+        return
+
+    mapping = cycles_node_map[node.bl_idname]
+    params = {}
+    for in_name, input in node.inputs.items():
+        param_name = "%s %s" % (get_socket_type(
+            node, input), get_socket_name(node, input))
+        if input.is_linked:
+            param_name = 'reference ' + param_name
+            link = input.links[0]
+            param_val = get_output_param_str(
+                link.from_node, mat_name, link.from_socket, input)
+
+        else:
+            param_val = rib(input.default_value,
+                            type_hint=get_socket_type(node, input))
+            # skip if this is a vector set to 0 0 0
+            if input.type == 'VECTOR' and param_val == [0.0, 0.0, 0.0]:
+                continue
+
+        params[param_name] = param_val
+
+    ramp_size = 256
+    if node.bl_idname == 'ShaderNodeValToRGB':
+        colors = []
+        alphas = []
+
+        for i in range(ramp_size):
+            c = node.color_ramp.evaluate(float(i) / (ramp_size - 1.0))
+            colors.extend(c[:3])
+            alphas.append(c[3])
+        params['color[%d] ramp_color' % ramp_size] = colors
+        params['float[%d] ramp_alpha' % ramp_size] = alphas
+    elif node.bl_idname == 'ShaderNodeVectorCurve':
+        colors = []
+        node.mapping.initialize()
+        r = node.mapping.curves[0]
+        g = node.mapping.curves[1]
+        b = node.mapping.curves[2]
+
+        for i in range(ramp_size):
+            v = float(i) / (ramp_size - 1.0)
+            colors.extend([r.evaluate(v), g.evaluate(v), b.evaluate(v)])
+
+        params['color[%d] ramp' % ramp_size] = colors
+
+    elif node.bl_idname == 'ShaderNodeRGBCurve':
+        colors = []
+        node.mapping.initialize()
+        c = node.mapping.curves[0]
+        r = node.mapping.curves[1]
+        g = node.mapping.curves[2]
+        b = node.mapping.curves[3]
+
+        for i in range(ramp_size):
+            v = float(i) / (ramp_size - 1.0)
+            c_val = c.evaluate(v)
+            colors.extend([r.evaluate(v) * c_val, g.evaluate(v)
+                           * c_val, b.evaluate(v) * c_val])
+
+        params['color[%d] ramp' % ramp_size] = colors
+
+    #print('doing %s %s' % (node.bl_idname, node.name))
+    # print(params)
+    ri.Pattern(mapping, get_node_name(node, mat_name), params)
+
+
+
+
+cycles_node_map = {
+    'ShaderNodeAttribute': 'node_attribute',
+    'ShaderNodeBlackbody': 'node_checker_blackbody',
+    'ShaderNodeTexBrick': 'node_brick_texture',
+    'ShaderNodeBrightContrast': 'node_brightness',
+    'ShaderNodeTexChecker': 'node_checker_texture',
+    'ShaderNodeBump': 'node_bump',
+    'ShaderNodeCameraData': 'node_camera',
+    'ShaderNodeTexChecker': 'node_checker_texture',
+    'ShaderNodeCombineHSV': 'node_combine_hsv',
+    'ShaderNodeCombineRGB': 'node_combine_rgb',
+    'ShaderNodeCombineXYZ': 'node_combine_xyz',
+    'ShaderNodeTexEnvironment': 'node_environment_texture',
+    'ShaderNodeFresnel': 'node_fresnel',
+    'ShaderNodeGamma': 'node_gamma',
+    'ShaderNodeNewGeometry': 'node_geometry',
+    'ShaderNodeTexGradient': 'node_gradient_texture',
+    'ShaderNodeHairInfo': 'node_hair_info',
+    'ShaderNodeInvert': 'node_invert',
+    'ShaderNodeHueSaturation': 'node_hsv',
+    'ShaderNodeTexImage': 'node_image_texture',
+    'ShaderNodeHueSaturation': 'node_hsv',
+    'ShaderNodeLayerWeight': 'node_layer_weight',
+    'ShaderNodeLightFalloff': 'node_light_falloff',
+    'ShaderNodeLightPath': 'node_light_path',
+    'ShaderNodeTexMagic': 'node_magic_texture',
+    'ShaderNodeMapping': 'node_mapping',
+    'ShaderNodeMath': 'node_math',
+    'ShaderNodeMixRGB': 'node_mix',
+    'ShaderNodeTexMusgrave': 'node_musgrave_texture',
+    'ShaderNodeTexNoise': 'node_noise_texture',
+    'ShaderNodeNormal': 'node_normal',
+    'ShaderNodeNormalMap': 'node_normal_map',
+    'ShaderNodeObjectInfo': 'node_object_info',
+    'ShaderNodeParticleInfo': 'node_particle_info',
+    'ShaderNodeRGBCurve': 'node_rgb_curves',
+    'ShaderNodeValToRGB': 'node_rgb_ramp',
+    'ShaderNodeSeparateHSV': 'node_separate_hsv',
+    'ShaderNodeSeparateRGB': 'node_separate_rgb',
+    'ShaderNodeSeparateXYZ': 'node_separate_xyz',
+    'ShaderNodeTexSky': 'node_sky_texture',
+    'ShaderNodeTangent': 'node_tangent',
+    'ShaderNodeTexCoord': 'node_texture_coordinate',
+    'ShaderNodeUVMap': 'node_uv_map',
+    'ShaderNodeValue': 'node_value',
+    'ShaderNodeVectorCurves': 'node_vector_curves',
+    'ShaderNodeVectorMath': 'node_vector_math',
+    'ShaderNodeVectorTransform': 'node_vector_transform',
+    'ShaderNodeTexVoronoi': 'node_voronoi_texture',
+    'ShaderNodeTexWave': 'node_wave_texture',
+    'ShaderNodeWavelength': 'node_wavelength',
+    'ShaderNodeWireframe': 'node_wireframe',
+}
+
+
+
+
 @ArnoldRenderEngine.register_class
 class ArnoldNodeRamp(ArnoldNode):
 
@@ -1383,33 +1526,23 @@ class ArnoldNodeRamp(ArnoldNode):
     ai_name="ramp_rgb"
 
 
-    # color: FloatVectorProperty(
-    #     name="Color",
-    #     size=3,
-    #     min=0, max=1,
-    #     subtype='COLOR'
-    # )
+    color: FloatVectorProperty(
+        name="Color",
+        size=3,
+        min=0, max=1,
+        subtype='COLOR'
+    )
 
-    def init(self, context):
-        # icons = load_icons()
-        # arnold_blender = icons.get("arnold_logo")
-        icons = load_icons()
-        arnold_blender = icons.get("arnold_logo")
-        self.label(text="", icon='MATERIAL')
-        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
-        # self.inputs.new(type="NodeSocketString", name="Type", identifier="type")
-        # self.inputs.new(type="NodeSocketShader", name="Input", identifier="input")
-        # self.inputs.new(type="ArnoldNodeSocketColor", name="Color", identifier="color")
-        # self.inputs.new(type="NodeSocketFloat", name="Position", identifier="position")
-        # self.inputs.new(type="NodeSocketString", name="interpolation", identifier="interpolation")
-        self.inputs.new(type="NodeSocketVectorXYZ", name="UV Set", identifier="uvset")
-
+    # def init(self, context):
+    #     template_color_ramp
     def draw_buttons(self, context, layout):
-        icons = load_icons()
-        arnold_blender = icons.get("arnold_logo")
-        params = {}
-        layout.label(text="", icon_value=arnold_blender.icon_id)
-        layout.template_color_ramp(self, "color_ramp", expand=True)
+        self.draw_nonconnectable_props(context, layout, 'ColorRamp')
+
+    def draw_nonconnectable_props(self, context, layout, prop_names):
+        nt = bpy.data.node_groups[self.node_group]
+        if nt:
+            layout.template_color_ramp(
+                nt.nodes["ColorRamp"], 'color_ramp')
 
     @property
     def ai_properties(self):
