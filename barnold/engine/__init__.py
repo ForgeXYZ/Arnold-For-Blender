@@ -1064,6 +1064,7 @@ def update(engine, data, depsgraph):
     print("Arnold Engine Updating...")
     engine.use_highlight_tiles = True
     engine._session = {}
+    bpy.context.scene.frame_set(bpy.context.scene.frame_current)
     arnold.AiBegin()
     _export(data, depsgraph,
             engine.camera_override,
@@ -1073,6 +1074,7 @@ def update(engine, data, depsgraph):
 
 
 def render(engine, depsgraph):
+    update.counter = 0
     try:
         session = engine._session
         xoff, yoff = session["offset"]
