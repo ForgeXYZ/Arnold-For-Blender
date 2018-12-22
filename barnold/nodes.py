@@ -521,93 +521,93 @@ class ArnoldNodeColorCorrect(ArnoldNode):
 
     ai_name = "color_correct"
 
-    mask = FloatProperty(
+    mask: FloatProperty(
         name="Mask",
         subtype='FACTOR',
         min=0, max=1,
         default=1
     )
 
-    gamma = FloatProperty(
+    gamma: FloatProperty(
         name="Gamma",
         subtype='FACTOR',
         min=0, max=5,
         default=1
     )
 
-    hue_shift = FloatProperty(
+    hue_shift: FloatProperty(
         name="Hue Shift",
         subtype='FACTOR',
         min=0, max=1,
         default=0
     )
 
-    saturation = FloatProperty(
+    saturation: FloatProperty(
         name="Saturation",
         subtype='FACTOR',
         min=0, max=5,
         default=1
     )
 
-    contrast = FloatProperty(
+    contrast: FloatProperty(
         name="Contrast",
         subtype='FACTOR',
         min=0, max=1,
         default=1
     )
 
-    contrast_pivot = FloatProperty(
+    contrast_pivot: FloatProperty(
         name="Contrast Pivot",
         subtype='FACTOR',
         min=0, max=1,
         default=0.180
     )
 
-    exposure = FloatProperty(
+    exposure: FloatProperty(
         name="Exposure",
         subtype='FACTOR',
         min=0, max=1,
         default=0
     )
 
-    multiply = FloatVectorProperty(
+    multiply: FloatVectorProperty(
         name="Multiply",
          subtype='COLOR',
          min=0, max=1,
          default=(1, 1, 1)
     )
 
-    add = FloatVectorProperty(
+    add: FloatVectorProperty(
         name="Add",
          subtype='COLOR',
          min=0, max=1,
          default=(0, 0, 0)
     )
-    invert = BoolProperty(
+    invert: BoolProperty(
         name="Invert",
         default=False
     )
 
-    is_luminance = BoolProperty(
+    is_luminance: BoolProperty(
         name="Is Luminance",
         default=False
     )
 
-    multiply_alpha = FloatProperty(
+    multiply_alpha: FloatProperty(
         name="Multiply",
         subtype='FACTOR',
         min=0, max=1,
         default=1.0
     )
 
-    add_alpha = FloatProperty(
+    add_alpha: FloatProperty(
         name="Add",
         subtype='FACTOR',
         min=0, max=1,
         default=0.0
     )
 
-    invert_alpha = BoolProperty(
+    invert_alpha: BoolProperty(
         name="Invert",
         default=False
     )
@@ -1760,13 +1760,13 @@ class ArnoldNodeShadowMatte(ArnoldNode):
         name="Use Background",
         default=True
     )
-
-    indirect_diffuse: BoolProperty(
+    
+    indirect_diffuse_enable: BoolProperty(
         name="Indirect Diffuse",
         default=False
     )
 
-    indirect_specular: BoolProperty(
+    indirect_specular_enable: BoolProperty(
         name="Indirect Specular",
         default=False
     )
@@ -1840,11 +1840,11 @@ class ArnoldNodeShadowMatte(ArnoldNode):
             col.prop(self, "diffuse_color", text="Color")
             col.prop(self, "diffuse_intensity", text="Intensity")
             col.prop(self, "use_background", text="Use Background")
-            col.prop(self, "indirect_diffuse", text="Indirect Diffuse")
+            col.prop(self, "indirect_diffuse_enable", text="Indirect Diffuse")
         sublayout = ui._nodesubpanel(layout, "Specular", self.ui_specular, "ui_specular", "node")
         if sublayout:
             col = sublayout.column()
-            col.prop(self, "indirect_specular", text="Indirect Specular")
+            col.prop(self, "indirect_specular_enable", text="Indirect Specular")
             col.prop(self, "specular_color", text="Color")
             col.prop(self, "specular_intensity", text="Intensity")
             col.prop(self, "specular_roughness", text="Roughness")
@@ -1872,8 +1872,8 @@ class ArnoldNodeShadowMatte(ArnoldNode):
             "diffuse_color": ('RGB', self.diffuse_color),
             "diffuse_intensity": ('FLOAT', self.diffuse_intensity),
             "use_background": ('BOOL', self.use_background),
-            "indirect_diffuse": ('BOOL', self.indirect_diffuse),
-            "indirect_specular": ('BOOL', self.indirect_specular),
+            "indirect_diffuse_enable": ('BOOL', self.indirect_diffuse_enable),
+            "indirect_specular_enable": ('BOOL', self.indirect_specular_enable),
             "specular_color": ('RGB', self.specular_color),
             "specular_intensity": ('FLOAT', self.specular_intensity),
             "specular_roughness": ('FLOAT', self.specular_roughness),
