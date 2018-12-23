@@ -1123,7 +1123,9 @@ def render(engine, depsgraph):
         cb = arnold.AtDisplayCallBack(display_callback)
         # HACK: Update Render Progress
         display_callback.counter = 0
-        arnold.AiNodeSetPtr(session['display'], "callback", cb)
+        print(bpy.context.scene.arnold.display_driver_type)
+        if bpy.context.scene.arnold.display_driver_type == "driver_display_callback":
+            arnold.AiNodeSetPtr(session["display"], "callback", cb)
 
         res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
         if res != arnold.AI_SUCCESS:
