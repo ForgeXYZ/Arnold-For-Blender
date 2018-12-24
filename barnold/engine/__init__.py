@@ -828,9 +828,11 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     ##############################
     ## options
     options = arnold.AiUniverseGetOptions()
+    color_manager = arnold.AiNode("color_manager_ocio")
+    arnold.AiNodeSetPtr(options, "color_manager", color_manager)
     arnold.AiNodeSetInt(options, "xres", xres)
     arnold.AiNodeSetInt(options, "yres", yres)
-    #arnold.AiNodeSetFlt(options, "aspect_ratio", aspect_y / aspect_x)
+    arnold.AiNodeSetFlt(options, "aspect_ratio", aspect_y / aspect_x)
     if render.use_border:
         xoff = int(xres * render.border_min_x)
         yoff = int(yres * render.border_min_y)
@@ -908,6 +910,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
         mw = camera.matrix_world
         cdata = camera.data
         cp = cdata.arnold
+        #print(camera.location.x)
         node = arnold.AiNode("persp_camera")
         arnold.AiNodeSetStr(node, "name", name)
         arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(mw))
@@ -946,8 +949,8 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
         arnold.AiNodeSetFlt(node, "rolling_shutter_duration", cp.rolling_shutter_duration)
         # TODO: camera shift
         if session is not None:
-            arnold.AiNodeSetVec2(node, "screen_window_min", -1, 1)
-            arnold.AiNodeSetVec2(node, "screen_window_max", 1, -1)
+            arnold.AiNodeSetVec2(node, "screen_window_min", -1, -1)
+            arnold.AiNodeSetVec2(node, "screen_window_max", 1, 1)
         arnold.AiNodeSetFlt(node, "exposure", cp.exposure)
         arnold.AiNodeSetPtr(options, "camera", node)
 
@@ -1006,36 +1009,39 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
         arnold.AiNodeSetStr(filter, "filter_weights", opts.sample_filter_weights)
 
     dd = opts.display_driver_type
-    display = arnold.AiNode(dd)
-    if dd == 'driver_display_callback':
-        arnold.AiNodeSetStr(display, "name", "__driver")
-        outputs_aovs = ( str.encode(opts.aov_pass + "__driver"), )
-    elif dd == 'driver_ptr':
-        arnold.AiNodeSetStr(display, "name", "__ptr")
-        outputs_aovs = ( str.encode(opts.aov_pass + "__ptr"), )
-    elif dd == 'driver_deepexr':
-        arnold.AiNodeSetStr(display, "name", "__deepexr")
-        outputs_aovs = ( str.encode(opts.aov_pass + "__deepexr"), )
+    display = arnold.AiNode("driver_display_callback")
+    output = arnold.AiNode(dd)
+    arnold.AiNodeSetStr(display, "name", "__driver")
+    if dd == 'driver_deepexr':
+        arnold.AiNodeSetStr(output, "name", "__deepexr")
+        outputs_aovs = ( str.encode(opts.aov_pass + "__deepexr"), str.encode(opts.aov_pass + "__driver"), )
+        render.image_settings.file_format = 'OPEN_EXR_MULTILAYER'
     elif dd == 'driver_exr':
-        arnold.AiNodeSetStr(display, "name", "__exr")
-        outputs_aovs = ( str.encode(opts.aov_pass + "__exr"), )
+        arnold.AiNodeSetStr(output, "name", "__exr")
+        outputs_aovs = ( str.encode(opts.aov_pass + "__exr"), str.encode(opts.aov_pass + "__driver"), )
+        render.image_settings.file_format = 'OPEN_EXR'
     elif dd == 'driver_jpeg':
-        arnold.AiNodeSetStr(display, "name", "__jpeg")
-        outputs_aovs = ( str.encode(opts.aov_pass + "__jpeg"), )
-    elif dd == 'driver_null':
-        arnold.AiNodeSetStr(display, "name", "__null")
-        outputs_aovs = ( str.encode(opts.aov_pass + "__null"), )
+        arnold.AiNodeSetStr(output, "name", "__jpeg")
+        outputs_aovs = ( str.encode(opts.aov_pass + "__jpeg"), str.encode(opts.aov_pass + "__driver"), )
+        render.image_settings.file_format = 'JPEG'
     elif dd == 'driver_png':
-        arnold.AiNodeSetStr(display, "name", "__png")
-        outputs_aovs = ( str.encode(opts.aov_pass + "__png"), )
+        arnold.AiNodeSetStr(output, "name", "__png")
+        outputs_aovs = ( str.encode(opts.aov_pass + "__png"), str.encode(opts.aov_pass + "__driver"), )
+        render.image_settings.file_format = 'PNG'
     elif dd == 'driver_tiff':
-        arnold.AiNodeSetStr(display, "name", "__tiff")
-        outputs_aovs = ( str.encode(opts.aov_pass + "__tiff"), )
+        arnold.AiNodeSetStr(output, "name", "__tiff")
+        outputs_aovs = ( str.encode(opts.aov_pass + "__tiff"), str.encode(opts.aov_pass + "__driver"), )
+        render.image_settings.file_format = 'TIFF'
+    elif dd == 'driver_display_callback':
+        outputs_aovs = ( str.encode(opts.aov_pass + "__driver"), )
+        render.image_settings.file_format = 'PNG'
 
-    arnold.AiNodeSetStr(display, "filename", render.frame_path())
+    arnold.AiNodeSetStr(output, "filename", render.frame_path())
 
-    
-    outputs = arnold.AiArray(len(outputs_aovs), 1, arnold.AI_TYPE_STRING, *outputs_aovs)
+    if dd != 'driver_null':
+        outputs = arnold.AiArray(len(outputs_aovs), 2, arnold.AI_TYPE_STRING, *outputs_aovs)
+    else:
+        outputs = arnold.AiArray(len(outputs_aovs), 1, arnold.AI_TYPE_STRING, *outputs_aovs)
     arnold.AiNodeSetArray(options, "outputs", outputs)
 
     AA_samples = opts.AA_samples
@@ -1103,8 +1109,9 @@ def render(engine, depsgraph):
                     # 40 - 19
                 finally:
                     arnold.AiFree(buffer)
+
             else:
-                result = engine.begin_result(_x, _y, width, height)
+                result = engine.begin_result(_x, engine.resolution_y - _y - height, width, height)
                 # TODO: sometimes highlighted tiles become empty
                 #engine.update_result(result)
                 _htiles[(_x, _y)] = result
@@ -1123,9 +1130,10 @@ def render(engine, depsgraph):
         cb = arnold.AtDisplayCallBack(display_callback)
         # HACK: Update Render Progress
         display_callback.counter = 0
-        print(bpy.context.scene.arnold.display_driver_type)
-        if bpy.context.scene.arnold.display_driver_type == "driver_display_callback":
-            arnold.AiNodeSetPtr(session["display"], "callback", cb)
+        #print(bpy.context.scene.arnold.display_driver_type)
+        #if bpy.context.scene.arnold.display_driver_type == "driver_display_callback":
+            #arnold.AiNodeSetPtr(session["display"], "callback", cb)
+        arnold.AiNodeSetPtr(session["display"], "callback", cb)
 
         res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
         if res != arnold.AI_SUCCESS:
@@ -1146,7 +1154,7 @@ def render(engine, depsgraph):
     finally:
         del engine._session
         arnold.AiEnd()
-
+        #bpy.types.UserPreferencesFilePaths.render_cachedir(bpy.context.scene.render.frame_path())
 
 def view_update(engine, context):
     print(">>> view_update [%f]:" % time.clock(), engine)
@@ -1408,7 +1416,7 @@ def view_update(engine, context):
             view_matrix = rv3d.view_matrix.copy()
             _camera = {
                 'name': ('STRING', '__camera'),
-                'matrix': ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), -1)),
+                'matrix': ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), 1)),
             }
             view_perspective = rv3d.view_perspective
             if view_perspective == 'CAMERA':
@@ -1532,7 +1540,7 @@ def view_draw(engine, depsgraph, region, space_data, region_data):
         view_matrix = rv3d.view_matrix
         if view_matrix != ipr.view_matrix:
             ipr.view_matrix = view_matrix.copy()
-            _camera['matrix'] = ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), -1))
+            _camera['matrix'] = ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), 1))
 
         view_perspective = rv3d.view_perspective
         if view_perspective != ipr.view_perspective:
@@ -1619,8 +1627,8 @@ def _view_update_camera(aspect, v3d, rv3d, camera):
     shift_y = cdata.shift_y
     shx = 2 * z * (2 * offset_x + shift_x)
     shy = 2 * z * (2 * offset_y + shift_y * aspect)
-    camera['screen_window_min'] = ('VECTOR2', (-1 + shx, -1 + shy))
-    camera['screen_window_max'] = ('VECTOR2', (1 + shx, 1 + shy))
+    camera['screen_window_min'] = ('VECTOR2', (-1, -1))
+    camera['screen_window_max'] = ('VECTOR2', (1, 1))
 
     return (zoom, fit, sensor, lens, offset_x, offset_y, shift_x, shift_y)
 

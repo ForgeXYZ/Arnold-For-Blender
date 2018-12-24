@@ -129,16 +129,14 @@ class ArnoldOptions(PropertyGroup):
     display_driver_type: EnumProperty(
         name="Driver",
         items=[
-            ('driver_display_callback', "Display", "Display"),
-            ('driver_ptr', "AOV", "AOV"),
             ('driver_deepexr', "Deep EXR", "Deep EXR"),
             ('driver_exr', "OpenEXR", "OpenEXR"),
             ('driver_jpeg', "JPEG", "JPEG"),
-            ('driver_null', "None", "None"),
+            ('driver_display_callback', "None", "None"),
             ('driver_png', "PNG", "PNG"),
             ('driver_tiff', "TIFF", "TIFF")
         ],
-        default='driver_display_callback'
+        default='driver_exr'
     )
 
     aov_pass: EnumProperty(
@@ -147,7 +145,7 @@ class ArnoldOptions(PropertyGroup):
             ("RGBA RGB __filter ", "RGB", "RGB"),
             ("RGBA RGBA __filter ", "RGBA", "RGBA")
         ],
-        default= "RGBA RGB __filter "
+        default= "RGBA RGBA __filter "
     )
 
     #############################
