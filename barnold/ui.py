@@ -532,6 +532,9 @@ class ArnoldCameraPanel(CameraButtonsPanel, Panel):
         camera = context.camera
         props = camera.arnold
 
+        col = layout.column()
+        col.prop(props, "camera_type")
+
         layout.prop(props, "exposure")
 
         col = layout.column()

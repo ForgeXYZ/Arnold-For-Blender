@@ -911,7 +911,8 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
         cdata = camera.data
         cp = cdata.arnold
         #print(camera.location.x)
-        node = arnold.AiNode("persp_camera")
+        camera_type = cp.camera_type
+        node = arnold.AiNode(camera_type)
         arnold.AiNodeSetStr(node, "name", name)
         arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(mw))
         if cdata.sensor_fit == 'VERTICAL':

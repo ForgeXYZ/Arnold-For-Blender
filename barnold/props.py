@@ -568,6 +568,20 @@ class ArnoldCamera(PropertyGroup):
     enable_dof: BoolProperty(
         name="Enable DOF"
     )
+
+    camera_type: EnumProperty(
+        name="Type",
+        items=[
+            ('cyl_camera', "Cylindrical ", "Cylindrical "),
+            ('fisheye_camera', "Fisheye", "Fisheye"),
+            ('ortho_camera', "Orthographic", "Orthographic"),
+            ('persp_camera', "Perspective", "Perspective"),
+            ('spherical_camera', "Spherical", "Spherical"),
+            ('vr_camera', "VR", "VR"),
+            ('uv_camera', "UV", "UV"),
+        ],
+        default='persp_camera'
+    )
     # far_clip with plane if True or with sphere
     #plane_distance: BoolProperty(
     #    name="Plane Distance",
