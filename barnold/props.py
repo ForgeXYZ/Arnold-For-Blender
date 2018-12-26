@@ -133,7 +133,7 @@ class ArnoldOptions(PropertyGroup):
             ("RGBA RGBA __filter ", "RGBA", "RGBA"),
             ("RGBA FLOAT __filter ", "FLOAT", "FLOAT")
         ],
-        default= "RGBA RGBA __filter "
+        default= "RGBA RGB __filter "
     )
 
     #############################

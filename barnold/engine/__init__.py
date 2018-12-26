@@ -1057,7 +1057,7 @@ def render(engine, depsgraph):
 
         _htiles = {}  # highlighted tiles
         session["peak"] = 0  # memory peak usage
-
+        
         def display_callback(x, y, width, height, buffer, data):
             _x = x - xoff
             _y = y - yoff
