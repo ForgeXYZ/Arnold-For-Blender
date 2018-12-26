@@ -765,39 +765,38 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
 
     ##############################
     ## TODO: Fix duplicators for 2.80
-    # for duplicator in duplicators:
-    #     i = 0
-    #     pc = time.perf_counter()
-    #     arnold.AiMsgDebug(b"[DUPLI:%S:%S] '%S'", duplicator.type,
-    #                      duplicator.dupli_type, duplicator.name)
-    #     arnold.AiMsgTab(4)
-    #     duplicator.dupli_list_create(scene, 'RENDER')
-    #     try:
-    #         for d in duplicator.dupli_list:
-    #             ob = d.object
-    #             if not ob.hide_render and ob.dupli_type not in {'VERTS', 'FACES'} and ob.type in _CT:
-    #                 onode = nodes.get(ob)
-    #                 if onode is None:
-    #                     arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
-    #                     with _Mesh(ob) as mesh:
-    #                         if mesh is not None:
-    #                             node = _AiPolymesh(mesh, shaders)
-    #                             arnold.AiNodeSetStr(node, "name", _Name(ob.name))
-    #                             arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix))
-    #                             nodes[ob] = node
-    #                 else:
-    #                     node = arnold.AiNode("ginstance")
-    #                     arnold.AiNodeSetStr(node, "name", _Name(ob.name))
-    #                     arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix))
-    #                     arnold.AiNodeSetBool(node, "inherit_xform", False)
-    #                     arnold.AiNodeSetPtr(node, "node", onode)
-    #                     i += 1
-    #                 _export_object_properties(ob, node)
-    #         arnold.AiMsgDebug(b"instances %d (%f)", ctypes.c_int(i),
-    #                          ctypes.c_double(time.perf_counter() - pc))
-    #     finally:
-    #         arnold.AiMsgTab(-4)
-    #         duplicator.dupli_list_clear()
+    for duplicator in duplicators:
+        i = 0
+        pc = time.perf_counter()
+        arnold.AiMsgDebug(b"[DUPLI:%S:%S] '%S'", duplicator.type,
+                         duplicator.instance_type, duplicator.name)
+        arnold.AiMsgTab(4)
+        try:
+            for d in depsgraph.object_instances:
+                if d.is_instance:
+                    ob = d.instance_object.original
+                    if not ob.hide_render and ob.instance_type not in {'VERTS', 'FACES'} and ob.type in _CT:
+                        onode = nodes.get(ob)
+                        if onode is None:
+                            arnold.AiMsgDebug(b"[%S] '%S'", ob.type, ob.name)
+                            with _Mesh(ob) as mesh:
+                                if mesh is not None:
+                                    node = _AiPolymesh(mesh, shaders)
+                                    arnold.AiNodeSetStr(node, "name", _Name(ob.name))
+                                    arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix_world.copy()))
+                                    nodes[ob] = node
+                        else:
+                            node = arnold.AiNode("ginstance")
+                            arnold.AiNodeSetStr(node, "name", _Name(ob.name))
+                            arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(d.matrix_world.copy()))
+                            arnold.AiNodeSetBool(node, "inherit_xform", False)
+                            arnold.AiNodeSetPtr(node, "node", onode)
+                            i += 1
+                        _export_object_properties(ob, node)
+            arnold.AiMsgDebug(b"instances %d (%f)", ctypes.c_int(i),
+                             ctypes.c_double(time.perf_counter() - pc))
+        finally:
+            arnold.AiMsgTab(-4)
 
     ##############################
     ## mesh lights
