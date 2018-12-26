@@ -80,6 +80,7 @@ const bool dither = true;
 AtNode* color_manager = (AtNode*)AiNodeGetPtr(AiUniverseGetOptions(), "color_manager");
 AtString display_space, linear_space;
 AiColorManagerGetDefaults(color_manager, display_space, linear_space);
+
 if (!display_space)
 display_space = linear_space;
 
@@ -102,12 +103,26 @@ for (int y = 0; y < bucket_size_y; y++)
 
 		switch (pixel_type)
 		{
-		case AI_TYPE_RGBA:
-		{
-			int idx = (bucket_size_y - y - 1) * bucket_size_x + x;
-			source = ((AtRGBA*)bucket_data)[idx];
-			break;
-		}
+			case AI_TYPE_FLOAT:
+			{
+				int idx = (bucket_size_y - y - 1) * bucket_size_x + x;
+				float f = ((float*)bucket_data)[idx];
+				source = AtRGBA(f, f, f, 1.0f);
+				break;
+			}
+			case AI_TYPE_RGB:
+			{
+				int idx = (bucket_size_y - y - 1) * bucket_size_x + x;
+				AtRGB rgb = ((AtRGB*)bucket_data)[idx];
+				source = AtRGBA(rgb, 1.0f);
+				break;
+			}
+			case AI_TYPE_RGBA:
+			{
+				int idx = (bucket_size_y - y - 1) * bucket_size_x + x;
+				source = ((AtRGBA*)bucket_data)[idx];
+				break;
+			}
 		}
 
 		AiColorManagerTransform(color_manager, display_space, false, false, NULL, (uint16_t*)&source.rgb());
