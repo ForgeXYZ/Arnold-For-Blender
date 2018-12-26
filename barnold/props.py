@@ -126,24 +126,12 @@ class ArnoldOptions(PropertyGroup):
         name="Clamp Sample Values"
     )
 
-    display_driver_type: EnumProperty(
-        name="Driver",
-        items=[
-            ('driver_deepexr', "Deep EXR", "Deep EXR"),
-            ('driver_exr', "OpenEXR", "OpenEXR"),
-            ('driver_jpeg', "JPEG", "JPEG"),
-            ('driver_display_callback', "None", "None"),
-            ('driver_png', "PNG", "PNG"),
-            ('driver_tiff', "TIFF", "TIFF")
-        ],
-        default='driver_exr'
-    )
-
     aov_pass: EnumProperty(
         name="AOV",
         items=[
             ("RGBA RGB __filter ", "RGB", "RGB"),
-            ("RGBA RGBA __filter ", "RGBA", "RGBA")
+            ("RGBA RGBA __filter ", "RGBA", "RGBA"),
+            ("RGBA FLOAT __filter ", "FLOAT", "FLOAT")
         ],
         default= "RGBA RGBA __filter "
     )

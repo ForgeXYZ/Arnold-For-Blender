@@ -288,14 +288,6 @@ class ArnoldRenderMainPanel(ArnoldButtonsPanel, Panel):
             row.prop(opts, "sample_filter_width")
             row.prop(opts, 'sample_filter_weights')
 
-        #layout.separator()
-        col.separator()
-        col.label(text="Display", icon='FILE_IMAGE')
-        col = layout.column()
-        row = col.row()
-        row.alignment = 'RIGHT'
-        row.label(text="Driver")
-        row.prop(opts, "display_driver_type", text="")
 
         col.separator()
         col.label(text="AOV Browser", icon='IMAGE_ZDEPTH')

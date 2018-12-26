@@ -8,12 +8,12 @@ namespace ASTR {
 
 AI_DRIVER_NODE_EXPORT_METHODS(DriverDisplayCallbackMtd)
 
-typedef void(*DisplayCallback)(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint16_t* buffer, void* data);
+typedef void(*DisplayCallback)(uint32_t x, uint32_t y, uint32_t width, uint32_t height, float* buffer, void* data);
 
 node_parameters
 {
 	AiParameterPtr("callback"     , NULL);
-AiParameterPtr("callback_data", NULL);  // This value will be passed directly to the callback function
+	AiParameterPtr("callback_data", NULL);  // This value will be passed directly to the callback function
 }
 
 node_initialize
@@ -89,7 +89,7 @@ display_space = linear_space;
 // This memory is not released here. The client code is
 // responsible for its release, which must be done using
 // the AiFree() function in the Arnold API
-uint16_t* buffer = (uint16_t*)AiMalloc(bucket_size_x * bucket_size_y * sizeof(uint16_t) * 4);
+float* buffer = (float*)AiMalloc(bucket_size_x * bucket_size_y * sizeof(float) * 4);
 int minx = bucket_xo;
 int miny = bucket_yo;
 int maxx = bucket_xo + bucket_size_x - 1;
@@ -125,16 +125,16 @@ for (int y = 0; y < bucket_size_y; y++)
 			}
 		}
 
-		AiColorManagerTransform(color_manager, display_space, false, false, NULL, (uint16_t*)&source.rgb());
+		AiColorManagerTransform(color_manager, display_space, false, false, NULL, (float*)&source.rgb());
 
 		int i = bucket_xo + x;
 		int j = bucket_yo + y;
 
-		uint16_t* target = &buffer[(y * bucket_size_x + x) * 4];
-		target[0] = AiQuantize16bit(i, j, 0, source.r, 1.0f);
-		target[1] = AiQuantize16bit(i, j, 1, source.g, 1.0f);
-		target[2] = AiQuantize16bit(i, j, 2, source.b, 1.0f);
-		target[3] = AiQuantize16bit(i, j, 3, source.a, 1.0f);
+		float* target = &buffer[(y * bucket_size_x + x) * 4];
+		target[0] = source.r;
+		target[1] = source.g;
+		target[2] = source.b;
+		target[3] = source.a;
 	}
 }
 

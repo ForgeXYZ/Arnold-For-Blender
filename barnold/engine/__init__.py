@@ -1008,40 +1008,11 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
         arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
         arnold.AiNodeSetStr(filter, "filter_weights", opts.sample_filter_weights)
 
-    dd = opts.display_driver_type
     display = arnold.AiNode("driver_display_callback")
-    output = arnold.AiNode(dd)
     arnold.AiNodeSetStr(display, "name", "__driver")
-    if dd == 'driver_deepexr':
-        arnold.AiNodeSetStr(output, "name", "__deepexr")
-        outputs_aovs = ( str.encode(opts.aov_pass + "__deepexr"), str.encode(opts.aov_pass + "__driver"), )
-        render.image_settings.file_format = 'OPEN_EXR_MULTILAYER'
-    elif dd == 'driver_exr':
-        arnold.AiNodeSetStr(output, "name", "__exr")
-        outputs_aovs = ( str.encode(opts.aov_pass + "__exr"), str.encode(opts.aov_pass + "__driver"), )
-        render.image_settings.file_format = 'OPEN_EXR'
-    elif dd == 'driver_jpeg':
-        arnold.AiNodeSetStr(output, "name", "__jpeg")
-        outputs_aovs = ( str.encode(opts.aov_pass + "__jpeg"), str.encode(opts.aov_pass + "__driver"), )
-        render.image_settings.file_format = 'JPEG'
-    elif dd == 'driver_png':
-        arnold.AiNodeSetStr(output, "name", "__png")
-        outputs_aovs = ( str.encode(opts.aov_pass + "__png"), str.encode(opts.aov_pass + "__driver"), )
-        render.image_settings.file_format = 'PNG'
-    elif dd == 'driver_tiff':
-        arnold.AiNodeSetStr(output, "name", "__tiff")
-        outputs_aovs = ( str.encode(opts.aov_pass + "__tiff"), str.encode(opts.aov_pass + "__driver"), )
-        render.image_settings.file_format = 'TIFF'
-    elif dd == 'driver_display_callback':
-        outputs_aovs = ( str.encode(opts.aov_pass + "__driver"), )
-        render.image_settings.file_format = 'PNG'
+    outputs_aovs = ( str.encode(opts.aov_pass + "__driver"), )
 
-    arnold.AiNodeSetStr(output, "filename", render.frame_path())
-
-    if dd != 'driver_null':
-        outputs = arnold.AiArray(len(outputs_aovs), 2, arnold.AI_TYPE_STRING, *outputs_aovs)
-    else:
-        outputs = arnold.AiArray(len(outputs_aovs), 1, arnold.AI_TYPE_STRING, *outputs_aovs)
+    outputs = arnold.AiArray(len(outputs_aovs), 1, arnold.AI_TYPE_STRING, *outputs_aovs)
     arnold.AiNodeSetArray(options, "outputs", outputs)
 
     AA_samples = opts.AA_samples
@@ -1095,25 +1066,19 @@ def render(engine, depsgraph):
                     result = _htiles.pop((_x, _y), None)
                     if result is None:
                         result = engine.begin_result(_x, _y, width, height)
-                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_uint16))
+                    _buffer = ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float))
                     rect = numpy.ctypeslib.as_array(_buffer, shape=(width * height, 4))
-                    # TODO: gamma correction. need??? kick is darker
-                    # set 1/2.2 the driver_display node by default
-                    #rect **= 2.2
                     result.layers[0].passes[0].rect = rect
                     engine.end_result(result)
 
                     # HACK: Update Render Progress
                     display_callback.counter += 0.0020
                     engine.update_progress(display_callback.counter)
-                    # 40 - 19
+                
                 finally:
                     arnold.AiFree(buffer)
-
             else:
                 result = engine.begin_result(_x, engine.resolution_y - _y - height, width, height)
-                # TODO: sometimes highlighted tiles become empty
-                #engine.update_result(result)
                 _htiles[(_x, _y)] = result
 
             if engine.test_break():
@@ -1128,12 +1093,10 @@ def render(engine, depsgraph):
 
         # display callback must be a variable
         cb = arnold.AtDisplayCallBack(display_callback)
+        arnold.AiNodeSetPtr(session["display"], "callback", cb)
+
         # HACK: Update Render Progress
         display_callback.counter = 0
-        #print(bpy.context.scene.arnold.display_driver_type)
-        #if bpy.context.scene.arnold.display_driver_type == "driver_display_callback":
-            #arnold.AiNodeSetPtr(session["display"], "callback", cb)
-        arnold.AiNodeSetPtr(session["display"], "callback", cb)
 
         res = arnold.AiRender(arnold.AI_RENDER_MODE_CAMERA)
         if res != arnold.AI_SUCCESS:
@@ -1148,13 +1111,13 @@ def render(engine, depsgraph):
                     engine.update_stats("", "Mem: %.2fMb, SL: %d" % (session.get("mem", "NA"), sl))
         if res != arnold.AI_SUCCESS:
             engine.error_set("Render status: %d" % res)
+    
     except:
         # cancel render on error
         engine.end_result(None, cancel=True)
     finally:
         del engine._session
         arnold.AiEnd()
-        #bpy.types.UserPreferencesFilePaths.render_cachedir(bpy.context.scene.render.frame_path())
 
 def view_update(engine, context):
     print(">>> view_update [%f]:" % time.clock(), engine)
