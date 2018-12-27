@@ -602,8 +602,11 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
             duplicators.append(ob)
             if ob.instance_type in {'VERTS', 'FACES'}:
                 duplicator_parent = ob.parent
-            arnold.AiMsgDebug(b"    skip (duplicator)")
-            continue
+            if ob.show_instancer_for_render:
+                arnold.AiMsgDebug(b"    particle system emitter")
+            else: 
+                arnold.AiMsgDebug(b"    skip (duplicator)")
+                continue
 
         if ob.type in _CT:
             name = None
@@ -616,8 +619,8 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                 use_render_emitter = False
                 for mod, ps in particle_systems:
                     pss = ps.settings
-                    # if pss.use_render_emitter:
-                    #     use_render_emitter = True
+                    if ob.show_instancer_for_render:
+                        use_render_emitter = True
                     node = None
                     if pss.type == 'HAIR' and pss.render_type == 'PATH':
                         node = _AiCurvesPS(bpy.context.scene, ob, mod, ps, pss, shaders)
@@ -763,8 +766,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
         else:
             arnold.AiMsgDebug(b"    skip (unsupported)")
 
-    ##############################
-    ## TODO: Fix duplicators for 2.80
     for duplicator in duplicators:
         i = 0
         pc = time.perf_counter()
