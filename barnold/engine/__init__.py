@@ -550,12 +550,24 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
         pc = time.perf_counter()
         mesh = ob.to_mesh(depsgraph, apply_modifiers=True, calc_undeformed=True)
         if mesh is not None:
-            try:
-                mesh.calc_normals_split()
-                arnold.AiMsgDebug(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
-                yield mesh
-            finally:
-                data.meshes.remove(mesh)
+            if mesh.users == 0:
+                try:
+                    mesh.calc_normals_split()
+                    arnold.AiMsgDebug(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
+                    mesh.user_clear()
+                    can_continue = True
+                    yield mesh
+                except:
+                    can_continue = False
+                if can_continue:
+                    try:
+                        mesh = bpy.data.meshes.get(ob.name)
+                        bpy.data.meshes.remove(mesh)
+                        result = True
+                    except:
+                        result = False
+                else:
+                    yield None
         else:
             yield None
 

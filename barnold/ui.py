@@ -31,7 +31,7 @@ from bpy.props import (PointerProperty, StringProperty, BoolProperty,
 
 
 def get_addon_prefs():
-    addon = bpy.context.user_preferences.addons[__name__.split('.')[0]]
+    addon = bpy.context.preferences.addons[__name__.split('.')[0]]
     return addon.preferences
 # ------- Subclassed Panel Types -------
 class _ArnoldPanelHeader():
