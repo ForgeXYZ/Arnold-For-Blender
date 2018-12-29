@@ -1392,7 +1392,7 @@ def view_update(engine, context):
             view_matrix = rv3d.view_matrix.copy()
             _camera = {
                 'name': ('STRING', '__camera'),
-                'matrix': ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), 1)),
+                'matrix': ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), -1)),
             }
             view_perspective = rv3d.view_perspective
             if view_perspective == 'CAMERA':
@@ -1516,7 +1516,7 @@ def view_draw(engine, depsgraph, region, space_data, region_data):
         view_matrix = rv3d.view_matrix
         if view_matrix != ipr.view_matrix:
             ipr.view_matrix = view_matrix.copy()
-            _camera['matrix'] = ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), 1))
+            _camera['matrix'] = ('MATRIX', numpy.reshape(view_matrix.inverted().transposed(), -1))
 
         view_perspective = rv3d.view_perspective
         if view_perspective != ipr.view_perspective:
@@ -1563,12 +1563,215 @@ def view_draw(engine, depsgraph, region, space_data, region_data):
         # bgl.glCopyTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_RGBA, 1920, 1080, width, height, 0)
 
         # bgl.glDrawBuffer(4)
-        #bgl.glRasterPos2f(0, vh - 1.0)
-        #bgl.glPixelZoom(vw / width, -vh / height)
+        # bgl.glRasterPos2f(0, vh - 1.0)
+        # bgl.glPixelZoom(vw / width, -vh / height)
+        import gpu
+        import random
+        from gpu_extras.batch import batch_for_shader
+        from gpu_extras.presets import draw_circle_2d
+        # gpu.matrix.load_matrix(rect)
         #bgl.glDrawPixels(width, height, bgl.GL_RGBA, bgl.GL_FLOAT,
                          #bgl.Buffer(bgl.GL_FLOAT, len(rect), rect))
-        #bgl.glPixelZoom(1.0, 1.0)
-        #bgl.glRasterPos2f(0, 0)
+        # bgl.glPixelZoom(1.0, 1.0)
+        # bgl.glRasterPos2f(0, 0)
+
+        IMAGE_NAME = "Generated Image"
+        # WIDTH = 512
+        # HEIGHT = 512
+        #RING_AMOUNT = 10
+
+
+        offscreen = gpu.types.GPUOffScreen(width, height)
+
+        with offscreen.bind():
+            bgl.glClear(bgl.GL_COLOR_BUFFER_BIT)
+            with gpu.matrix.push_pop():
+                # reset matrices -> use normalized device coordinates [-1, 1]
+                gpu.matrix.load_matrix(Matrix.Identity(4))
+                gpu.matrix.load_projection_matrix(Matrix.Identity(4))
+
+                vertex_shader = '''
+                        uniform mat4 ModelViewProjectionMatrix;
+            
+                        /* Keep in sync with intern/opencolorio/gpu_shader_display_transform_vertex.glsl */
+                        
+                        in vec2 texCoord;
+                        in vec2 pos;
+                        out vec2 texCoord_interp;
+                        void main()
+                        {
+                        gl_Position = ModelViewProjectionMatrix * vec4(pos.xy, 0.0f, 1.0f);
+                        gl_Position.z = 1.0;
+                        texCoord_interp = texCoord;
+                        }
+                '''
+                fragment_shader = '''
+                    in vec2 texCoord_interp;
+                    out vec4 fragColor;
+                    uniform sampler2D image;
+                    uniform bool ColorMode;
+                    void main()
+                    {
+                        if (ColorMode) {
+                        fragColor = texture(image, texCoord_interp);
+                        } else {
+                        fragColor = texture(image, texCoord_interp).rrrr;
+                        }
+                    }
+                '''
+
+            buffer = bgl.Buffer(bgl.GL_FLOAT, len(rect), rect)
+            bgl.glReadBuffer(bgl.GL_BACK)
+            bgl.glReadPixels(0, 0, width, height, bgl.GL_RGB, bgl.GL_FLOAT, buffer)
+
+        offscreen.free()
+
+        from bpy.types import SpaceView3D, SpaceImageEditor
+
+        callback_dict = {}
+
+        def tag_redraw_all_3dviews():
+
+            for window in bpy.context.window_manager.windows:
+                for area in window.screen.areas:
+                    if area.type == 'VIEW_3D':
+                        for region in area.regions:
+                            if region.type == 'WINDOW':
+                                region.tag_redraw()
+
+        def callback_enable(*args, overlay='POST_VIEW'):
+            n_id = args[0]
+            if n_id in callback_dict:
+                return
+
+            handle_pixel = SpaceView3D.draw_handler_add(draw_callback_px, args, 'WINDOW', overlay)
+            callback_dict[n_id] = handle_pixel
+            tag_redraw_all_3dviews()
+        
+        def restore_opengl_defaults():
+            bgl.glLineWidth(1)
+            bgl.glDisable(bgl.GL_BLEND)
+
+        def draw_callback_px(n_id, data):
+            context = bpy.context.space_data
+            drawing_func = data.get('custom_function')   # must accept 'context' first
+            args = data.get('args', (None,))        # args does not need to be a tuple.
+            drawing_func(args)
+            restore_opengl_defaults()
+
+            ###
+            #    in your drawing function you can use the first parameter to get a reference to region/3d
+            #
+            #    region = context.region
+            #    region3d = context.space_data.region_3d
+            ###
+        
+        def init_texture(width, height, texname, texture, clr):
+            # function to init the texture
+            bgl.glPixelStorei(bgl.GL_UNPACK_ALIGNMENT, 1)
+
+            bgl.glEnable(bgl.GL_TEXTURE_2D)
+            bgl.glBindTexture(bgl.GL_TEXTURE_2D, texname)
+            bgl.glActiveTexture(bgl.GL_TEXTURE0)
+
+            bgl.glTexParameterf(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_WRAP_S, bgl.GL_CLAMP_TO_EDGE)
+            bgl.glTexParameterf(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_WRAP_T, bgl.GL_CLAMP_TO_EDGE)
+            bgl.glTexParameterf(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, bgl.GL_LINEAR)
+            bgl.glTexParameterf(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, bgl.GL_LINEAR)
+
+            bgl.glTexImage2D(
+                bgl.GL_TEXTURE_2D,
+                0, clr, width, height,
+                0, clr, bgl.GL_FLOAT, texture
+            )
+
+        def simple_screen(args):
+            """ shader draw function for the texture """
+
+            # border_color = (0.390805, 0.754022, 1.000000, 1.00)
+            texture, texname, width, height, batch, shader, cMode = args
+
+            def draw_texture(x=0, y=0, w=1920, h=1080, texname=texname, c=cMode):
+                # function to draw a texture
+                bgl.glDisable(bgl.GL_DEPTH_TEST)
+
+                act_tex = bgl.Buffer(bgl.GL_INT, 1)
+                bgl.glBindTexture(bgl.GL_TEXTURE_2D, texname)
+
+                shader.bind()
+                shader.uniform_int("image", act_tex)
+                shader.uniform_bool("ColorMode", c)
+                batch.draw(shader)
+
+                # restoring settings
+                bgl.glBindTexture(bgl.GL_TEXTURE_2D, act_tex[0])
+                bgl.glDisable(bgl.GL_TEXTURE_2D)
+
+            draw_texture(x=x, y=y, w=width, h=height, texname=texname, c=cMode)
+
+
+        def generate_batch_shader(args):
+            x, y, w, h = args
+            positions = ((x, y), (x + w, y), (x + w, y - h), (x, y - h))
+            indices = ((0, 1), (1, 1), (1, 0), (0, 0))
+            shader = gpu.types.GPUShader(vertex_shader, fragment_shader)
+            batch = batch_for_shader(shader, 'TRI_FAN', {"pos": positions, "texCoord": indices})
+            return batch, shader
+
+        def get_preferences():
+            # supplied with default, forces at least one value :)
+            # props = get_params({
+            #     'render_scale': 1.0, 
+            #     'render_location_xy_multiplier': 1.0})
+            return 1.0, 1.0
+
+        def adjust_position_and_dimensions(x, y, width, height):
+            """
+            this could also return scale for a blf notation in the vacinity of the texture
+            """
+            scale, multiplier = get_preferences()
+            x, y = [x * multiplier, y * multiplier]
+            width, height = [width * scale, height * scale]
+            return x, y, width, height
+
+
+        #0, 0, width, height = args
+        positions = ((0, 0), (0 + width, 0), (0 + width, 0 - height), (0, 0 - height))
+        indices = ((0, 1), (1, 1), (1, 0), (0, 0))
+        shader = gpu.types.GPUShader(vertex_shader, fragment_shader)
+        batch = batch_for_shader(shader, 'TRI_FAN', {"pos": positions, "texCoord": indices})
+
+      #  x, y = self.xy_offset
+        # width, height, colm = self.width_custom_tex, self.height_custom_tex, self.color_mode
+        total_size = width * height * 3
+        texture = bgl.Buffer(bgl.GL_FLOAT, len(rect), rect)
+        x = 0
+        y = 0
+        name = bgl.Buffer(bgl.GL_INT, 1)
+        bgl.glGenTextures(1, name)
+        #self.texture[n_id] = name[0]
+        init_texture(width, height, name[0], texture, 6407)
+
+        adjust_position_and_dimensions(x, y, width, height)
+        batch, shader = generate_batch_shader((x, y, width, height))
+
+        tex = bgl.Buffer(bgl.GL_INT, 1)
+        bgl.glGenTextures(1, tex)
+        texture_id = tex[0]
+
+        is_multi_channel = 1 == 1
+        cMode = (is_multi_channel,)
+
+        draw_data = {
+            'tree_name': "ARNOLD_WORLD_NODETREE",
+            'mode': 'custom_function',
+            'custom_function': simple_screen,
+            'loc': (0, 0),
+            'args': (texture, texture_id, width, height, batch, shader, cMode)
+        }
+
+        callback_enable(0, draw_data)
+
     except:
         print("~" * 30)
         traceback.print_exc()
