@@ -131,7 +131,7 @@ def _worker(data, new_data, redraw_event, mmap_size, mmap_name, state):
         arnold.AiNodeSetStr(driver, "name", "__driver")
         #arnold.AiNodeSetBool(driver, "rgba_packing", False)
         outputs_aovs = (
-            b"RGBA RGBA __filter __driver",
+            b"RGBA RGB __filter __driver",
         )
         outputs = arnold.AiArray(len(outputs_aovs), 1, arnold.AI_TYPE_STRING, *outputs_aovs)
         arnold.AiNodeSetArray(options, "outputs", outputs)
@@ -238,7 +238,7 @@ def _main():
 
     global _engine_, _data_, _width_, _height_, _mmap_size_, _mmap_
 
-    _mmap_name = "blender/barnold/ipr/pid-%d" % id(_engine_)
+    _mmap_name = "blender/arnold/ipr/pid-%d" % id(_engine_)
 
     if platform.system() == "Darwin" or "Linux":
         _mmap_ = mmap.mmap(-1, 64 * 1024 * 1024)  # 64Mb
