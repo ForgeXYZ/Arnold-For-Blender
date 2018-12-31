@@ -16,10 +16,9 @@ Blender One Roadmap                   [####                     ] 20% Complete
 ```
 ### Currently In Development: 
 - OpenGL / Optix / RTX IPR (rendered viewport)
-- Fixing a segfault on high poly scenes
+- Fixing Particle Systems
 - Cleaning up UI
 - Adding procedurals
-- Adding Stand-Ins
 - Streamling with Eevee, Cycles, and Workbench Render Engines
 - Adding Color Ramps, Math Nodes, and more
 - VDB & AOV Support
