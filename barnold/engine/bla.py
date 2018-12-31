@@ -286,6 +286,7 @@ def _BezierInterpolate(pts, n, cache, npts, steps, scale):
             float
             interpolation scale factor
     """
+    #TODO: First Render -> Cache is Empty, causes Hair only to appear in subsequent renders.
     try:
         for i in range(npts):
             c = cache[i]
