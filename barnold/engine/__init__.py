@@ -548,28 +548,18 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     @contextmanager
     def _Mesh(ob):
         pc = time.perf_counter()
-        mesh = ob.to_mesh(depsgraph, apply_modifiers=True, calc_undeformed=True)
-        if mesh is not None:
-            if mesh.users == 0:
-                try:
-                    mesh.calc_normals_split()
-                    arnold.AiMsgDebug(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
-                    mesh.user_clear()
-                    can_continue = True
-                    yield mesh
-                except:
-                    can_continue = False
-                if can_continue:
-                    try:
-                        mesh = bpy.data.meshes.get(ob.name)
-                        bpy.data.meshes.remove(mesh)
-                        result = True
-                    except:
-                        result = False
-                else:
-                    yield None
-        else:
-            yield None
+        mesh = None
+        try:
+            mesh = ob.to_mesh(depsgraph=depsgraph, apply_modifiers=True, calc_undeformed=False)
+
+            if mesh:
+                mesh.calc_normals_split()
+                arnold.AiMsgDebug(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
+
+            yield mesh
+        finally:
+            if mesh:
+                bpy.data.meshes.remove(mesh, do_unlink=False)
 
     _Name = _CleanNames("O", itertools.count())
 
@@ -1151,17 +1141,18 @@ def view_update(engine, context):
             @contextmanager
             def _to_mesh(ob):
                 pc = time.perf_counter()
-                mesh = ob.to_mesh(depsgraph, apply_modifiers=True, calc_undeformed=False)
-                if mesh is not None:
-                    try:
+                mesh = None
+                try:
+                    mesh = ob.to_mesh(depsgraph=depsgraph, apply_modifiers=True, calc_undeformed=False)
+
+                    if mesh:
                         mesh.calc_normals_split()
-                        print("    to_mesh (%f)" % (time.perf_counter() - pc))
-                        yield mesh
-                    finally:
-                        # it force call view_update
-                        blend_data.meshes.remove(mesh)
-                else:
-                    yield None
+                        arnold.AiMsgDebug(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
+
+                    yield mesh
+                finally:
+                    if mesh:
+                        bpy.data.meshes.remove(mesh, do_unlink=False)
 
             def _AiNode(node, prefix):
                 anode = _nodes.get(node)
@@ -1655,6 +1646,7 @@ def view_draw(engine, depsgraph, region, space_data, region_data):
             bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_WRAP_T, bgl.GL_CLAMP_TO_EDGE)
             bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, bgl.GL_NEAREST)
             bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, bgl.GL_LINEAR)
+            
 
             bgl.glTexImage2D(
                 bgl.GL_TEXTURE_2D,
@@ -1700,7 +1692,7 @@ def view_draw(engine, depsgraph, region, space_data, region_data):
             this could also return scale for a blf notation in the vacinity of the texture
             """
             scale = 0.5
-            multiplier = 1000.0
+            multiplier = 1.0
             x, y = [x * multiplier, y * multiplier]
             width, height = [width * scale, height * scale]
             return x, y, width, height
