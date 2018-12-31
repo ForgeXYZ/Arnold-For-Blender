@@ -286,25 +286,27 @@ def _BezierInterpolate(pts, n, cache, npts, steps, scale):
             float
             interpolation scale factor
     """
-    for i in range(npts):
-        c = cache[i]
+    try:
+        for i in range(npts):
+            c = cache[i]
 
-        a = _NDARRAY([steps, 3], dtype='f')
-        for j in range(steps):
-            a[j] = c[j].co
+            a = _NDARRAY([steps, 3], dtype='f')
+            for j in range(steps):
+                a[j] = c[j].co
 
-        s = a[1:-1]
-        t = a[2:] - a[:-2]
-        t *= scale / _NORM(t, axis=1)[_S]  # tangents
-        m = _NORM(a[1:] - a[:-1], axis=1)[_S]  # magnitudes
+            s = a[1:-1]
+            t = a[2:] - a[:-2]
+            t *= scale / _NORM(t, axis=1)[_S]  # tangents
+            m = _NORM(a[1:] - a[:-1], axis=1)[_S]  # magnitudes
 
-        pts[n, ::3] = a
-        pts[n, 1] = a[0] + (a[1] - a[0]) * scale
-        pts[n, -2] = a[-1] - (a[-1] - a[-2]) * scale
-        pts[n, 2:-3:3] = s - t * m[:-1]
-        pts[n, 4::3] = s + t * m[1:]
-        n += 1
-    return n
+            pts[n, ::3] = a
+            pts[n, 1] = a[0] + (a[1] - a[0]) * scale
+            pts[n, -2] = a[-1] - (a[-1] - a[-2]) * scale
+            pts[n, 2:-3:3] = s - t * m[:-1]
+            pts[n, 4::3] = s + t * m[1:]
+            n += 1
+    finally:
+        return n
 
 
 def psys_get_curves(ps, steps, use_parent_particles, props):
@@ -406,35 +408,35 @@ def psys_get_points(ps, pss, frame_current):
             _cache = _PointCache.from_address(ps.point_cache.as_pointer())
             _mem = ctypes.cast(_cache.mem_cache.first, ctypes.POINTER(_PTCacheMem))
 
-            #def parts():
-            #    i = 0
-            #    particles = ps.particles
-            #    if nch == 0 or pss.use_parent_particles:
-            #        for p in particles:
-            #            # <...>\source\blender\editors\space_view3d\drawobject.c:5354
-            #            bt = p.birth_time
-            #            yield (i, bt, p.die_time, (frame_current - bt) / p.lifetime)
-            #            i += 1
-            #    PART_CHILD_FACES = (pss.child_type == 'INTERPOLATED')
-            #    for c, p in enumerate(ps.child_particles):
-            #        cpa = _ChildParticle.from_address(p.as_pointer())
-            #        # <...>\source\blender\blenkernel\intern\particle.c:3561
-            #        if PART_CHILD_FACES:
-            #            bt = 0.0
-            #            cpaw = cpa.w
-            #            for w, n in enumerate(cpa.pa):
-            #                if n < 0:
-            #                    break
-            #                bt += cpaw[w] * particles[n].birth_time
-            #            lt = pss.lifetime
-            #            if randlength > 0:
-            #                lt *= 1.0 - randlength * psys_frand(pss, c + 25)
-            #        else:
-            #            p = particles[cpa.parent]
-            #            bt = p.birth_time
-            #            lt = p.lifetime
-            #        yield (i, bt, bt + lt, (frame_current - bt) / lt)
-            #        i += 1
+            def parts():
+               i = 0
+               particles = ps.particles
+               if nch == 0 or pss.use_parent_particles:
+                   for p in particles:
+                       # <...>\source\blender\editors\space_view3d\drawobject.c:5354
+                       bt = p.birth_time
+                       yield (i, bt, p.die_time, (frame_current - bt) / p.lifetime)
+                       i += 1
+               PART_CHILD_FACES = (pss.child_type == 'INTERPOLATED')
+               for c, p in enumerate(ps.child_particles):
+                   cpa = _ChildParticle.from_address(p.as_pointer())
+                   # <...>\source\blender\blenkernel\intern\particle.c:3561
+                   if PART_CHILD_FACES:
+                       bt = 0.0
+                       cpaw = cpa.w
+                       for w, n in enumerate(cpa.pa):
+                           if n < 0:
+                               break
+                           bt += cpaw[w] * particles[n].birth_time
+                       lt = pss.lifetime
+                       if randlength > 0:
+                           lt *= 1.0 - randlength * psys_frand(pss, c + 25)
+                   else:
+                       p = particles[cpa.parent]
+                       bt = p.birth_time
+                       lt = p.lifetime
+                   yield (i, bt, bt + lt, (frame_current - bt) / lt)
+                   i += 1
 
             #for a, pa_birthtime, pa_dietime, pa_time in parts():
             for a, pa in enumerate(ps.particles):
