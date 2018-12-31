@@ -1325,7 +1325,7 @@ class ArnoldCurvesPanel(ParticleButtonsPanel, Panel):
             col.prop(curves, "bezier_scale")
         col.prop(curves, "mode")
         col.prop(curves, "min_pixel_width")
-        col.prop_search(curves, "uvmap", context.object.data, "uv_textures")
+        col.prop_search(curves, "uvmap", context.object.data, "uv_layers")
 
 
 @ArnoldRenderEngine.register_class

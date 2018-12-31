@@ -152,8 +152,8 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
     def view_draw(self, context):
         engine.view_draw(self, context.depsgraph, context.region, context.space_data, context.region_data)
 
-    def __del__(self):
-        engine.free(self)
+    # def __del__(self):
+    #     engine.free(self)
 
 
 def register():
