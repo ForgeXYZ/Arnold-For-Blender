@@ -413,7 +413,7 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
     """Create arnold curves node from a particle system"""
     pc = time.perf_counter()
 
-    ps.set_resolution(scene, ob, 'RENDER')
+    #ps.set_resolution(scene, ob, 'RENDER')
     try:
         props = pss.arnold.curves
         steps = 2 ** pss.render_step + 1
@@ -481,7 +481,8 @@ def _AiCurvesPS(scene, ob, mod, ps, pss, shaders):
                 arnold.AiNodeSetArray(node, "uparamcoord", uparam)
                 arnold.AiNodeSetArray(node, "vparamcoord", vparam)
     finally:
-        ps.set_resolution(scene, ob, 'PREVIEW')
+        #ps.set_resolution(scene, ob, 'PREVIEW')
+        print("Calculated Hair Particles.")
     return node
 
 
@@ -516,7 +517,7 @@ def _AiPointsPS(scene, ob, ps, pss, frame_current, shaders):
                 return node
     finally:
         #ps.set_resolution(scene, ob, 'PREVIEW')
-        print("hi")
+        print("Calculated Particle System.")
     return None
 
 
