@@ -5,9 +5,9 @@
 <img src="https://rawcdn.githack.com/tyler-furby/Arnold-For-Blender/b194477da00ea4ab76d0acf0722be2be51df0075/arnold%20logo.svg" alt="Blender One Logo" width="50%">
 </p>
 
-Arnold integration with Blender, updated to work with the latest versions of Arnold 5.2.1.0 and Blender 2.8. This is not yet production ready, but will be soon... :balloon:
+Arnold integration with Blender, updated to work with the latest versions of Arnold and Blender 2.8. This is not yet production ready, but will be soon... :balloon:
 
-Join the Discord channel for discussions/help/updates/feature requests/talk about water coolers: https://discord.gg/WNdNXzZ
+Join the Discord channel for discussions/help/updates/feature requests/talk about water coolers: https://discord.gg/M7K8Tw8
 
 Update: Working on the offical version of this addon, will post more information as that project progresses further.
 
@@ -27,10 +27,10 @@ Blender One Roadmap                   [####                     ] 20% Complete
 
 ### Installation (Windows, macOS, and Linux)
 - Download this repository.
-- Download the Arnold 5.2.1.0 SDK here: https://www.solidangle.com/arnold/download/#arnold-sdk
+- Download the latest Arnold SDK here: https://www.solidangle.com/arnold/download/#arnold-sdk
 - Add a new environment variable `ARNOLD_HOME` and add the path of the downloaded arnold SDK from the previous step.
 - Add a second environment variable to `PATH` to the arnold SDK `bin` folder.
-- Add `barnold` directory to `path\to\blender\2.79\scripts\addons`
+- Add `barnold` directory to `path\to\blender\2.80\scripts\addons`
 - Open the `Arnold SDK Adjustments\plugins` folder the `driver_display_callback.dll` (Windows) or `libbarnold_display_callback.dylib` (macOS) or `libbarnold_display_callback.so` (Linux) file needs to be placed inside the `ARNOLDSDK\plugins` folder.
 - Open the `Arnold SDK Adjustments\arnold` folder, the `ai_drivers.py` file needs to be placed inside the `ARNOLDSDK\python\arnold` folder, overwriting the existing file.
 - Open the `Arnold SDK Adjustments\arnold` folder, the `ai_universe.py` file needs to be placed inside the `ARNOLDSDK\python\arnold` folder, overwriting the existing file. 
