@@ -6,7 +6,7 @@ from .arnold_common import ai, NullToNone
 from .ai_node_entry import AtNodeEntry
 from .ai_types import *
 
-AtDisplayCallBack = CFUNCTYPE(None, c_uint, c_uint, c_uint, c_uint, POINTER(c_byte), c_void_p)
+AtDisplayCallBack = CFUNCTYPE(None, c_uint32, c_uint32, c_uint32, c_uint32, POINTER(c_float), c_void_p)
 
 _AiFindDriverType = ai.AiFindDriverType
 _AiFindDriverType.argtypes = [AtPythonString]
