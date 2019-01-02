@@ -326,7 +326,6 @@ def psys_get_curves(ps, steps, use_parent_particles, props):
         tot = nch
         use_parent_particles = False
     else:
-        print("UH OH NO NO")
         return None
 
     _ps = _ParticleSystem.from_address(ps.as_pointer())
