@@ -6,16 +6,17 @@ __email__ = "nildar@users.sourceforge.net"
 import collections
 
 import bpy
-import _cycles
 from bpy.app.handlers import persistent
 
+
+import _cycles
 import xml.etree.ElementTree as ET
 
 import tempfile
 import nodeitems_utils
 import shutil
 
-from bpy.types import NodeTree, NodeSocket, Node, ColorRamp
+from bpy.types import NodeTree, NodeSocket, Node, ColorRamp, PropertyGroup
 from bpy.props import *
 from nodeitems_utils import NodeCategory, NodeItem
 
@@ -1884,50 +1885,193 @@ class ArnoldNodeShadowMatte(ArnoldNode):
             "shadow_mask": ('STRING', self.shadow_mask)
         }
 
+@ArnoldRenderEngine.register_class
+class ColorRampItem(PropertyGroup):
+    offset: FloatProperty(name="Offset", default=0.0, min=0, max=1)
+    value: FloatVectorProperty(name="", min=0, soft_max=1, subtype="COLOR")
+    # For internal use
+    index: IntProperty()
+    node_name: StringProperty()
 
+    def update_add_keyframe(self, context):
+        data_path = 'nodes["%s"].ramp_items[%d]' % (self.node_name, self.index)
+        self.id_data.keyframe_insert(data_path=data_path + ".offset")
+        self.id_data.keyframe_insert(data_path=data_path + ".value")
+        self["add_keyframe"] = False
 
+    def update_remove_keyframe(self, context):
+        data_path = 'nodes["%s"].ramp_items[%d]' % (self.node_name, self.index)
+        self.id_data.keyframe_delete(data_path=data_path + ".offset")
+        self.id_data.keyframe_delete(data_path=data_path + ".value")
+        self["remove_keyframe"] = False
 
+    # This is a bit of a hack, we use BoolProperties as buttons
+    add_keyframe: BoolProperty(name="", description="Add a keyframe on the current frame",
+                                default=False, update=update_add_keyframe)
+    remove_keyframe: BoolProperty(name="", description="Remove the keyframe on the current frame",
+                                   default=False, update=update_remove_keyframe)
 
 @ArnoldRenderEngine.register_class
-class ArnoldNodeRamp(ArnoldNode):
+class ArnoldNodeRamp(ArnoldNode, bpy.types.Node):
 
     bl_label = "Ramp RGB"
     bl_icon = 'PREFERENCES'
 
     ai_name="ramp_rgb"
+    bl_width_default = 250
+
+    interpolation_items = [
+        ("constant", "Constant", "Constant interpolation between values, smooth transition", 0),
+        ("linear", "Linear", "Linear interpolation between values, smooth transition", 1),
+        ("catmull-rom", "Catmull", "No interpolation between values, sharp transition", 2),
+        ("monotone-cubic", "Cubic", "Cubic interpolation between values, smooth transition", 3),
+    ]
+    interpolation: EnumProperty(name="Mode", description="Interpolation type of band values",
+                                 items=interpolation_items, default="constant")
+
+    def update_add(self, context):
+        if len(self.ramp_items) == 1:
+            new_offset = 1
+            new_value = (1, 1, 1)
+        else:
+            max_item = None
+
+            for item in self.ramp_items:
+                if max_item is None or item.offset > max_item.offset:
+                    max_item = item
+
+            new_offset = max_item.offset
+            new_value = max_item.value
+
+        new_item = self.ramp_items.add()
+        new_item.offset = new_offset
+        new_item.value = new_value
+        new_item.index = len(self.ramp_items) - 1
+        new_item.node_name = self.name
+
+        self["add_item"] = False
+
+    def update_remove(self, context):
+        if len(self.ramp_items) > 2:
+            self.ramp_items.remove(len(self.ramp_items) - 1)
+        self["remove_item"] = False
 
 
-    color: FloatVectorProperty(
-        name="Color",
-        size=3,
-        min=0, max=1,
-        subtype='COLOR'
-    )
+    # This is a bit of a hack, we use BoolProperties as buttons
+    add_item: BoolProperty(name="Add", description="Add an offset",
+                            default=False, update=update_add)
+    remove_item: BoolProperty(name="Remove", description="Remove last offset",
+                               default=False, update=update_remove)
+    ramp_items: CollectionProperty(type=ColorRampItem)
+    
+    def init(self, context):
 
-    # def init(self, context):
-    #     template_color_ramp
+        self.outputs.new(type="NodeSocketShader", name="RGB", identifier="output")
+
+        # Add inital items
+        item_0 = self.ramp_items.add()
+        item_0.offset = 0
+        item_0.value = (0.0, 0.0, 0.0)
+        item_0.index = 0
+        item_0.node_name = self.name
+
+        item_1 = self.ramp_items.add()
+        item_1.offset = 1
+        item_1.value = (1.0, 1.0, 1.0)
+        item_1.index = 1
+        item_1.node_name = self.name
+
+    def copy(self, orig_node):
+        for item in self.ramp_items:
+            # We have to update the parent node's name by hand because it's a StringProperty
+            item.node_name = self.name
+        
     def draw_buttons(self, context, layout):
-        self.draw_nonconnectable_props(context, layout, 'ColorRamp')
+        layout.prop(self, "interpolation", expand=True)
 
-    def draw_nonconnectable_props(self, context, layout, prop_names):
-        nt = bpy.data.node_groups[self.node_group]
-        if nt:
-            layout.template_color_ramp(
-                nt.nodes["ColorRamp"], 'color_ramp')
+        row = layout.row(align=True)
+        row.prop(self, "add_item", icon="ADD")
+
+        subrow = row.row(align=True)
+        subrow.enabled = len(self.ramp_items) > 2
+        subrow.prop(self, "remove_item", icon="REMOVE")
+
+        for index, item in enumerate(self.ramp_items):
+            row = layout.row(align=True)
+
+            split = row.split(align=True, factor=0.55)
+            split.prop(item, "offset", slider=True)
+            split.prop(item, "value")
+
+            node_tree = self.id_data
+            anim_data = node_tree.animation_data
+            # Keyframes are attached to fcurves, which are attached to the parent node tree
+            if anim_data and anim_data.action:
+                data_path = 'nodes["%s"].ramp_items[%d].offset' % (self.name, index)
+                fcurves = (fcurve for fcurve in anim_data.action.fcurves if fcurve.data_path == data_path)
+
+                fcurve_on_current_frame = False
+
+                for fcurve in fcurves:
+                    for keyframe_point in fcurve.keyframe_points:
+                        frame = keyframe_point.co[0]
+                        if frame == context.scene.frame_current:
+                            fcurve_on_current_frame = True
+                            break
+            else:
+                fcurve_on_current_frame = False
+
+            if fcurve_on_current_frame:
+                sub = row.row(align=True)
+                # Highlight in red to show that a keyframe exists
+                sub.alert = True
+                sub.prop(item, "remove_keyframe", toggle=True, icon="KEY_DEHLT")
+            else:
+                row.prop(item, "add_keyframe", toggle=True, icon="KEY_HLT")
 
     @property
     def ai_properties(self):
         #scale = self.geometry_matrix_scale
-        color = Color([
-            [0, 0, 0],
-            [1, 1, 1],
-            [1, 1, 1]
-        ])
+
+        definitions = {
+            "type": "u",
+            "interpolation": self.interpolation,
+            #"amount": self.inputs["Amount"].export(exporter, props),
+        }
+
+        offsets = []
+        colors = []
+
+        for index, item in enumerate(self.ramp_items):            
+            definitions["offset%d" % index] = item.offset
+            offsets.append(definitions["offset%d" % index])
+            definitions["value%d" % index] = list(item.value)
+            colors.append(definitions["value%d" % index])
+
+        
+        if self.interpolation == "constant":
+            interpolations = [0]
+        elif self.interpolation == "linear":
+            interpolations = [1]
+        elif self.interpolation == "catmull-rom":
+            interpolations = [2]
+        else:
+            interpolations = [3]
+
+        for i in range(len(offsets) - 1):
+            interpolations.append(interpolations[0])
+
+        # position = 1.0
+        # color = (0,0,0)
+        #interpolation = self.interpolation_items
         # matrix.rotate(Euler(self.geometry_matrix_rotation))
         # matrix = matrix.to_4x4()
         # matrix.translation = (self.geometry_matrix_translation)
         return {
-            "color": ('RGB', color),
+            "type": ('STRING', definitions.get("type")),
+            "interpolation": ('ARRAY', interpolations),
+            "position": ('ARRAY', offsets),
+            "color": ('ARRAY', colors)
             # "resolution": ('STRING', self.resolution),
             # "portal_mode": ('STRING', self.portal_mode),
             # "matrix": ('MATRIX', matrix),

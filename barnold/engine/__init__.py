@@ -47,6 +47,25 @@ def _CleanNames(prefix, count):
 
 _AiMatrix = lambda m: arnold.AtMatrix(*numpy.reshape(m.transposed(), -1))
 
+# ¸¸♫·¯·♪¸¸♩·¯·♬¸¸¸¸♫·¯·♪¸¸♩·¯·♬¸¸¸¸♫·¯·♪¸¸♩·¯·♬¸¸¸¸♫·¯·♪¸¸♩·¯·♬¸¸¸¸♫·¯·♪¸¸♩·¯·♬¸¸¸¸♫·¯·♪¸¸♩·¯·♬¸¸
+def _AiNodeSetArray(node, param, value):
+        t = value[0]
+        _len = len(value)
+        if type(t) is float:
+            int_arr_type = ctypes.c_float * len(value)
+            oftype = arnold.AI_TYPE_FLOAT
+            _a = arnold.AiArrayConvert(_len, 1, oftype, int_arr_type(*value))
+        if type(t) is list:
+            oftype = arnold.AI_TYPE_RGB
+            arr_t = ctypes.c_float * 3
+            arr_of_arr_t = arr_t * len(value)
+            _a = arnold.AiArrayConvert(_len, 1, oftype, arr_of_arr_t(arr_t(*value[0]), arr_t(*value[1])))
+        if type(t) is int:
+            int_arr_type = ctypes.c_int * len(value)
+            oftype = arnold.AI_TYPE_INT
+            _a = arnold.AiArrayConvert(_len, 1, oftype, int_arr_type(*value))
+        arnold.AiNodeSetArray(node, param, _a)
+
 _AiNodeSet = {
     "NodeSocketShader": lambda n, i, v: True,
     "NodeSocketBool": lambda n, i, v: arnold.AiNodeSetBool(n, i, v),
@@ -60,6 +79,7 @@ _AiNodeSet = {
     "ArnoldNodeSocketByte": lambda n, i, v: arnold.AiNodeSetByte(n, i, v),
     "ArnoldNodeSocketProperty": lambda n, i, v: True,
     "STRING": lambda n, i, v: arnold.AiNodeSetStr(n, i, v),
+    'ARRAY': _AiNodeSetArray,
     "BOOL": lambda n, i, v: arnold.AiNodeSetBool(n, i, v),
     "BYTE": lambda n, i, v: arnold.AiNodeSetByte(n, i, v),
     "INT": lambda n, i, v: arnold.AiNodeSetInt(n, i, v),
@@ -691,7 +711,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                 arnold.AiNodeSetStr(node, "format", light.format)
                 arnold.AiMsgDebug(b"    skydome_light")
             elif lamp.type == 'AREA':
-                print(light.type)
                 node = arnold.AiNode(light.type)
                 if light.type == 'cylinder_light':
                     top = arnold.AiArray(1, 1, arnold.AI_TYPE_VECTOR, arnold.AtVector(0, lamp.size_y / 2, 0))
@@ -850,7 +869,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
         arnold.AiNodeSetBool(options, "AA_sample_clamp_affects_aovs", opts.AA_sample_clamp_affects_aovs)
     if not opts.auto_threads:
         arnold.AiNodeSetInt(options, "threads", opts.threads)
-    print(opts.thread_priority)
     arnold.AiNodeSetStr(options, "thread_priority", opts.thread_priority)
     arnold.AiNodeSetStr(options, "pin_threads", opts.pin_threads)
     arnold.AiNodeSetBool(options, "abort_on_error", opts.abort_on_error)
@@ -967,7 +985,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                 if isinstance(_node, nt.ArnoldNodeWorldOutput) and _node.is_active:
                     name = "W::" + _RN.sub("_", world.name)
                     for input in _node.inputs:
-                        print(input.identifier)
                         if input.is_linked:
                             node = _AiNode(input.links[0].from_node, name, {})
                             if node:
