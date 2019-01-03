@@ -881,7 +881,7 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
             layout.operator('barnold.convert_cycles')
 
         mat_type = mat
-        if shader.type == 'lambert' or shader.type == 'standard_surface' or shader.type == 'toon' or shader.type == 'utility' or shader.type == 'flat':
+        if shader.type == 'lambert' or shader.type == 'standard_surface' or shader.type == 'toon' or shader.type == 'utility' or shader.type == 'flat' or shader.type == 'standard_hair':
             shader_type = shader.type
             layout.prop(shader, "type", expand=True)
             if shader_type == 'lambert':
