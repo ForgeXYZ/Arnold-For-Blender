@@ -287,8 +287,10 @@ def _BezierInterpolate(pts, n, cache, npts, steps, scale):
             interpolation scale factor
     """
     #TODO: First Render -> Cache is Empty, causes Hair only to appear in subsequent renders.
-    try:
-        for i in range(npts):
+    #try:
+    for i in range(npts):
+        #print(npts)
+        if cache:
             c = cache[i]
 
             a = _NDARRAY([steps, 3], dtype='f')
@@ -306,12 +308,12 @@ def _BezierInterpolate(pts, n, cache, npts, steps, scale):
             pts[n, 2:-3:3] = s - t * m[:-1]
             pts[n, 4::3] = s + t * m[1:]
             n += 1
-    except:
-        pass
-    else:
-        n += 1
-    finally:
-        return n
+            print(cache[i])
+        # else:
+        #     cache = []
+        #     for i in range(npts):
+        #         cache.append(i)
+    return n
 
 
 def psys_get_curves(ps, steps, use_parent_particles, props):
@@ -334,6 +336,7 @@ def psys_get_curves(ps, steps, use_parent_particles, props):
     if props.basis == 'bezier':
         nsteps = steps * 3 - 2
         points = _NDARRAY([tot, nsteps, 3], dtype=numpy.float32)
+        #print(points)
         scale = props.bezier_scale
         if use_parent_particles:
             n = _BezierInterpolate(points, n, _ps.pathcache, np, steps, scale)
@@ -346,24 +349,26 @@ def psys_get_curves(ps, steps, use_parent_particles, props):
         if use_parent_particles:
             _cache = _ps.pathcache
             for i in range(np):
+                if _cache:
+                    c = _cache[i]
+                    points[n:n + 2] = c[0].co
+                    n += 2
+                    for j in range(steps):
+                        points[n] = c[j].co
+                        n += 1
+                    points[n:n + 2] = points[n - 1]
+                    n += 2
+        _cache = _ps.childcache
+        for i in range(nch):
+            if _cache:
                 c = _cache[i]
                 points[n:n + 2] = c[0].co
                 n += 2
                 for j in range(steps):
                     points[n] = c[j].co
                     n += 1
-                points[n:n + 2] = points[n - 1]
+                points[n: n + 2] = points[n - 1]
                 n += 2
-        _cache = _ps.childcache
-        for i in range(nch):
-            c = _cache[i]
-            points[n:n + 2] = c[0].co
-            n += 2
-            for j in range(steps):
-                points[n] = c[j].co
-                n += 1
-            points[n: n + 2] = points[n - 1]
-            n += 2
         radius = numpy.ndarray(steps + 2, dtype=numpy.float32)
         radius[1:-1] = numpy.linspace(props.radius_root, props.radius_tip, steps, dtype=numpy.float32)
         radius[0] = 0
@@ -375,16 +380,18 @@ def psys_get_curves(ps, steps, use_parent_particles, props):
         if use_parent_particles:
             _cache = _ps.pathcache
             for i in range(np):
+                if _cache:
+                    c = _cache[i]
+                    for j in range(steps):
+                        points[n] = c[j].co
+                        n += 1
+        _cache = _ps.childcache
+        for i in range(nch):
+            if _cache:
                 c = _cache[i]
                 for j in range(steps):
                     points[n] = c[j].co
                     n += 1
-        _cache = _ps.childcache
-        for i in range(nch):
-            c = _cache[i]
-            for j in range(steps):
-                points[n] = c[j].co
-                n += 1
         radius = numpy.linspace(props.radius_root, props.radius_tip, steps, dtype=numpy.float32)
         return (points, numpy.tile(radius, tot), steps)
 

@@ -460,13 +460,23 @@ class _NodeOutput:
 class ArnoldNodeOutput(_NodeOutput, Node):
     bl_icon = 'MATERIAL'
 
+    # disp_map: StringProperty(
+    #     name="Displacement",
+    #     subtype='FILE_PATH'
+    # )
+
     def init(self, context):
         super().init(context)
         self.inputs.new(type="NodeSocketShader", name="Surface", identifier="surface")
         self.inputs.new(type="NodeSocketShader", name="Volume", identifier="volume")
-        self.inputs.new(type="NodeSocketVector", name="Displacement", identifier="displacement")
-        # self.inputs.new("NodeSocketShader", "Surface Shader", "surface")
-        # self.inputs.new("NodeSocketShader", "Volume Shader", "volume")
+        self.inputs.new(type="ARRAY", name="Displacement", identifier="disp_map")
+
+    
+    # @property
+    # def ai_properties(self):
+    #     return {
+    #         "disp_map": ('FLOAT', self.disp_map)
+    #     }
 
 
 @ArnoldRenderEngine.register_class

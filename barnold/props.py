@@ -679,10 +679,10 @@ class ArnoldShape(PropertyGroup):
         name="Height",
         default=0
     )
-    # disp_map: PointerProperty(
-    #     name="Displacement Map",
-    #
-    # )
+    disp_map: StringProperty(
+        name="Displacement Map",
+        subtype='FILE_PATH'
+    )
     subdiv_iterations: IntProperty(
         name="Iterations",
         subtype='UNSIGNED',
