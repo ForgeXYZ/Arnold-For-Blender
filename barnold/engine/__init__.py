@@ -452,7 +452,7 @@ def _AiPolymesh(mesh, shaders):
     return node
 
 
-def _AiCurvesPS(depsgraph, ob, mod, ps, pss, shaders):
+def _AiCurvesPS(data, ob, mod, ps, pss, shaders):
     """Create arnold curves node from a particle system"""
     pc = time.perf_counter()
 
@@ -530,7 +530,7 @@ def _AiCurvesPS(depsgraph, ob, mod, ps, pss, shaders):
     return node
 
 
-def _AiPointsPS(scene, ob, ps, pss, frame_current, shaders):
+def _AiPointsPS(data, ob, ps, pss, frame_current, shaders):
     """Create arnold points node from a particle system"""
     pc = time.perf_counter()
     #ps.set_resolution(scene, ob, 'RENDER')
