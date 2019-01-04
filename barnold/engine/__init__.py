@@ -670,9 +670,9 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                         use_render_emitter = True
                     node = None
                     if pss.type == 'HAIR' and pss.render_type == 'PATH':
-                        node = _AiCurvesPS(depsgraph, ob, mod, ps, pss, shaders)
+                        node = _AiCurvesPS(bpy.data.objects, ob, mod, ps, pss, shaders)
                     elif pss.type == 'EMITTER' and pss.render_type in {'HALO', 'LINE', 'PATH'}:
-                        node = _AiPointsPS(depsgraph, ob, ps, pss, bpy.context.scene.frame_current, shaders)
+                        node = _AiPointsPS(bpy.data.objects, ob, ps, pss, bpy.context.scene.frame_current, shaders)
                     if node is not None:
                         if name is None:
                             name = _Name(ob.name)

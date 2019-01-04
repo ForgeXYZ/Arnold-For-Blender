@@ -308,7 +308,6 @@ def _BezierInterpolate(pts, n, cache, npts, steps, scale):
             pts[n, 2:-3:3] = s - t * m[:-1]
             pts[n, 4::3] = s + t * m[1:]
             n += 1
-            print(cache[i])
         # else:
         #     cache = []
         #     for i in range(npts):
