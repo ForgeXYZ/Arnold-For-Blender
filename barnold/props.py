@@ -677,11 +677,30 @@ class ArnoldShape(PropertyGroup):
     )
     disp_height: FloatProperty(
         name="Height",
-        default=0
+        subtype="FACTOR",
+        min=0, max=5,
+        default=1
     )
     disp_map: StringProperty(
         name="Displacement Map",
         subtype='FILE_PATH'
+    )
+    disp_padding: FloatProperty(
+        name= "Bounds Padding",
+        subtype="FACTOR",
+        min=0, max=5,
+        default=0
+    )
+    disp_zero_value: FloatProperty(
+        name="Scalar Zero Value",
+        subtype="FACTOR",
+        min=0, max=5,
+        default=0 
+    )
+
+    disp_autobump: BoolProperty(
+        name= "Auto Bump",
+        default = False
     )
     subdiv_iterations: IntProperty(
         name="Iterations",
@@ -767,7 +786,8 @@ class ArnoldShape(PropertyGroup):
 
     def _visibility(mask):
         def get(self):
-            return self.visibility & mask
+            # TODO: Refactor to hide/show based on context
+            return True
 
         def set(self, value):
             if value:
@@ -807,7 +827,8 @@ class ArnoldShape(PropertyGroup):
 
     def _sidedness(mask):
         def get(self):
-            return self.sidedness & mask
+            # TODO: Refactor to hide/show based on context
+            return True
 
         def set(self, value):
             if value:

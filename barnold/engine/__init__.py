@@ -421,6 +421,43 @@ def _AiPolymesh(mesh, shaders):
 
     # materials
     if mesh.materials:
+        _Name = _CleanNames("M", itertools.count())
+        if mesh.materials[0].use_nodes:
+            for _node in mesh.materials[0].node_tree.nodes:
+                if isinstance(_node, nt.ArnoldNodeOutput) and _node.is_active:
+                    for input in _node.inputs:
+                        if input.is_linked:
+                            # Displacement Mapping (Arnold needs map to be a pointer to the array of nodes pointing to displacement)
+                            if input.identifier == "disp_map":
+                                dispnodes = []
+                                # _AiNode() converts blender node to arnold node
+                                dispnodes.append(_AiNode(input.links[0].from_node, _Name(mesh.materials[0].name), {}))
+                                nmaps = len(dispnodes)
+                                # Calculate the number of nodes linked to displacement and initialize a numpy array
+                                a = numpy.ndarray(nmaps, dtype=numpy.uint8)
+                                mm = collections.OrderedDict()
+                                # Set up the arnold parameters as NODE INDEX 
+                                for i in numpy.unique(a):
+                                    mn = _AiNode(input.links[0].from_node, _Name(mesh.materials[0].name), {})
+                                    mi = mm.setdefault(id(mn), (mn, []))[1]
+                                    mi.append(i)
+                                for i, (mn, mi) in enumerate(mm.values()):
+                                    a[numpy.in1d(a, numpy.setdiff1d(mi, i))] = i
+                                if mm:
+                                    nmm = len(mm)
+                                    t = mm.popitem(False)
+                                    if t:
+                                        # Point to the array of nodes
+                                        AiDisplace = arnold.AiArrayAllocate(nmm, 1, arnold.AI_TYPE_POINTER)
+                                        arnold.AiArraySetPtr(AiDisplace, 0, t[1][0])
+                                        i = 1
+                                        while mm:
+                                            arnold.AiArraySetPtr(AiDisplace, 0, mm.popitem(False)[1][0])
+                                            i += 1
+                                        # Link Displacement Map to corresponding image node
+                                        arnold.AiNodeSetArray(node, "disp_map", AiDisplace)
+                                        
+        # Calculate shaders per face assignment
         a = numpy.ndarray(npolygons, dtype=numpy.uint8)
         polygons.foreach_get("material_index", a)
         mm = collections.OrderedDict()
@@ -441,10 +478,10 @@ def _AiPolymesh(mesh, shaders):
                     arnold.AiArraySetPtr(shader, i, mm.popitem(False)[1][0])
                     i += 1
                 shidxs = arnold.AiArrayConvert(len(a), 1, arnold.AI_TYPE_BYTE, ctypes.c_void_p(a.ctypes.data))
-                disp_map = arnold.AiArrayConvert(len(a), 1, arnold.AI_TYPE_BYTE, ctypes.c_void_p(a.ctypes.data))
+                #disp_map = arnold.AiArrayConvert(len(a), 1, arnold.AI_TYPE_BYTE, ctypes.c_void_p(a.ctypes.data))
                 arnold.AiNodeSetArray(node, "shader", shader)
                 arnold.AiNodeSetArray(node, "shidxs", shidxs)
-                arnold.AiNodeSetArray(node, "disp_map", disp_map)
+                #arnold.AiNodeSetArray(node, "disp_map", disp_map)
             else:
                 arnold.AiNodeSetPtr(node, "shader", t[1][0])
 

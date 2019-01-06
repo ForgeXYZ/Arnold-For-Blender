@@ -640,6 +640,9 @@ class ArnoldDisplacementPanel(_ObjectPanel, Panel):
 
         col = layout.column()
         col.prop(props, "disp_height")
+        col.prop(props, "disp_padding")
+        col.prop(props, "disp_zero_value")
+        col.prop(props, "disp_autobump")
         #col.prop(props, "disp_map")
 
 ##

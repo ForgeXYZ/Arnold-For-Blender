@@ -16,12 +16,11 @@ Blender One Roadmap                   [####                     ] 20% Complete
 ```
 ### Currently In Development: 
 - OpenGL / Optix / RTX IPR (rendered viewport)
-- Fixing Particle Systems
-- Cleaning up UI
+- Fixing Occasional Particle System Crash
 - Adding procedurals
 - Streamling with Eevee, Cycles, and Workbench Render Engines
-- Adding Color Ramps, Math Nodes, and more
-- VDB & AOV Support
+- Adding Math Nodes, and more
+- VDB Support
 - Launching a custom build (Blender One) which comes packaged with Arnold Render by default.
 
 ### Installation (Windows, macOS, and Linux)
