@@ -469,7 +469,7 @@ class ArnoldNodeOutput(_NodeOutput, Node):
         super().init(context)
         self.inputs.new(type="NodeSocketShader", name="Surface", identifier="surface")
         self.inputs.new(type="NodeSocketShader", name="Volume", identifier="volume")
-        self.inputs.new(type="ARRAY", name="Displacement", identifier="disp_map")
+        self.inputs.new(type="NodeSocketShader", name="Displacement", identifier="disp_map")
 
     
     # @property
