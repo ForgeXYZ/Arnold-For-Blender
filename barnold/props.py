@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__author__ = "Ildar Nikolaev"
-__email__ = "nildar@users.sourceforge.net"
+__authors__ = "Tyler Furby, Ildar Nikolaev"
 
 import bpy
 from bpy.types import (
