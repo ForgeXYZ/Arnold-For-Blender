@@ -744,8 +744,13 @@ class ArnoldNodeStandardSurface(ArnoldNode):
         # Emission
         ("emission_color"           , ('RGB', "Emission Color", "ext_properties")),
         ("emission"                 , ('FLOAT', "Emission", "ext_properties")),
-        # Normal
-        ("normal"                 , ('VECTOR', "Normal", "ext_properties"))
+        # Advanced
+        ("normal"                 , ('VECTOR', "Normal", "ext_properties")),
+        ("caustics"               , ('BOOL', "Caustics", "ext_properties")),
+        ("internal_reflections"   , ('BOOL', "Internal Reflections", "ext_properties")),
+        ("exit_to_background"   , ('BOOL', "Exit to Background", "ext_properties")),
+        ("indirect_diffuse"   , ('FLOAT', "Indirect Diffuse", "ext_properties")),
+        ("indirect_specular"   , ('FLOAT', "Indirect Specular", "ext_properties")),
     ])
 
     # base: FloatProperty(
@@ -928,7 +933,7 @@ class ArnoldNodeStandardSurface(ArnoldNode):
             _draw_property(col, properties, "thin_walled", links)
 
         # Advanced
-        sublayout = ui._subpanel(layout, "Advanced", properties.ui_caustics,
+        sublayout = ui._subpanel(layout, "Advanced", properties.ui_advanced,
                               "ext_properties", "ui_advanced", "node")
         if sublayout:
             col = sublayout.column()
