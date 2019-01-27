@@ -21,7 +21,7 @@ Blender One Roadmap                   [####                     ] 20% Complete
 - Streamling with Eevee, Cycles, and Workbench Render Engines
 - Adding Math Nodes, and more
 - VDB Support
-- Launching a custom build (Blender One) which comes packaged with Arnold Render by default.
+- Launching a custom build which comes packaged with Arnold Render by default.
 
 ### Installation (Windows, macOS, and Linux)
 - Download this repository.
@@ -31,6 +31,8 @@ Blender One Roadmap                   [####                     ] 20% Complete
 - Add `barnold` directory to `path\to\blender\2.80\scripts\addons`
 - If you are on **macOS**:
   - Simply type this into terminal: `launchctl setenv ARNOLD_HOME "/path/to/ArnoldSDK"`
+ - If you are on **Linux**
+    - Create a file called `arnold.sh` inside `etc/profile.d` and put your `ARNOLD_HOME` environment variable in there. 
 - Open the `Arnold SDK Adjustments\plugins` folder the `driver_display_callback.dll` (Windows) or `libbarnold_display_callback.dylib` (macOS) or `libbarnold_display_callback.so` (Linux) file needs to be placed inside the `ARNOLDSDK\plugins` folder.
 - Open the `Arnold SDK Adjustments\arnold` folder, the `ai_drivers.py` file needs to be placed inside the `ARNOLDSDK\python\arnold` folder, overwriting the existing file.
 - Open the `Arnold SDK Adjustments\arnold` folder, the `ai_universe.py` file needs to be placed inside the `ARNOLDSDK\python\arnold` folder, overwriting the existing file. 
