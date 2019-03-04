@@ -15,8 +15,8 @@ from bpy.types import (
     Operator,
 )
 
-import arnold.engine as engine
-#import arnold.nodes as nodes
+import blenderarnold.engine as engine
+#import blenderarnold.nodes as nodes
 from . import ArnoldRenderEngine
 
 # icons
@@ -121,7 +121,7 @@ def _subpanel(layout, title, opened, path, attr, ctx):
     row = box.row()
     row.alignment = 'LEFT'
     icon = 'TRIA_DOWN' if opened else 'TRIA_RIGHT'
-    op = row.operator("arnold.ui_toggle", text=title, icon=icon, emboss=False)
+    op = row.operator("blenderarnold.ui_toggle", text=title, icon=icon, emboss=False)
     op.path = path
     op.attr = attr
     op.ctx = ctx
@@ -133,7 +133,7 @@ def _nodesubpanel(layout, title, opened, attr, ctx):
     row = box.row()
     row.alignment = 'LEFT'
     icon = 'TRIA_DOWN' if opened else 'TRIA_RIGHT'
-    op = row.operator("arnold.ui_toggle", text=title, icon=icon, emboss=True)
+    op = row.operator("blenderarnold.ui_toggle", text=title, icon=icon, emboss=True)
     op.attr = attr
     op.ctx = ctx
     return col.box() if opened else None
@@ -880,7 +880,7 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
         if mat and not nodes.is_arnold_nodetree(mat):
             # layout.operator(
             #     'shading.add_renderman_nodetree').idtype = "material"
-            layout.operator('arnold.convert_cycles')
+            layout.operator('blenderarnold.convert_cycles')
 
         mat_type = mat
         if shader.type == 'lambert' or shader.type == 'standard_surface' or shader.type == 'toon' or shader.type == 'utility' or shader.type == 'flat' or shader.type == 'standard_hair':

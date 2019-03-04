@@ -18,7 +18,7 @@ from . import ArnoldRenderEngine
 
 @ArnoldRenderEngine.register_class
 class ArnoldUiToggle(Operator):
-    bl_idname = "barnold.ui_toggle"
+    bl_idname = "blenderarnold.ui_toggle"
     bl_options = {'INTERNAL'}
     bl_label = "Open / Close"
     bl_description = "Open / close options"
@@ -37,7 +37,7 @@ class ArnoldUiToggle(Operator):
 
 @ArnoldRenderEngine.register_class
 class ArnoldNodeSocketAdd(Operator):
-    bl_idname = "barnold.node_socket_add"
+    bl_idname = "blenderarnold.node_socket_add"
     bl_options = {'INTERNAL'}
     bl_label = "Create Socket"
 
@@ -58,7 +58,7 @@ class ArnoldNodeSocketAdd(Operator):
 class ArnoldConvertFromCycles(Operator):
 
     ''''''
-    bl_idname = "barnold.convert_cycles"
+    bl_idname = "blenderarnold.convert_cycles"
     bl_label = "Convert Cycles/EEVEE Shaders to Arnold"
     bl_description = "Convert all nodetrees to Arnold"
 
@@ -117,7 +117,7 @@ class ArnoldConvertFromCycles(Operator):
 
 @ArnoldRenderEngine.register_class
 class ArnoldLightFilterInputAdd(Operator):
-    bl_idname = "barnold.light_filter_add"
+    bl_idname = "blenderarnold.light_filter_add"
     bl_options = {'INTERNAL'}
     bl_label = "Add Filter"
     bl_description = "Add Filter input"
@@ -132,7 +132,7 @@ class ArnoldLightFilterInputAdd(Operator):
 
 @ArnoldRenderEngine.register_class
 class ArnoldLightFilterInputRemove(Operator):
-    bl_idname = "barnold.light_filter_remove"
+    bl_idname = "blenderarnold.light_filter_remove"
     bl_options = {'INTERNAL'}
     bl_label = "Remove Filter"
     bl_description = "Remove Filter input"
@@ -158,7 +158,7 @@ class ArnoldLightFilterInputRemove(Operator):
 
 @ArnoldRenderEngine.register_class
 class ArnoldExportASS(Operator, ExportHelper):
-    bl_idname = "barnold.export_ass"
+    bl_idname = "blenderarnold.export_ass"
     bl_label = "Export ASS"
 
     filename_ext = ".ass"
