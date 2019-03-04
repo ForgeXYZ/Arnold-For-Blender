@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__author__ = "Tyler Furby"
+__authors__ = "Tyler Furby, Jared Webber"
 __email__ = "tyler@tylerfurby.com"
 
 bl_info = {
@@ -146,11 +146,11 @@ class ArnoldRenderEngine(bpy.types.RenderEngine):
     def render(self, depsgraph):
         engine.render(self, depsgraph)
 
-    def view_update(self, context):
-        engine.view_update(self, context)
+    # def view_update(self, context):
+    #     engine.view_update(self, context)
 
-    def view_draw(self, context):
-        engine.view_draw(self, context.depsgraph, context.region, context.space_data, context.region_data)
+    # def view_draw(self, context):
+    #     engine.view_draw(self, context.depsgraph, context.region, context.space_data, context.region_data)
 
     # def __del__(self):
     #     engine.free(self)
@@ -161,24 +161,24 @@ def register():
     addon_preferences.register()
 
     from . import props
-    from . import nodes
+    # from . import nodes
     from . import ops
     from . import ui
     from . import engine
     from . import addon_preferences
 
     bpy.utils.register_class(ArnoldRenderEngine)
-    nodes.register()
+    #nodes.register()
 
 
 def unregister():
     from . import addon_preferences
     from . import props
-    from . import nodes
+    #from . import nodes
     from . import ops
     from . import ui
     from . import engine
     from . import addon_preferences
     addon_preferences.unregister()
     bpy.utils.unregister_class(ArnoldRenderEngine)
-    nodes.unregister()
+    #nodes.unregister()

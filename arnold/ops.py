@@ -13,7 +13,7 @@ from bpy.props import (
 )
 from bpy_extras.io_utils import ExportHelper
 from . import ArnoldRenderEngine
-from .nodes import convert_cycles_nodetree, is_arnold_nodetree
+# from .nodes import convert_cycles_nodetree, is_arnold_nodetree
 
 
 @ArnoldRenderEngine.register_class

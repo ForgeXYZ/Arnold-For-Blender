@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__authors__ = "Tyler Furby, Ildar Nikolaev"
+__authors__ = "Tyler Furby, Jared Webber"
 
 import bpy
 
@@ -15,8 +15,8 @@ from bpy.types import (
     Operator,
 )
 
-import barnold.engine as engine
-import barnold.nodes as nodes
+import arnold.engine as engine
+#import arnold.nodes as nodes
 from . import ArnoldRenderEngine
 
 # icons
@@ -121,7 +121,7 @@ def _subpanel(layout, title, opened, path, attr, ctx):
     row = box.row()
     row.alignment = 'LEFT'
     icon = 'TRIA_DOWN' if opened else 'TRIA_RIGHT'
-    op = row.operator("barnold.ui_toggle", text=title, icon=icon, emboss=False)
+    op = row.operator("arnold.ui_toggle", text=title, icon=icon, emboss=False)
     op.path = path
     op.attr = attr
     op.ctx = ctx
@@ -133,7 +133,7 @@ def _nodesubpanel(layout, title, opened, attr, ctx):
     row = box.row()
     row.alignment = 'LEFT'
     icon = 'TRIA_DOWN' if opened else 'TRIA_RIGHT'
-    op = row.operator("barnold.ui_toggle", text=title, icon=icon, emboss=True)
+    op = row.operator("arnold.ui_toggle", text=title, icon=icon, emboss=True)
     op.attr = attr
     op.ctx = ctx
     return col.box() if opened else None
@@ -782,7 +782,7 @@ class ArnoldLightPanel(LightButtonsPanel, Panel):
 #from bl_ui.properties_material import
 # def panel_node_draw(layout, id_data, output_type, input_name):
 #     if not id_data.use_nodes:
-#         layout.operator("barnold.use_shading_nodes", icon='NODETREE')
+#         layout.operator("arnold.use_shading_nodes", icon='NODETREE')
 #         return False
 #
 #     ntree = id_data.node_tree
@@ -880,7 +880,7 @@ class ArnoldShaderPanel(ArnoldButtonsPanel, Panel):
         if mat and not nodes.is_arnold_nodetree(mat):
             # layout.operator(
             #     'shading.add_renderman_nodetree').idtype = "material"
-            layout.operator('barnold.convert_cycles')
+            layout.operator('arnold.convert_cycles')
 
         mat_type = mat
         if shader.type == 'lambert' or shader.type == 'standard_surface' or shader.type == 'toon' or shader.type == 'utility' or shader.type == 'flat' or shader.type == 'standard_hair':
