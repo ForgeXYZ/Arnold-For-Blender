@@ -18,56 +18,82 @@ import bpy
 import bgl
 from mathutils import Matrix, Vector, geometry
 
-#sys.path.append('home/furby/ArnoldSDK/python/arnold')
+from . import polymesh as polymesh
 
 import arnold
 
 def _export(data, depsgraph, camera, xres, yres, session=None):
 
-    # create a sphere geometric primitive
-    sph = arnold.AiNode("sphere")
-    arnold.AiNodeSetStr(sph, "name", "mysphere")
-    arnold.AiNodeSetVec(sph, "center", 0.0, 4.0, 0.0)
-    arnold.AiNodeSetFlt(sph, "radius", 4.0)
+    _RN = re.compile("[^-0-9A-Za-z_]")  # regex to cleanup names
+    _CONVERTIBLETYPES = {'MESH', 'CURVE', 'SURFACE', 'META', 'FONT'}
 
-    # create a polymesh, with UV coordinates
-    # AtNode *mesh = AiNode("polymesh");
-    # mesh = AiNode("polymesh")
-    # AiNodeSetStr(mesh, "name", "mymesh");
-    # AtArray* nsides_array = AiArray(1, 1, AI_TYPE_UINT, 4);
-    # AiNodeSetArray(mesh, "nsides", nsides_array);
-    # AtArray* vlist_array = AiArray(12, 1, AI_TYPE_FLOAT, -10.f, 0.f, 10.f, 10.f, 0.f, 10.f, -10.f, 0.f, -10.f, 10.f, 0.f, -10.f);
-    # AiNodeSetArray(mesh, "vlist", vlist_array);
-    # AtArray* vidxs_array = AiArray(4, 1, AI_TYPE_UINT, 0, 1, 3, 2);
-    # AiNodeSetArray(mesh, "vidxs", vidxs_array);
-    # AtArray* uvlist_array = AiArray(8, 1, AI_TYPE_FLOAT, 0.f, 0.f, 1.f, 0.f, 1.f, 1.f, 0.f, 1.f);
-    # AiNodeSetArray(mesh, "uvlist", uvlist_array);
-    # AtArray* uvidxs_array = AiArray(4, 1, AI_TYPE_UINT, 0, 1, 2, 3);
-    # AiNodeSetArray(mesh, "uvidxs", uvidxs_array);
+    def _CleanNames(prefix, count):
+        def fn(name):
+            return "%s%d::%s" % (prefix, next(count), _RN.sub("_", name))
+        return fn
+
+    _AiMatrix = lambda m: arnold.AtMatrix(*numpy.reshape(m.transposed(), -1))
+
+    @contextmanager
+    def _Mesh(ob):
+        pc = time.perf_counter()
+        mesh = None
+        try:
+            mesh = ob.to_mesh(depsgraph=depsgraph, apply_modifiers=True, calc_undeformed=False)
+
+            if mesh:
+                mesh.calc_normals_split()
+                arnold.AiMsgDebug(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
+
+            yield mesh
+        finally:
+            if mesh:
+                bpy.data.meshes.remove(mesh, do_unlink=False)
+    
+    _Name = _CleanNames("O", itertools.count())
+
+    nodes = {} # {Object: AiNode}
+    AiNodes = {}  # {Object.data: AiNode}
+
+    #shaders = Shaders(data)
+
+    for ob in bpy.data.objects:
+        if ob.type in _CONVERTIBLETYPES:
+            name = None
+
+            if name is None:
+                name = _Name(ob.name)
+
+            modified = ob.is_modified(bpy.context.scene, 'RENDER')
+            if not modified:
+                inode = AiNodes.get(ob.data)
+                if inode is not None:
+                    node = arnold.AiNode("ginstance")
+                    arnold.AiNodeSetStr(node, "name", name)
+                    arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
+                    arnold.AiNodeSetBool(node, "inherit_xform", False)
+                    arnold.AiNodeSetPtr(node, "node", inode)
+                    polymesh._export_object_properties(ob, node)
+                    arnold.AiMsgDebug(b"    instance (%S)", ob.data.name)
+                    continue
+
+            with _Mesh(ob) as mesh:
+                if mesh is not None:
+                    node = polymesh._AiPolymesh(mesh)
+                    arnold.AiNodeSetStr(node, "name", name)
+                    arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
+                    polymesh._export_object_properties(ob, node)
+                    if not modified:
+                        # cache unmodified shapes for instancing
+                        AiNodes[ob.data] = node
+                    # cache for duplicators
+                    nodes[ob] = node
 
     # create a red standard surface shader
     shader1 = arnold.AiNode("standard_surface")
     arnold.AiNodeSetStr(shader1, "name", "myshader1")
     arnold.AiNodeSetRGB(shader1, "base_color", 1.0, 0.02, 0.02)
     arnold.AiNodeSetFlt(shader1, "specular", 0.05)
-
-    # create a textured standard surface shader
-    shader2 = arnold.AiNode("standard_surface")
-    arnold.AiNodeSetStr(shader2, "name", "myshader2")
-    arnold.AiNodeSetRGB(shader2, "base_color", 1.0, 0.0, 0.0)
-
-    # create an image shader for texture mapping
-    # AtNode *image = AiNode("image");
-    # AiNodeSetStr(image, "name", "myimage");
-    # AiNodeSetStr(image, "filename", "solidangle_icon.png");
-    # AiNodeSetFlt(image, "sscale", 4.f);
-    # AiNodeSetFlt(image, "tscale", 4.f);
-    # link the output of the image shader to the color input of the surface shader
-    # AiNodeLink(image, "base_color", shader2);
-
-    # assign the shaders to the geometric objects
-    arnold.AiNodeSetPtr(sph, "shader", shader1)
-    # AiNodeSetPtr(mesh, "shader", shader2);
 
     # create a perspective camera
     camera = arnold.AiNode("persp_camera")
