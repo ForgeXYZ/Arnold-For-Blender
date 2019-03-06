@@ -24,39 +24,23 @@ import arnold
 
 def _export(data, depsgraph, camera, xres, yres, session=None):
 
-    _RN = re.compile("[^-0-9A-Za-z_]")  # regex to cleanup names
     _CONVERTIBLETYPES = {'MESH', 'CURVE', 'SURFACE', 'META', 'FONT'}
 
-    def _CleanNames(prefix, count):
-        def fn(name):
-            return "%s%d::%s" % (prefix, next(count), _RN.sub("_", name))
-        return fn
-
     _AiMatrix = lambda m: arnold.AtMatrix(*numpy.reshape(m.transposed(), -1))
-
-    @contextmanager
-    def _Mesh(ob):
-        pc = time.perf_counter()
-        mesh = None
-        try:
-            mesh = ob.to_mesh(depsgraph=depsgraph, apply_modifiers=True, calc_undeformed=False)
-
-            if mesh:
-                mesh.calc_normals_split()
-                arnold.AiMsgDebug(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
-
-            yield mesh
-        finally:
-            if mesh:
-                bpy.data.meshes.remove(mesh, do_unlink=False)
-    
-    _Name = _CleanNames("O", itertools.count())
 
     nodes = {} # {Object: AiNode}
     AiNodes = {}  # {Object.data: AiNode}
 
     #shaders = Shaders(data)
 
+    def _CleanNames(prefix, count):
+        _RN = re.compile("[^-0-9A-Za-z_]")  # regex to cleanup names
+        def fn(name):
+            return "%s%d::%s" % (prefix, next(count), _RN.sub("_", name))
+        return fn
+
+    _Name = _CleanNames("O", itertools.count())
+    
     for ob in bpy.data.objects:
         if ob.type in _CONVERTIBLETYPES:
             name = None
@@ -66,18 +50,18 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
 
             modified = ob.is_modified(bpy.context.scene, 'RENDER')
             if not modified:
-                inode = AiNodes.get(ob.data)
-                if inode is not None:
+                AiNodes = AiNodes.get(ob.data)
+                if AiNodes is not None:
                     node = arnold.AiNode("ginstance")
                     arnold.AiNodeSetStr(node, "name", name)
                     arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
                     arnold.AiNodeSetBool(node, "inherit_xform", False)
-                    arnold.AiNodeSetPtr(node, "node", inode)
+                    arnold.AiNodeSetPtr(node, "node", AiNodes)
                     polymesh._export_object_properties(ob, node)
                     arnold.AiMsgDebug(b"    instance (%S)", ob.data.name)
                     continue
 
-            with _Mesh(ob) as mesh:
+            with polymesh._AiPolymesh(ob) as mesh:
                 if mesh is not None:
                     node = polymesh._AiPolymesh(mesh)
                     arnold.AiNodeSetStr(node, "name", name)
