@@ -63,7 +63,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
 
             with polymesh._AiPolymesh(ob) as mesh:
                 if mesh is not None:
-                    node = polymesh._AiPolymesh(mesh)
+                    node = polymesh._AiPolymesh.export(mesh)
                     arnold.AiNodeSetStr(node, "name", name)
                     arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
                     polymesh._export_object_properties(ob, node)

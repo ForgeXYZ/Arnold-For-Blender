@@ -17,52 +17,40 @@ import arnold
 
 
 class _AiPolymesh(cl.AbstractContextManager):
-    def __init__(self, ob):
-        self._object = ob
+    def __init__(self, obj):
+        self.bpy_obj = obj
         self.node = arnold.AiNode("polymesh")
 
-    # @contextmanager
-    # def _Mesh(self, ob):
-    #     pc = time.perf_counter()
-    #     mesh = None
-    #     try:
-    #         mesh = ob.to_mesh(depsgraph=bpy.context.depsgraph, apply_modifiers=True, calc_undeformed=False)
+        self._mesh = None
 
-    #         if mesh:
-    #             mesh.calc_normals_split()
-    #             arnold.AiMsgDebug(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
-
-    #         yield mesh
-    #     finally:
-    #         if mesh:
-    #             bpy.data.meshes.remove(mesh, do_unlink=False)
-    @contextmanager
     def __enter__(self):
         pc = time.perf_counter()
-        mesh = None
-        #try:
-
-        self._mesh = self._object.to_mesh(depsgraph=bpy.context.depsgraph, apply_modifiers=True, calc_undeformed=False)
-
-        if mesh:
-            mesh.calc_normals_split()
-            arnold.AiMsgDebug(b"    mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
-
-
-        self._meshverts = self._mesh.vertices
-        self._meshnverts = len(self._meshverts)
-
-        self._meshloops = self._mesh.loops
-        self._meshnloops = len(self._meshloops)
-
-        self._meshpolygons = self._mesh.polygons
-        self._meshnpolygons = len(self._meshpolygons)
         
-        return mesh
+        try:
+            self._mesh = self.bpy_obj.to_mesh(depsgraph=bpy.context.depsgraph, apply_modifiers=True, calc_undeformed=False)
+
+            if self._mesh:
+                self._mesh.calc_normals_split()
+                arnold.AiMsgDebug(b"    self._mesh (%f)", ctypes.c_double(time.perf_counter() - pc))
+                self._meshverts = self._mesh.vertices
+                self._meshnverts = len(self._meshverts)
+
+                self._meshloops = self._mesh.loops
+                self._meshnloops = len(self._meshloops)
+
+                self._meshpolygons = self._mesh.polygons
+                self._meshnpolygons = len(self._meshpolygons)
+
+                yield self._mesh
+        
+        finally:
+            pass
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._mesh:
-                bpy.data.meshes.remove(self._mesh, do_unlink=False)
+            mesh = self._mesh
+            bpy.data.meshes.remove(mesh, do_unlink=False)
+            self._mesh = None
 
     def export(self):
         verts = self._meshverts
