@@ -21,6 +21,8 @@ from mathutils import Matrix, Vector, geometry
 from . import polymesh as polymesh
 from . import camera as cam
 from . import lights as light
+from . import options as options
+from . import filters as filters
 
 import arnold
 
@@ -75,152 +77,21 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                         AiNodes[ob.data] = node
                     # cache for duplicators
                     nodes[ob] = node
+
         elif ob.type == 'LIGHT':
             AiLight = light._AiLights(ob)
             AiLight.export()
 
-
-    render = bpy.context.scene.render
-    aspect_x = render.pixel_aspect_x
-    aspect_y = render.pixel_aspect_y
-    # offsets for border render
-    xoff = 0
-    yoff = 0
-
-    opts = bpy.context.scene.arnold
-
-
-    # get the global options node and set some options
-    options = arnold.AiUniverseGetOptions()
-    color_manager = arnold.AiNode("color_manager_ocio")
-    arnold.AiNodeSetPtr(options, "color_manager", color_manager)
-    arnold.AiNodeSetInt(options, "xres", xres)
-    arnold.AiNodeSetInt(options, "yres", yres)
-    #arnold.AiNodeSetFlt(options, "aspect_ratio", aspect_y / aspect_x)
-    if render.use_border:
-        xoff = int(xres * render.border_min_x)
-        yoff = int(yres * render.border_min_y)
-        arnold.AiNodeSetInt(options, "region_min_x", xoff)
-        arnold.AiNodeSetInt(options, "region_min_y", yoff)
-        arnold.AiNodeSetInt(options, "region_max_x", int(xres * render.border_max_x) - 1)
-        arnold.AiNodeSetInt(options, "region_max_y", int(yres * render.border_max_y) - 1)
-    if not opts.lock_sampling_pattern:
-        arnold.AiNodeSetInt(options, "AA_seed", bpy.context.scene.frame_current)
-    if opts.clamp_sample_values:
-        arnold.AiNodeSetFlt(options, "AA_sample_clamp", opts.AA_sample_clamp)
-        arnold.AiNodeSetBool(options, "AA_sample_clamp_affects_aovs", opts.AA_sample_clamp_affects_aovs)
-    if not opts.auto_threads:
-        arnold.AiNodeSetInt(options, "threads", opts.threads)
-    arnold.AiNodeSetStr(options, "thread_priority", opts.thread_priority)
-    arnold.AiNodeSetStr(options, "pin_threads", opts.pin_threads)
-    arnold.AiNodeSetBool(options, "abort_on_error", opts.abort_on_error)
-    arnold.AiNodeSetBool(options, "abort_on_license_fail", opts.abort_on_license_fail)
-    arnold.AiNodeSetBool(options, "skip_license_check", opts.skip_license_check)
-    arnold.AiNodeSetRGB(options, "error_color_bad_texture", *opts.error_color_bad_texture)
-    arnold.AiNodeSetRGB(options, "error_color_bad_pixel", *opts.error_color_bad_pixel)
-    arnold.AiNodeSetRGB(options, "error_color_bad_shader", *opts.error_color_bad_shader)
-    arnold.AiNodeSetInt(options, "bucket_size", opts.bucket_size)
-    arnold.AiNodeSetStr(options, "bucket_scanning", opts.bucket_scanning)
-    arnold.AiNodeSetBool(options, "ignore_textures", opts.ignore_textures)
-    arnold.AiNodeSetBool(options, "ignore_shaders", opts.ignore_shaders)
-    arnold.AiNodeSetBool(options, "ignore_atmosphere", opts.ignore_atmosphere)
-    arnold.AiNodeSetBool(options, "ignore_lights", opts.ignore_lights)
-    arnold.AiNodeSetBool(options, "ignore_shadows", opts.ignore_shadows)
-    arnold.AiNodeSetBool(options, "ignore_subdivision", opts.ignore_subdivision)
-    arnold.AiNodeSetBool(options, "ignore_displacement", opts.ignore_displacement)
-    arnold.AiNodeSetBool(options, "ignore_bump", opts.ignore_bump)
-    arnold.AiNodeSetBool(options, "ignore_motion_blur", opts.ignore_motion_blur)
-    arnold.AiNodeSetBool(options, "ignore_dof", opts.ignore_dof)
-    arnold.AiNodeSetBool(options, "ignore_smoothing", opts.ignore_smoothing)
-    arnold.AiNodeSetBool(options, "ignore_sss", opts.ignore_sss)
-    arnold.AiNodeSetInt(options, "auto_transparency_depth", opts.auto_transparency_depth)
-    arnold.AiNodeSetInt(options, "texture_max_open_files", opts.texture_max_open_files)
-    arnold.AiNodeSetFlt(options, "texture_max_memory_MB", opts.texture_max_memory_MB)
-    arnold.AiNodeSetStr(options, "texture_searchpath", opts.texture_searchpath)
-    arnold.AiNodeSetBool(options, "texture_automip", opts.texture_automip)
-    arnold.AiNodeSetInt(options, "texture_autotile", opts.texture_autotile)
-    arnold.AiNodeSetBool(options, "texture_accept_untiled", opts.texture_accept_untiled)
-    arnold.AiNodeSetBool(options, "texture_accept_unmipped", opts.texture_accept_unmipped)
-    arnold.AiNodeSetFlt(options, "low_light_threshold", opts.low_light_threshold)
-    arnold.AiNodeSetInt(options, "GI_sss_samples", opts.GI_sss_samples)
-    arnold.AiNodeSetBool(options, "sss_use_autobump", opts.sss_use_autobump)
-    arnold.AiNodeSetInt(options, "GI_volume_samples", opts.GI_volume_samples)
-    arnold.AiNodeSetByte(options, "max_subdivisions", opts.max_subdivisions)
-    arnold.AiNodeSetStr(options, "procedural_searchpath", opts.procedural_searchpath)
-    arnold.AiNodeSetStr(options, "plugin_searchpath", opts.plugin_searchpath)
-    arnold.AiNodeSetInt(options, "GI_diffuse_depth", opts.GI_diffuse_depth)
-    arnold.AiNodeSetInt(options, "GI_specular_depth", opts.GI_specular_depth)
-    arnold.AiNodeSetInt(options, "GI_transmission_depth", opts.GI_transmission_depth)
-    arnold.AiNodeSetInt(options, "GI_volume_depth", opts.GI_volume_depth)
-    arnold.AiNodeSetInt(options, "GI_total_depth", opts.GI_total_depth)
-    arnold.AiNodeSetInt(options, "GI_diffuse_samples", opts.GI_diffuse_samples)
-    arnold.AiNodeSetInt(options, "GI_specular_samples", opts.GI_specular_samples)
-    arnold.AiNodeSetInt(options, "GI_transmission_samples", opts.GI_transmission_samples)
-
+    AiOptions = options._AiOptions(session, xres, yres)
+    AiOptions.export()
+    
     if camera:
         AiCamera = cam._AiCamera(camera, session, xres, yres)
         AiCamera.export()
 
-    opts = bpy.context.scene.arnold
-    arnold.AiMsgSetConsoleFlags(opts.get("console_log_flags", 0))
-    arnold.AiMsgSetMaxWarnings(opts.max_warnings)
-    arnold.AiMsgDebug(b"ARNOLD: >>>")
-
-    plugins_path = os.path.normpath(os.path.join(os.path.dirname(__file__), os.path.pardir, "bin"))
-    arnold.AiLoadPlugins(plugins_path)
-
-    sft = opts.sample_filter_type
-    filter = arnold.AiNode(sft)
-    arnold.AiNodeSetStr(filter, "name", "__filter")
-    if sft == 'blackman_harris_filter':
-        arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_bh_width)
-    elif sft == 'sinc_filter':
-        arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_sinc_width)
-    elif sft in {'cone_filter',
-                 'cook_filter',
-                 'disk_filter',
-                 'gaussian_filter',
-                 'triangle_filter',
-                 'contour_filter'}:
-        arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
-    elif sft == 'farthest_filter':
-        arnold.AiNodeSetStr(filter, "domain", opts.sample_filter_domain)
-    elif sft == 'heatmap_filter':
-        arnold.AiNodeSetFlt(filter, "minumum", opts.sample_filter_min)
-        arnold.AiNodeSetFlt(filter, "maximum", opts.sample_filter_max)
-    elif sft == 'variance_filter':
-        arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
-        arnold.AiNodeSetBool(filter, "scalar_mode", opts.sample_filter_scalar_mode)
-        arnold.AiNodeSetStr(filter, "filter_weights", opts.sample_filter_weights)
-    elif sft == 'cryptomatte_filter':
-        arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
-        arnold.AiNodeSetInt(filter, "rank", opts.sample_filter_rank)
-        arnold.AiNodeSetStr(filter, "filter", opts.cryptomatte_filter)
-    elif sft == 'denoise_optix_filter':
-        arnold.AiNodeSetFlt(filter, "blend", opts.optix_blend)
-    elif sft == 'diff_filter':
-        arnold.AiNodeSetFlt(filter, "width", opts.sample_filter_width)
-        arnold.AiNodeSetStr(filter, "filter_weights", opts.sample_filter_weights)
+    AiFilters = filters._AiFilters()
+    AiFilters.export()
     
-    # create an output driver node
-    display = arnold.AiNode("driver_display_callback")
-    arnold.AiNodeSetStr(display, "name", "__driver")
-    outputs_aovs = ( str.encode(opts.aov_pass + "__driver"), )
-
-    outputs = arnold.AiArray(len(outputs_aovs), 1, arnold.AI_TYPE_STRING, *outputs_aovs)
-    arnold.AiNodeSetArray(options, "outputs", outputs)
-
-    AA_samples = opts.AA_samples
-    if session is not None:
-        session["display"] = display
-        session["offset"] = xoff, yoff
-        if opts.progressive_refinement:
-            isl = opts.initial_sampling_level
-            session["ipr"] = (isl, AA_samples + 1)
-            AA_samples = isl
-    arnold.AiNodeSetInt(options, "AA_samples", AA_samples)
-
-    arnold.AiMsgDebug(b"ARNOLD DEBUG: <<<")
 
 def update(engine, data, depsgraph):
     print("Arnold Engine Updating...")
