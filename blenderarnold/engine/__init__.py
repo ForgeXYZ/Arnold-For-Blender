@@ -74,22 +74,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                         AiNodes[ob.data] = node
                     # cache for duplicators
                     nodes[ob] = node
-    if camera:
-        camera = cam._AiCamera(camera, session, xres, yres)
-
-    # create a red standard surface shader
-    shader1 = arnold.AiNode("standard_surface")
-    arnold.AiNodeSetStr(shader1, "name", "myshader1")
-    arnold.AiNodeSetRGB(shader1, "base_color", 1.0, 0.02, 0.02)
-    arnold.AiNodeSetFlt(shader1, "specular", 0.05)
-
-    # create a point light source
-    light = arnold.AiNode("point_light")
-    arnold.AiNodeSetStr(light, "name", "mylight")
-    # position the light (alternatively use 'matrix')
-    arnold.AiNodeSetVec(light, "position", 15.0, 30.0, 15.0)
-    arnold.AiNodeSetFlt(light, "intensity", 4500.0) # alternatively, use 'exposure'
-    arnold.AiNodeSetFlt(light, "radius", 4.0) # for soft shadows
 
 
     render = bpy.context.scene.render
@@ -108,7 +92,7 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     arnold.AiNodeSetPtr(options, "color_manager", color_manager)
     arnold.AiNodeSetInt(options, "xres", xres)
     arnold.AiNodeSetInt(options, "yres", yres)
-    arnold.AiNodeSetFlt(options, "aspect_ratio", aspect_y / aspect_x)
+    #arnold.AiNodeSetFlt(options, "aspect_ratio", aspect_y / aspect_x)
     if render.use_border:
         xoff = int(xres * render.border_min_x)
         yoff = int(yres * render.border_min_y)
@@ -169,6 +153,10 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     arnold.AiNodeSetInt(options, "GI_specular_samples", opts.GI_specular_samples)
     arnold.AiNodeSetInt(options, "GI_transmission_samples", opts.GI_transmission_samples)
 
+    if camera:
+        AiCamera = cam._AiCamera(camera, session, xres, yres)
+        AiCamera.export()
+
     opts = bpy.context.scene.arnold
     arnold.AiMsgSetConsoleFlags(opts.get("console_log_flags", 0))
     arnold.AiMsgSetMaxWarnings(opts.max_warnings)
@@ -221,13 +209,11 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     AA_samples = opts.AA_samples
     if session is not None:
         session["display"] = display
-        xoff = 0
-        yoff = 0
         session["offset"] = xoff, yoff
-        # if opts.progressive_refinement:
-        #     isl = opts.initial_sampling_level
-        #     session["ipr"] = (isl, AA_samples + 1)
-        #     AA_samples = isl
+        if opts.progressive_refinement:
+            isl = opts.initial_sampling_level
+            session["ipr"] = (isl, AA_samples + 1)
+            AA_samples = isl
     arnold.AiNodeSetInt(options, "AA_samples", AA_samples)
 
     arnold.AiMsgDebug(b"ARNOLD DEBUG: <<<")

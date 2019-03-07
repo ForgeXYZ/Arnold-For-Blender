@@ -23,7 +23,6 @@ class _AiCamera():
         self._mw = camera.matrix_world
         self._cdata = camera.data
         self._cp = self._cdata.arnold
-        #print(camera.location.x)
         self._camera_type = self._cp.camera_type
 
         self._session = session
@@ -45,9 +44,11 @@ class _AiCamera():
         aspect_y = render.pixel_aspect_y
 
         if self._cdata.sensor_fit == 'VERTICAL':
+            print(self._cdata.sensor_fit)
             sw = self._cdata.sensor_height * self._xres / self._yres * aspect_x / aspect_y
         else:
             sw = self._cdata.sensor_width
+            print(self._cdata.sensor_fit)
             if self._cdata.sensor_fit == 'AUTO':
                 x = self._xres * aspect_x
                 y = self._xres * aspect_y
