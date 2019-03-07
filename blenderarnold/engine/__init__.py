@@ -19,6 +19,7 @@ import bgl
 from mathutils import Matrix, Vector, geometry
 
 from . import polymesh as polymesh
+from . import camera as cam
 
 import arnold
 
@@ -73,20 +74,14 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                         AiNodes[ob.data] = node
                     # cache for duplicators
                     nodes[ob] = node
+    if camera:
+        camera = cam._AiCamera(camera, session, xres, yres)
 
     # create a red standard surface shader
     shader1 = arnold.AiNode("standard_surface")
     arnold.AiNodeSetStr(shader1, "name", "myshader1")
     arnold.AiNodeSetRGB(shader1, "base_color", 1.0, 0.02, 0.02)
     arnold.AiNodeSetFlt(shader1, "specular", 0.05)
-
-    # create a perspective camera
-    camera = arnold.AiNode("persp_camera")
-    arnold.AiNodeSetStr(camera, "name", "mycamera")
-    # position the camera (alternatively you can set 'matrix')
-    arnold.AiNodeSetVec(camera, "position", 0.0, 10.0, 35.0)
-    arnold.AiNodeSetVec(camera, "look_at", 0.0, 3.0, 0.0)
-    arnold.AiNodeSetFlt(camera, "fov", 45.0)
 
     # create a point light source
     light = arnold.AiNode("point_light")
@@ -173,10 +168,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
     arnold.AiNodeSetInt(options, "GI_diffuse_samples", opts.GI_diffuse_samples)
     arnold.AiNodeSetInt(options, "GI_specular_samples", opts.GI_specular_samples)
     arnold.AiNodeSetInt(options, "GI_transmission_samples", opts.GI_transmission_samples)
-
-    
-    # set the active camera (optional, since there is only one camera)
-    arnold.AiNodeSetPtr(options, "camera", camera)
 
     opts = bpy.context.scene.arnold
     arnold.AiMsgSetConsoleFlags(opts.get("console_log_flags", 0))
