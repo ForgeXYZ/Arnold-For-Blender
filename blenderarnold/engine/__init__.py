@@ -20,6 +20,7 @@ from mathutils import Matrix, Vector, geometry
 
 from . import polymesh as polymesh
 from . import camera as cam
+from . import lights as light
 
 import arnold
 
@@ -74,6 +75,9 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
                         AiNodes[ob.data] = node
                     # cache for duplicators
                     nodes[ob] = node
+        elif ob.type == 'LIGHT':
+            AiLight = light._AiLights(ob)
+            AiLight.export()
 
 
     render = bpy.context.scene.render
