@@ -50,20 +50,21 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
 
             modified = ob.is_modified(bpy.context.scene, 'RENDER')
             if not modified:
-                AiNodes = AiNodes.get(ob.data)
-                if AiNodes is not None:
+                AiNode = AiNodes.get(ob.data)
+                if AiNode is not None:
                     node = arnold.AiNode("ginstance")
                     arnold.AiNodeSetStr(node, "name", name)
                     arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
                     arnold.AiNodeSetBool(node, "inherit_xform", False)
-                    arnold.AiNodeSetPtr(node, "node", AiNodes)
+                    arnold.AiNodeSetPtr(node, "node", AiNode)
                     polymesh._export_object_properties(ob, node)
                     arnold.AiMsgDebug(b"    instance (%S)", ob.data.name)
                     continue
 
-            with polymesh._AiPolymesh(ob) as mesh:
+            mesh = polymesh._AiPolymesh(ob)
+            with mesh:
                 if mesh is not None:
-                    node = polymesh._AiPolymesh.export(mesh)
+                    node = mesh.export()
                     arnold.AiNodeSetStr(node, "name", name)
                     arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
                     polymesh._export_object_properties(ob, node)
