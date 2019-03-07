@@ -30,13 +30,6 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
 
     _CONVERTIBLETYPES = {'MESH', 'CURVE', 'SURFACE', 'META', 'FONT'}
 
-    _AiMatrix = lambda m: arnold.AtMatrix(*numpy.reshape(m.transposed(), -1))
-
-    nodes = {} # {Object: AiNode}
-    AiNodes = {}  # {Object.data: AiNode}
-
-    #shaders = Shaders(data)
-
     def _CleanNames(prefix, count):
         _RN = re.compile("[^-0-9A-Za-z_]")  # regex to cleanup names
         def fn(name):
@@ -52,31 +45,10 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
             if name is None:
                 name = _Name(ob.name)
 
-            modified = ob.is_modified(bpy.context.scene, 'RENDER')
-            if not modified:
-                AiNode = AiNodes.get(ob.data)
-                if AiNode is not None:
-                    node = arnold.AiNode("ginstance")
-                    arnold.AiNodeSetStr(node, "name", name)
-                    arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
-                    arnold.AiNodeSetBool(node, "inherit_xform", False)
-                    arnold.AiNodeSetPtr(node, "node", AiNode)
-                    polymesh._export_object_properties(ob, node)
-                    arnold.AiMsgDebug(b"    instance (%S)", ob.data.name)
-                    continue
-
             mesh = polymesh._AiPolymesh(ob)
             with mesh:
                 if mesh is not None:
-                    node = mesh.export()
-                    arnold.AiNodeSetStr(node, "name", name)
-                    arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(ob.matrix_world))
-                    polymesh._export_object_properties(ob, node)
-                    if not modified:
-                        # cache unmodified shapes for instancing
-                        AiNodes[ob.data] = node
-                    # cache for duplicators
-                    nodes[ob] = node
+                    mesh.export(name)
 
         elif ob.type == 'LIGHT':
             AiLight = light._AiLights(ob)

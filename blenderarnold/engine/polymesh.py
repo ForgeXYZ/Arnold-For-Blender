@@ -50,7 +50,7 @@ class _AiPolymesh(cl.AbstractContextManager):
             bpy.data.meshes.remove(mesh, do_unlink=False)
             self._mesh = None
 
-    def export(self):
+    def export(self, name):
         verts = self._meshverts
         nverts = self._meshnverts
         loops = self._meshloops
@@ -96,6 +96,33 @@ class _AiPolymesh(cl.AbstractContextManager):
                 arnold.AiNodeSetArray(self.node, "uvidxs", uvidxs)
                 arnold.AiNodeSetArray(self.node, "uvlist", uvlist)
                 break
+        
+        _AiMatrix = lambda m: arnold.AtMatrix(*numpy.reshape(m.transposed(), -1))
+
+        nodes = {} # {Object: AiNode}
+        AiNodes = {}  # {Object.data: AiNode}
+
+        modified = self.bpy_obj.is_modified(bpy.context.scene, 'RENDER')
+        if not modified:
+            AiNode = AiNodes.get(self.bpy_obj.data)
+            if AiNode is not None:
+                node = arnold.AiNode("ginstance")
+                arnold.AiNodeSetStr(node, "name", name)
+                arnold.AiNodeSetMatrix(node, "matrix", _AiMatrix(self.bpy_obj.matrix_world))
+                arnold.AiNodeSetBool(node, "inherit_xform", False)
+                arnold.AiNodeSetPtr(node, "node", AiNode)
+                _export_object_properties(self.bpy_obj, node)
+                arnold.AiMsgDebug(b"    instance (%S)", self.bpy_obj.data.name)
+                return node
+                
+        arnold.AiNodeSetStr(self.node, "name", name)
+        arnold.AiNodeSetMatrix(self.node, "matrix", _AiMatrix(self.bpy_obj.matrix_world))
+        _export_object_properties(self.bpy_obj, self.node)
+        if not modified:
+            # cache unmodified shapes for instancing
+            AiNodes[self.bpy_obj.data] = self.node
+        # cache for duplicators
+        nodes[self.bpy_obj] = self.node
 
         return self.node
 
