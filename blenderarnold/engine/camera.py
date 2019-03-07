@@ -29,8 +29,7 @@ class _AiCamera():
 
         self._xres = xres
         self._yres = yres
-
-        #self._bpy_camera = camera
+        
         self.node = arnold.AiNode(self._camera_type)
 
     def export(self):
@@ -44,11 +43,9 @@ class _AiCamera():
         aspect_y = render.pixel_aspect_y
 
         if self._cdata.sensor_fit == 'VERTICAL':
-            print(self._cdata.sensor_fit)
             sw = self._cdata.sensor_height * self._xres / self._yres * aspect_x / aspect_y
         else:
             sw = self._cdata.sensor_width
-            print(self._cdata.sensor_fit)
             if self._cdata.sensor_fit == 'AUTO':
                 x = self._xres * aspect_x
                 y = self._xres * aspect_y
