@@ -25,7 +25,6 @@ class _AiPolymesh(cl.AbstractContextManager):
 
     def __enter__(self):
         pc = time.perf_counter()
-        print("HELLO WORLD")
         
         try:
             self._mesh = self.bpy_obj.to_mesh(depsgraph=bpy.context.depsgraph, apply_modifiers=True, calc_undeformed=False)
@@ -44,8 +43,6 @@ class _AiPolymesh(cl.AbstractContextManager):
         
         finally:
             pass
-        
-        return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._mesh:
