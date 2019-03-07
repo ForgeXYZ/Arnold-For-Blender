@@ -44,23 +44,24 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
 
             if name is None:
                 name = _Name(ob.name)
-
-            mesh = polymesh._AiPolymesh(ob)
-            with mesh:
-                if mesh is not None:
-                    mesh.export(name)
-
+            
+            # Export AiPolymesh
+            AiPolymesh = polymesh._AiPolymesh(ob)
+            with AiPolymesh:
+                if AiPolymesh is not None:
+                    AiPolymesh.export(name)
+        # Export AiLights
         elif ob.type == 'LIGHT':
             AiLight = light._AiLights(ob)
             AiLight.export()
-
+    # Export AiOptions
     AiOptions = options._AiOptions(session, xres, yres)
     AiOptions.export()
-    
+    # Export AiCamera
     if camera:
         AiCamera = cam._AiCamera(camera, session, xres, yres)
         AiCamera.export()
-
+    # Export AiFilters
     AiFilters = filters._AiFilters()
     AiFilters.export()
     
