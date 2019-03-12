@@ -165,14 +165,12 @@ def register():
     from . import ops
     from . import ui
     from . import engine
-    from . import addon_preferences
 
     bpy.utils.register_class(ArnoldRenderEngine)
     #nodes.register()
 
 
 def unregister():
-    from . import addon_preferences
     from . import props
     #from . import nodes
     from . import ops
