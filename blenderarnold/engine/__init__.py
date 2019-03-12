@@ -23,6 +23,7 @@ from . import camera as cam
 from . import lights as light
 from . import options as options
 from . import filters as filters
+from . import shaders as shaders
 
 import arnold
 
@@ -49,7 +50,10 @@ def _export(data, depsgraph, camera, xres, yres, session=None):
             AiPolymesh = polymesh._AiPolymesh(ob)
             with AiPolymesh:
                 if AiPolymesh is not None:
-                    AiPolymesh.export(name)
+                    node = AiPolymesh.export(name)
+                    # Export Shaders
+                    AiShaders = shaders._AiShaders(data)
+                    AiShaders.export(AiPolymesh._mesh, node)
         # Export AiLights
         elif ob.type == 'LIGHT':
             AiLight = light._AiLights(ob)
