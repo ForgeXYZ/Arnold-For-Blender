@@ -9,7 +9,7 @@ Arnold integration with Blender, updated to work with the latest versions of Arn
 
 Join the Discord channel for discussions/help/updates/feature requests/talk about water coolers: https://discord.gg/M7K8Tw8
 
-# Stay tuned for a major release this Sunday - April 14th, 2019. Arnold GPU, Rendered Viewport, automatic installer and more. Will post the link right here when it's ready! Windows, Linux, and macOS are all supported. Thanks for your patience.
+# Stay tuned for a major release Sunday - April 21st, 2019. Arnold GPU, Rendered Viewport, automatic installer and more. Will post the link right here when it's ready! Windows, Linux, and macOS are all supported. Thanks for your patience.
 
 ### Complete BtoA Documentation (coming soon)
 
