@@ -1,4 +1,5 @@
 # Arnold For Blender 2.80 (BtoA) Beta
+https://readthedocs.org/projects/the-forge-arnold-for-blender/badge/?version=latest&style=flat
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5D8ZMMACFUX36)
 
 <p align="center">
