@@ -9,6 +9,8 @@ Welcome to Arnold for Blender's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   
+   welcome
 
 
 
