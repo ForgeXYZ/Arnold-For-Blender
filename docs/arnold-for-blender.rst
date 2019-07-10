@@ -1,3 +1,0 @@
-#  Arnold For Blender
-
-Welcome.
