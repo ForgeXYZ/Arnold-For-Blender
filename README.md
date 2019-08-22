@@ -6,15 +6,13 @@
 <img src="https://rawcdn.githack.com/tyler-furby/Arnold-For-Blender/b194477da00ea4ab76d0acf0722be2be51df0075/arnold%20logo.svg" alt="Blender One Logo" width="50%">
 </p>
 
-Arnold integration with Blender, updated to work with the latest versions of Arnold and Blender 2.8. This is not yet production ready, but will be soon... :balloon:
+Arnold integration with Blender, updated to work with the latest versions of Arnold and Blender 2.8. Almost ready for production :balloon:
 
 Join the Discord channel for discussions/help/updates/feature requests/talk about water coolers: https://discord.gg/M7K8Tw8
 
-# Stay tuned for a major release. We're just getting some last minute editions put in. Thanks for your patience! 
+# Hello, all. As a quick status update, we are nearly there. There will be a beta shortly before we release it for download. We're just as excited as you are to have this done as soon as possible.  
 
 # Arnold GPU, Rendered Viewport, automatic installer and more. Will post the link right here when it's ready! Windows, Linux, and macOS are all supported.
-
-### Complete BtoA Documentation (coming soon)
 
 ### About
 I'm actively working on this every day, if you have any issues feel free to contact me at tyler@tylerfurby.com,
