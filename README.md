@@ -8,28 +8,9 @@
 
 Solid Angle's Arnold render engine for Blender, written with production in mind.
 
-Join the Discord channel for discussions/help/updates/feature requests/talk about water coolers: https://discord.gg/M7K8Tw8
+Join the Discord channel: https://discord.gg/M7K8Tw8
 
-# Update 12/5/2019
-> Hello, we've still been going strong, and we're proud to say that we are finally on the final stretch of getting Arnold for Blender released to all of you... We've been working hard on making performance our number one priority, and getting new features in along the way.  Here's the last couple months in review:
-
-- We now have our IPR (Rendered Viewport) working faster than ever. We update full screens just as you'd expect and it makes the entire look development process so much nicer, as it isn't a distracting workflow.
-
-- We now support custom nodes -- Simply write your own custom shaders and they will be fully available from within the Shader Node Editor in Blender. 
-
-- We now support Optix Denoising in viewport renders for fast previews of scenes.
-
-- Updated our addon to support upcoming versions of Blender (2.81, 2.82).
-
-- Integrated OpenVDB for rendering of smoke and liquids from the Mantaflow Blender branch -- which is speculated to be in the master branch of Blender for 2.82.
-
-- Rounded out the design to get a nice hybrid between where cycles menu items are laid out, but with similar settings to those in Maya.
-
-- Release is imminent! -- I mean it this time. 
-
-#### Arnold GPU, Rendered Viewport, automatic installer and more. The official release will be linked right here when it's ready. Windows, Linux, and macOS are all supported.
-
-## Release Date
-Imminent.
+# Update 2/3/2020
+> Brace yourselves. We're about to launch. Closing down the hatches, giving one last look over. All further details will be made publicly available. See you soon, thank you for your patience.
 
 ![Blender loves arnold](https://cdn.rawgit.com/tyler-furby/Furby-Studios-Website-Files/a449e03a/images/Untitled-1.png)
