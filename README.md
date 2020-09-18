@@ -1,17 +1,18 @@
-# Arnold For Blender
-[![Documentation Status](https://readthedocs.org/projects/the-forge-arnold-for-blender/badge/)](http://the-forge-arnold-for-blender.readthedocs-hosted.com)
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5D8ZMMACFUX36)
+# Arnold Blender
 
 <p align="center">
-<img src="https://rawcdn.githack.com/tyler-furby/Arnold-For-Blender/b194477da00ea4ab76d0acf0722be2be51df0075/arnold%20logo.svg" alt="Blender One Logo" width="25%">
+<img src="https://rawcdn.githack.com/griffin-copperfield/Arnold-For-Blender/38928dec8529efe3d626c35ae1628312b4b823d2/arnoldblender_logo.png" alt="Arnold Blender Logo" width="100%">
 </p>
 
-Solid Angle's Arnold render engine for Blender, written with production in mind.
+<br>
 
-Join the Discord channel: https://discord.gg/M7K8Tw8
+### Prepare for the pixel epoch.
+[![Teaser](https://rawcdn.githack.com/griffin-copperfield/Arnold-For-Blender/38928dec8529efe3d626c35ae1628312b4b823d2/forge_coming_soon.png)](https://youtu.be/B2hQn3WG_F0)
+> Watch the coming soon [teaser ad](https://youtu.be/B2hQn3WG_F0).
 
-# Release Date - Q3 2020
+<br>
+<br>
 
-> Prepare for the pixel epoch.
+Solid Angle's Arnold render engine for Blender **2.91+**, written with production in mind.
 
-[![Teaser](https://j.gifs.com/jZ97rl.gif)](https://youtu.be/B2hQn3WG_F0)
+Join the **Discord** channel: https://discord.gg/ZJZeXtz
